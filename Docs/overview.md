@@ -68,6 +68,7 @@
 ---
 
 ## 3. Spacing System (`Source/UI/Theme/Spacing.h`)
+<!-- Note: Utility types (ChannelMode, DisplayRange, SpectrumAnalyzerDefaults) are in Source/Utility/ -->
 
 ### Padding (internal)
 
@@ -255,13 +256,13 @@ Extends `LookAndFeel_V4` with:
 
 ## 8. Interfaces (Decoupled Architecture)
 
-| Interface | Purpose |
-|---|---|
-| `IAudioDataSink` | Push stereo audio from processor to UI components |
-| `IGhostDataSink` | Push ghost/reference audio data |
-| `IPeakLevelSource` | Read peak mid/side dB levels |
-| `ISpectrumControls` | Control spectrum visibility, modes, freeze, peak |
-| `ISpectrumDisplaySettings` | Configure dB/freq range, colors, FFT, smoothing, slope |
+| Interface | Location | Purpose |
+|---|---|---|
+| `IAudioDataSink` | `Source/DSP/` | Push stereo audio from processor to UI components |
+| `IGhostDataSink` | `Source/DSP/` | Push ghost/reference audio data |
+| `IPeakLevelSource` | `Source/DSP/` | Read peak mid/side dB levels |
+| `ISpectrumControls` | `Source/UI/` | Control spectrum visibility, modes, freeze, peak |
+| `ISpectrumDisplaySettings` | `Source/UI/` | Configure dB/freq range, colors, FFT, smoothing, slope |
 
 ---
 

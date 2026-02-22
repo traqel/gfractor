@@ -18,9 +18,9 @@ Your gFractor audio plugin now has a complete, production-ready build and releas
 **Key Settings**:
 ```cmake
 PLUGIN_NAME:             "gFractor"
-PLUGIN_MANUFACTURER:     "YourCompany"
-PLUGIN_CODE:             "Blpt"  # Change these!
-PLUGIN_MANUFACTURER_CODE: "YrCo"  # Change these!
+PLUGIN_MANUFACTURER:     "GrowlAudio"
+PLUGIN_CODE:             "gFrt"
+PLUGIN_MANUFACTURER_CODE: "GrAd"
 C++ Standard:            C++17
 ```
 
@@ -274,11 +274,11 @@ gFractor/
 │       ├── build.yml           # CI/CD build workflow
 │       └── release.yml         # Release workflow
 ├── JUCE/                       # JUCE framework (add via submodule)
-├── Source/                     # Plugin source code (needs files!)
-│   ├── DSP/                    # Signal processing
-│   ├── Parameters/             # Parameter definitions
-│   ├── State/                  # State management
-│   └── UI/                     # User interface
+├── Source/                     # Plugin source code
+│   ├── DSP/                    # Signal processing & audio interfaces
+│   ├── Utility/                # Shared types & settings
+│   ├── State/                  # Parameters & state management
+│   └── UI/                     # User interface (Visualizers, Panels, Controls)
 ├── Tests/                      # Unit tests
 │   ├── CMakeLists.txt          # Test configuration
 │   └── BasicTests.cpp          # Example test
