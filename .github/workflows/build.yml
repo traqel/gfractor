@@ -2,11 +2,11 @@ name: Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ develop ]
     tags:
       - 'v*'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ develop ]
   workflow_dispatch:
 
 env:
