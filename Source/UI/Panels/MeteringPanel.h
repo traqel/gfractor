@@ -6,8 +6,8 @@
 #include <array>
 #include <vector>
 
-#include "AudioVisualizerBase.h"
-#include "../../Interfaces/IAudioDataSink.h"
+#include "../Visualizers/AudioVisualizerBase.h"
+#include "../../DSP/IAudioDataSink.h"
 
 /**
  * MeteringPanel

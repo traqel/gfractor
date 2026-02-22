@@ -10,11 +10,11 @@
 #include <juce_core/juce_core.h>
 
 #include "DSP/AudioRingBuffer.h"
-#include "UI/Utility/ChannelMode.h"
-#include "UI/Components/PeakHold.h"
+#include "Utility/ChannelMode.h"
+#include "UI/Visualizers/PeakHold.h"
 #include "State/PluginState.h"
-#include "Parameters/ParameterIDs.h"
-#include "Parameters/ParameterLayout.h"
+#include "State/ParameterIDs.h"
+#include "State/ParameterLayout.h"
 
 //==============================================================================
 // AudioRingBuffer Tests

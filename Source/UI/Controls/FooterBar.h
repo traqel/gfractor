@@ -4,8 +4,8 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PillButton.h"
 #include "../Theme/ColorPalette.h"
-#include "../../Interfaces/ISpectrumControls.h"
-#include "../../Interfaces/IPeakLevelSource.h"
+#include "../ISpectrumControls.h"
+#include "../../DSP/IPeakLevelSource.h"
 
 class gFractorAudioProcessor;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../UI/Utility/SpectrumAnalyzerDefaults.h"
+#include "../Utility/SpectrumAnalyzerDefaults.h"
 
 struct ISpectrumDisplaySettings {
     virtual ~ISpectrumDisplaySettings() = default;

@@ -85,7 +85,7 @@ target_include_directories(${PLUGIN_NAME}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/DSP
-        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Parameters
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Utility
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/State
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/UI
 )

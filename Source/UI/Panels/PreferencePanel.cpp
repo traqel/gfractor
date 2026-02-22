@@ -2,7 +2,7 @@
 
 #include <juce_gui_extra/misc/juce_ColourSelector.h>
 
-#include "../Utility/AnalyzerSettings.h"
+#include "../../Utility/AnalyzerSettings.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/Spacing.h"
 

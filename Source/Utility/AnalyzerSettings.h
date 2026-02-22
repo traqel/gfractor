@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_data_structures/juce_data_structures.h>
-#include "../../Interfaces/ISpectrumDisplaySettings.h"
+#include "../UI/ISpectrumDisplaySettings.h"
 
 /**
  * AnalyzerSettings

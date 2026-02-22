@@ -3,10 +3,10 @@
 #include <atomic>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "DSP/gFractorDSP.h"
-#include "Parameters/ParameterListener.h"
-#include "Interfaces/IAudioDataSink.h"
-#include "Interfaces/IGhostDataSink.h"
-#include "Interfaces/IPeakLevelSource.h"
+#include "State/ParameterListener.h"
+#include "DSP/IAudioDataSink.h"
+#include "DSP/IGhostDataSink.h"
+#include "DSP/IPeakLevelSource.h"
 
 /**
  * Main AudioProcessor class for the gFractor plugin

@@ -3,8 +3,8 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <vector>
 
-#include "../Utility/DisplayRange.h"
-#include "../Utility/ChannelMode.h"
+#include "../../Utility/DisplayRange.h"
+#include "../../Utility/ChannelMode.h"
 #include "../Theme/ColorPalette.h"
 
 /**

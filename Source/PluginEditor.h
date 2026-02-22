@@ -2,17 +2,17 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
-#include "UI/Components/SpectrumAnalyzer.h"
-#include "UI/Components/HeaderBar.h"
-#include "UI/Components/FooterBar.h"
-#include "UI/Components/MeteringPanel.h"
-#include "UI/Components/PreferencePanel.h"
-#include "UI/Components/HelpPanel.h"
+#include "UI/Visualizers/SpectrumAnalyzer.h"
+#include "UI/Controls/HeaderBar.h"
+#include "UI/Controls/FooterBar.h"
+#include "UI/Panels/MeteringPanel.h"
+#include "UI/Panels/PreferencePanel.h"
+#include "UI/Panels/HelpPanel.h"
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
 #include "UI/Theme/ColorPalette.h"
 
 #if JUCE_DEBUG
-#include "UI/Components/PerformanceDisplay.h"
+#include "UI/Controls/PerformanceDisplay.h"
 #endif
 
 /**

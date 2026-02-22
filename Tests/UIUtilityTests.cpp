@@ -13,8 +13,8 @@
 #include <cmath>
 #include <vector>
 
-#include "UI/Utility/DisplayRange.h"
-#include "UI/Utility/SpectrumAnalyzerDefaults.h"
+#include "Utility/DisplayRange.h"
+#include "Utility/SpectrumAnalyzerDefaults.h"
 #include "DSP/FFTProcessor.h"
 
 class UIUtilityTests : public juce::UnitTest {

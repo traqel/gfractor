@@ -15,7 +15,7 @@ file(GLOB_RECURSE DSP_SOURCES
 
 # Additional source files needed by core tests (not under DSP/)
 set(CORE_SOURCES
-    "${CMAKE_SOURCE_DIR}/Source/UI/Components/PeakHold.cpp"
+    "${CMAKE_SOURCE_DIR}/Source/UI/Visualizers/PeakHold.cpp"
     "${CMAKE_SOURCE_DIR}/Source/State/PluginState.cpp"
 )
 
@@ -33,7 +33,7 @@ target_include_directories(gFractorTests
     PRIVATE
         ${CMAKE_SOURCE_DIR}/Source
         ${CMAKE_SOURCE_DIR}/Source/DSP
-        ${CMAKE_SOURCE_DIR}/Source/Parameters
+        ${CMAKE_SOURCE_DIR}/Source/Utility
         ${CMAKE_SOURCE_DIR}/Source/State
         ${CMAKE_SOURCE_DIR}/Source/UI
 )

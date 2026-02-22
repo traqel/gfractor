@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 
-#include "../Utility/DisplayRange.h"
+#include "../../Utility/DisplayRange.h"
 
 /**
  * Tooltip overlay for the spectrum analyzer.

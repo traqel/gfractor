@@ -4,7 +4,7 @@
 #include <functional>
 #include <vector>
 
-#include "../Utility/ChannelMode.h"
+#include "../../Utility/ChannelMode.h"
 
 /**
  * Infinite peak hold accumulator + glow paint.

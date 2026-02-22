@@ -1,6 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "UI/Utility/AnalyzerSettings.h"
+#include "Utility/AnalyzerSettings.h"
 #include "UI/Theme/ColorPalette.h"
 #include "UI/Theme/Spacing.h"
 

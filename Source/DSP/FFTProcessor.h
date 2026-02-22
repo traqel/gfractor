@@ -4,8 +4,8 @@
 #include <vector>
 #include <memory>
 
-#include "../UI/Utility/ChannelMode.h"
-#include "../UI/Utility/SpectrumAnalyzerDefaults.h"
+#include "../Utility/ChannelMode.h"
+#include "../Utility/SpectrumAnalyzerDefaults.h"
 
 /**
  * FFTProcessor

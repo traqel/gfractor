@@ -1,7 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "PluginState.h"
-#include "Parameters/ParameterLayout.h"
+#include "State/ParameterLayout.h"
 
 //==============================================================================
 gFractorAudioProcessor::gFractorAudioProcessor()

@@ -5,8 +5,8 @@
 #include <functional>
 #include <vector>
 
-#include "AudioRingBuffer.h"
-#include "../Utility/ChannelMode.h"
+#include "../../DSP/AudioRingBuffer.h"
+#include "../../Utility/ChannelMode.h"
 
 /**
  * Ghost spectrum — secondary FFT pipeline for visual comparison.
