@@ -9,7 +9,7 @@
  * Persists spectrum display preferences to a global properties file
  * so they are shared across all plugin instances and sessions.
  *
- * File location: ~/Library/Application Support/GrowlAudio/gFractor/analyzer.settings (macOS)
+ * File location: ~/Library/Application Support/GrowlAudio/gFractor.settings (macOS)
  */
 struct AnalyzerSettings {
     static void save(const ISpectrumDisplaySettings &settings) {

@@ -152,8 +152,8 @@ private:
     std::unique_ptr<juce::ResizableCornerComponent> resizeCorner;
 
     // Default and constrained sizes
-    static constexpr int defaultWidth = 600;
-    static constexpr int defaultHeight = 300;
+    static constexpr int defaultWidth = 1200;
+    static constexpr int defaultHeight = 640;
     static constexpr int minWidth = 400;
     static constexpr int minHeight = 200;
     static constexpr int maxWidth = 1200;

@@ -425,7 +425,7 @@ void SpectrumAnalyzer::buildPath(juce::Path &path,
 
 void SpectrumAnalyzer::setInfinitePeak(const bool enabled) {
     peakHold.setEnabled(enabled);
-    repaint();
+    clearAllCurves();
 }
 
 void SpectrumAnalyzer::clearAllCurves() {

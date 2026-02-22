@@ -68,7 +68,7 @@ void SonogramView::setSideVisible(const bool visible) {
 
 void SonogramView::clearImage() {
     if (image.isValid()) {
-        image.clear(image.getBounds(), juce::Colours::transparentBlack);
+        image.clear(image.getBounds(), juce::Colours::black);
         writeRow = 0;
     }
 }
