@@ -125,7 +125,13 @@ endif()
 
 if(MSVC)
     # Windows-specific compiler flags
-    target_compile_options(${PLUGIN_NAME} PRIVATE /W4)
+    # Note: /W4 is already set by juce_recommended_warning_flags
+    target_compile_options(${PLUGIN_NAME} PRIVATE
+        /bigobj          # Required for juce_dsp large translation units
+        /wd4244          # Suppress conversion warnings from JUCE internals
+        /wd4267          # Suppress size_t to int warnings from JUCE internals
+        /wd4458          # Suppress member hides class member warnings from JUCE
+    )
 else()
     # GCC/Clang compiler flags
     target_compile_options(${PLUGIN_NAME} PRIVATE -Wall -Wextra -Wpedantic)
