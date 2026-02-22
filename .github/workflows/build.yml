@@ -3,11 +3,8 @@ name: Build and Test
 on:
   push:
     branches: [ develop ]
-    tags:
-      - 'v*'
   pull_request:
     branches: [ develop ]
-  workflow_dispatch:
 
 env:
   BUILD_TYPE: Release
