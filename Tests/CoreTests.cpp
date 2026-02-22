@@ -9,7 +9,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_core/juce_core.h>
 
-#include "UI/Components/AudioRingBuffer.h"
+#include "DSP/AudioRingBuffer.h"
 #include "UI/Utility/ChannelMode.h"
 #include "UI/Components/PeakHold.h"
 #include "State/PluginState.h"

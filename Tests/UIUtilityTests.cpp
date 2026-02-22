@@ -15,7 +15,7 @@
 
 #include "UI/Utility/DisplayRange.h"
 #include "UI/Utility/SpectrumAnalyzerDefaults.h"
-#include "UI/Components/FFTProcessor.h"
+#include "DSP/FFTProcessor.h"
 
 class UIUtilityTests : public juce::UnitTest {
 public:

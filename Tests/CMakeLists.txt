@@ -15,9 +15,7 @@ file(GLOB_RECURSE DSP_SOURCES
 
 # Additional source files needed by core tests (not under DSP/)
 set(CORE_SOURCES
-    "${CMAKE_SOURCE_DIR}/Source/UI/Components/AudioRingBuffer.cpp"
     "${CMAKE_SOURCE_DIR}/Source/UI/Components/PeakHold.cpp"
-    "${CMAKE_SOURCE_DIR}/Source/UI/Components/FFTProcessor.cpp"
     "${CMAKE_SOURCE_DIR}/Source/State/PluginState.cpp"
 )
 
