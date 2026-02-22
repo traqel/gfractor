@@ -56,6 +56,14 @@ juce_add_plugin(${PLUGIN_NAME}
     IS_MIDI_EFFECT FALSE                    # Set TRUE for MIDI-only effects
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE       # Set TRUE if editor needs keyboard
 
+    # macOS audio permissions
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    MICROPHONE_PERMISSION_TEXT "gFractor needs access to your audio input for real-time audio processing."
+
+    # Hardened runtime entitlements
+    HARDENED_RUNTIME_ENABLED TRUE
+    HARDENED_RUNTIME_OPTIONS "com.apple.security.device.audio-input"
+
     # Copy plugin to standard locations after build
     COPY_PLUGIN_AFTER_BUILD TRUE
 
