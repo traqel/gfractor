@@ -10,7 +10,7 @@
 #include "../../DSP/IAudioDataSink.h"
 
 /**
- * MeteringPanel
+ * StereoMeteringPanel
  *
  * Right-side collapsible panel (~180px wide) providing three M/S analysis instruments:
  *  1. Goniometer  — Lissajous with phosphor persistence (Mid=up, Side=sideways)
@@ -20,12 +20,12 @@
  * Audio data is pushed from the audio thread via pushStereoData() and consumed
  * by a 60 Hz timer on the UI thread. The FIFO is lock-free (juce::AbstractFifo).
  */
-class MeteringPanel : public AudioVisualizerBase,
-                      public IAudioDataSink {
+class StereoMeteringPanel : public AudioVisualizerBase,
+                            public IAudioDataSink {
 public:
-    MeteringPanel();
+    StereoMeteringPanel();
 
-    ~MeteringPanel() override;
+    ~StereoMeteringPanel() override;
 
     //==============================================================================
     // IAudioDataSink implementation (forwards to AudioVisualizerBase)
@@ -89,5 +89,5 @@ private:
     juce::Rectangle<int> gonioArea, corrArea, widthArea;
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MeteringPanel)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StereoMeteringPanel)
 };

@@ -152,7 +152,7 @@
 | Max size | 1200 x 600 |
 | Resizable | Yes (corner handle) |
 
-### Metering Panel (collapsible, right side)
+### StereoMeteringPanel (collapsible, right side)
 
 | Property | Value |
 |---|---|
@@ -187,7 +187,7 @@ Rounded-rectangle toggle button used throughout the footer.
 | Mid | `midGreen` | Outline-only |
 | Side | `sideAmber` | Outline-only |
 | L+R | `blueAccent` | Outline-only |
-| Meters | `blueAccent` | Outline-only |
+| Stereo Meters | `blueAccent` | Outline-only |
 | Freeze | `blueAccent` | Outline-only |
 | Infinite | `blueAccent` | Outline-only |
 | Help | `textDimmed` | Filled |
@@ -206,7 +206,7 @@ Rounded-rectangle toggle button used throughout the footer.
 - **Interaction**: Crosshair tooltip (freq/dB/note), right-click audition bell filter (Q: 0.5–10)
 - **Features**: Ghost overlay, reference mode, infinite peak hold, freeze
 
-### MeteringPanel (right side, collapsible)
+### StereoMeteringPanel (right side, collapsible)
 
 Three instruments stacked vertically:
 

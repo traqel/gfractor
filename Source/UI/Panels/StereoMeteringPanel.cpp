@@ -1,11 +1,11 @@
-#include "MeteringPanel.h"
+#include "StereoMeteringPanel.h"
 #include "../Theme/ColorPalette.h"
 
 //==============================================================================
 static constexpr int kFifoCapacity = 8192;
 static constexpr int kRollingSize = 1 << 10; // 1024, matches kFftSize
 
-MeteringPanel::MeteringPanel()
+StereoMeteringPanel::StereoMeteringPanel()
     : AudioVisualizerBase(kFifoCapacity, kRollingSize),
       fft(std::make_unique<juce::dsp::FFT>(kFftOrder)),
       hannWindow(kFftSize, 0.0f),
@@ -17,12 +17,12 @@ MeteringPanel::MeteringPanel()
         juce::dsp::WindowingFunction<float>::hann);
 }
 
-MeteringPanel::~MeteringPanel() {
+StereoMeteringPanel::~StereoMeteringPanel() {
     stopVisualizerTimer();
 }
 
 //==============================================================================
-void MeteringPanel::processDrainedData(const int numNewSamples) {
+void StereoMeteringPanel::processDrainedData(const int numNewSamples) {
     if (numNewSamples == 0) return;
     updateGoniometerImage();
 
@@ -34,7 +34,7 @@ void MeteringPanel::processDrainedData(const int numNewSamples) {
 }
 
 //==============================================================================
-void MeteringPanel::updateGoniometerImage() const {
+void StereoMeteringPanel::updateGoniometerImage() const {
     if (!gonioImage.isValid()) return;
 
     // Fade existing image by drawing semi-transparent black over it
@@ -90,7 +90,7 @@ void MeteringPanel::updateGoniometerImage() const {
     }
 }
 
-float MeteringPanel::computeCorrelation() const {
+float StereoMeteringPanel::computeCorrelation() const {
     const auto &rolling_L = getRollingL();
     const auto &rolling_R = getRollingR();
     const int rollingSize = getRollingSize();
@@ -108,7 +108,7 @@ float MeteringPanel::computeCorrelation() const {
     return juce::jlimit(-1.0f, 1.0f, static_cast<float>(sumLR / denom));
 }
 
-void MeteringPanel::computeWidthPerOctave() {
+void StereoMeteringPanel::computeWidthPerOctave() {
     const auto &rolling_L = getRollingL();
     const auto &rolling_R = getRollingR();
     const int wp = getRollingWritePos();
@@ -161,7 +161,7 @@ void MeteringPanel::computeWidthPerOctave() {
 }
 
 //==============================================================================
-void MeteringPanel::resized() {
+void StereoMeteringPanel::resized() {
     constexpr int corrH = 46;
     constexpr int widthH = 72;
 
@@ -189,7 +189,7 @@ void MeteringPanel::resized() {
 }
 
 //==============================================================================
-void MeteringPanel::paintGoniometer(juce::Graphics &g) const {
+void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     // Title
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(juce::Font(juce::FontOptions(12.0f)));
@@ -234,7 +234,7 @@ void MeteringPanel::paintGoniometer(juce::Graphics &g) const {
                juce::Justification::centred);
 }
 
-void MeteringPanel::paintCorrelation(juce::Graphics &g) const {
+void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     constexpr int labelH = 14;
     constexpr int pad = 4;
 
@@ -304,7 +304,7 @@ void MeteringPanel::paintCorrelation(juce::Graphics &g) const {
                juce::Justification::centred);
 }
 
-void MeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
+void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
     constexpr int labelH = 14;
     constexpr int freqH = 14;
     constexpr int pad = 4;
@@ -357,7 +357,7 @@ void MeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
 }
 
 //==============================================================================
-void MeteringPanel::paint(juce::Graphics &g) {
+void StereoMeteringPanel::paint(juce::Graphics &g) {
     g.fillAll(juce::Colour(ColorPalette::background));
 
     paintGoniometer(g);

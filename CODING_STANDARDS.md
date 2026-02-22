@@ -1254,7 +1254,7 @@ Source/
 │   │   ├── PeakHold.h/.cpp
 │   │   └── SpectrumTooltip.h/.cpp
 │   ├── Panels/
-│   │   ├── MeteringPanel.h/.cpp
+│   │   ├── StereoMeteringPanel.h/.cpp
 │   │   ├── PreferencePanel.h/.cpp
 │   │   └── HelpPanel.h/.cpp
 │   ├── Controls/

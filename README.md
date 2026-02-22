@@ -76,7 +76,7 @@ Source/
 ├── State/        # Parameters & state serialization
 └── UI/
     ├── Visualizers/  # SpectrumAnalyzer, SonogramView, GhostSpectrum, etc.
-    ├── Panels/       # MeteringPanel, PreferencePanel, HelpPanel
+    ├── Panels/       # StereoMeteringPanel, PreferencePanel, HelpPanel
     ├── Controls/     # HeaderBar, FooterBar, PillButton
     ├── LookAndFeel/  # Custom theme
     └── Theme/        # ColorPalette, Spacing

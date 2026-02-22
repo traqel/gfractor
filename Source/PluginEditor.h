@@ -5,7 +5,7 @@
 #include "UI/Visualizers/SpectrumAnalyzer.h"
 #include "UI/Controls/HeaderBar.h"
 #include "UI/Controls/FooterBar.h"
-#include "UI/Panels/MeteringPanel.h"
+#include "UI/Panels/StereoMeteringPanel.h"
 #include "UI/Panels/PreferencePanel.h"
 #include "UI/Panels/HelpPanel.h"
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
@@ -63,7 +63,7 @@ private:
     SpectrumAnalyzer spectrumAnalyzer;
 
     // M/S metering panel (goniometer, correlation, width-per-octave)
-    MeteringPanel meteringPanel;
+    StereoMeteringPanel meteringPanel;
     bool metersVisible = false;
     int meteringPanelW = 180;
     static constexpr int kMinPanelW = 120;

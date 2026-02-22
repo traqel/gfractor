@@ -64,11 +64,10 @@ private:
     PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
     PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
     PillButton lrPill{"L+R", juce::Colour(ColorPalette::blueAccent), true};
-
-    // Right group
-    PillButton metersPill{"Meters", juce::Colour(ColorPalette::blueAccent), true};
     PillButton freezePill{"Freeze", juce::Colour(ColorPalette::blueAccent), true};
     PillButton infinitePill{"Infinite", juce::Colour(ColorPalette::blueAccent), true};
+
+    PillButton metersPill{"Stereo", juce::Colour(ColorPalette::blueAccent), true};
     PillButton helpPill{"Help", juce::Colour(ColorPalette::textDimmed), false};
     PillButton settingsPill{"Settings", juce::Colour(ColorPalette::textDimmed), false};
 
