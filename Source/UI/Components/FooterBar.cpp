@@ -115,17 +115,17 @@ void FooterBar::resized() {
 
     constexpr auto ph = static_cast<float>(Spacing::pillHeight);
     constexpr auto gs = static_cast<float>(Spacing::gapS);
-    constexpr auto gл = static_cast<float>(Spacing::gapL);
+    constexpr auto gl = static_cast<float>(Spacing::gapL);
     constexpr auto ms = static_cast<float>(Spacing::marginS);
 
     // ── [Mid-Side] — left edge aligns with SpectrumAnalyzer dB axis ─────────
     fb.items.add(Item(56, ph, midPill).withMargin(Margin(0, gs, 0, analyzerLeftMargin)));
     fb.items.add(Item(58, ph, sidePill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(56, ph, lrPill).withMargin(Margin(0, gл, 0, 0)));
+    fb.items.add(Item(56, ph, lrPill).withMargin(Margin(0, gl, 0, 0)));
 
     // ── [Reference  Ghost] ───────────────────────────────────────────────────
     fb.items.add(Item(100, ph, referencePill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(72, ph, ghostPill).withMargin(Margin(0, gл, 0, 0)));
+    fb.items.add(Item(72, ph, ghostPill).withMargin(Margin(0, gl, 0, 0)));
 
     // ── [Spectrum  Sonogram  Freeze] ──────────────────────────────────────────
     fb.items.add(Item(90, ph, spectrumPill).withMargin(Margin(0, gs, 0, 0)));
