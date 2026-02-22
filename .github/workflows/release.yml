@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  BUILD_TYPE: Release
+  PLUGIN_NAME: gFractor
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ steps.get_version.outputs.version }}
+          draft: true
+          prerelease: false
+
+  build-and-sign:
+    name: Build ${{ matrix.name }}
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+            installer_script: Scripts/create_installer_macos.sh
+            artifact_pattern: "*.pkg"
+
+          - name: Windows
+            os: windows-latest
+            installer_script: Scripts/create_installer_windows.bat
+            artifact_pattern: "*.exe"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 4
+
+      - name: Run Tests
+        run: ctest --test-dir build --build-config ${{ env.BUILD_TYPE }} --output-on-failure
+
+      # macOS Code Signing
+      - name: Sign and Notarize (macOS)
+        if: matrix.os == 'macos-latest' && secrets.CODESIGN_IDENTITY != ''
+        env:
+          CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+        run: |
+          # Sign VST3
+          codesign --deep --force --verify --verbose \
+            --sign "$CODESIGN_IDENTITY" \
+            build/*_artefacts/Release/VST3/*.vst3
+
+          # Sign AU
+          codesign --deep --force --verify --verbose \
+            --sign "$CODESIGN_IDENTITY" \
+            build/*_artefacts/Release/AU/*.component
+
+      # Windows Code Signing
+      - name: Sign (Windows)
+        if: matrix.os == 'windows-latest' && secrets.WINDOWS_CERT_PASSWORD != ''
+        env:
+          CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          # Decode certificate from base64
+          echo "${{ secrets.WINDOWS_CERT_BASE64 }}" | base64 -d > cert.pfx
+
+          # Sign VST3
+          signtool sign /f cert.pfx /p "$env:CERT_PASSWORD" \
+            /t http://timestamp.digicert.com \
+            build/*_artefacts/Release/VST3/*.vst3
+
+          # Clean up certificate
+          Remove-Item cert.pfx
+
+      # Create installers
+      - name: Create Installer
+        run: |
+          echo "Installer creation placeholder"
+          echo "Add installer build script here (Packages for macOS, InnoSetup for Windows)"
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./${{ env.PLUGIN_NAME }}-${{ matrix.name }}-${{ needs.create-release.outputs.version }}.${{ matrix.artifact_pattern }}
+          asset_name: ${{ env.PLUGIN_NAME }}-${{ matrix.name }}-${{ needs.create-release.outputs.version }}.${{ matrix.artifact_pattern }}
+          asset_content_type: application/octet-stream

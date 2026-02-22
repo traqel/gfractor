@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=600, height=300">
+<title>gFractor UI Mockup</title>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+
+  .plugin-window {
+    width: 600px;
+    height: 300px;
+    background: #0D0F0D;
+    border: 1px solid #2A2D2B;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── Header ── */
+  .header {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .logo-g { font-size: 24px; font-weight: bold; font-style: italic; color: #3DCC6E; }
+  .logo-name { font-size: 24px; font-weight: bold; font-style: italic; color: #FFF; }
+  .subtitle { font-size: 9px; color: #666; margin-left: 74px; letter-spacing: 0.5px; }
+  .version { font-size: 12px; color: #666; margin-left: auto; min-width: 50px; text-align: right; }
+
+  /* ── Spectrum Area ── */
+  .spectrum-area {
+    flex: 1;
+    background: #0A0C0A;
+    margin: 0;
+    position: relative;
+    border-top: 1px solid #1E221E;
+    border-bottom: 1px solid #1E221E;
+  }
+  .spectrum-inner {
+    position: absolute;
+    top: 24px; left: 40px; right: 22px; bottom: 26px;
+  }
+
+  /* Grid lines */
+  .grid-h, .grid-v {
+    position: absolute;
+    background: rgba(26, 31, 26, 0.5);
+  }
+  .grid-h { height: 1px; left: 0; right: 0; }
+  .grid-v { width: 1px; top: 0; bottom: 0; }
+
+  /* Axis labels */
+  .db-label {
+    position: absolute;
+    left: -36px;
+    font-size: 10px;
+    color: #556055;
+    text-align: right;
+    width: 30px;
+    transform: translateY(-50%);
+  }
+  .hz-label {
+    position: absolute;
+    bottom: -20px;
+    font-size: 10px;
+    color: #556055;
+    transform: translateX(-50%);
+  }
+
+  /* Spectrum curves via SVG */
+  .spectrum-svg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+  }
+
+  /* Level meters */
+  .level-meters {
+    position: absolute;
+    right: -16px;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    display: flex;
+    gap: 2px;
+  }
+  .level-bar {
+    width: 4px;
+    border-radius: 1px;
+    position: relative;
+    overflow: hidden;
+  }
+  .level-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 1px;
+  }
+  .level-bar.mid::after { background: linear-gradient(to top, #3DCC6E 0%, #3DCC6E 60%, #C8A820 85%, #CC3D3D 100%); height: 100%; }
+  .level-bar.side::after { background: linear-gradient(to top, #C8A820 0%, #C8A820 60%, #C8A820 85%, #CC3D3D 100%); height: 100%; }
+  .level-bar.mid::after { height: 55%; }
+  .level-bar.side::after { height: 38%; }
+
+  /* ── Footer ── */
+  .footer {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px 0 40px;
+    flex-shrink: 0;
+    gap: 4px;
+  }
+  .footer-spacer { flex: 1; }
+  .footer-gap { width: 8px; }
+
+  /* ── Pill Buttons ── */
+  .pill {
+    height: 28px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    letter-spacing: 0.3px;
+    user-select: none;
+  }
+  .pill.inactive {
+    background: #1A1F1A;
+    border: 1px solid #556055;
+    color: #556055;
+  }
+  .pill.active-outline {
+    background: #1A1F1A;
+    color: #FFF;
+  }
+  .pill.active-outline.green  { border: 1px solid #3DCC6E; }
+  .pill.active-outline.amber  { border: 1px solid #C8A820; }
+  .pill.active-outline.blue   { border: 1px solid #1E6ECC; }
+  .pill.active-filled {
+    color: #FFF;
+    border: none;
+  }
+  .pill.active-filled.blue { background: #1E6ECC; }
+</style>
+</head>
+<body>
+
+<div class="plugin-window">
+
+  <!-- Header -->
+  <div class="header">
+    <span class="logo-g">g</span><span class="logo-name">Fractor</span>
+    <span class="subtitle">MID-SIDE SPECTRUM ANALYZER</span>
+    <span class="version">v1.2.3</span>
+  </div>
+
+  <!-- Spectrum Analyzer -->
+  <div class="spectrum-area">
+    <div class="spectrum-inner">
+
+      <!-- dB labels -->
+      <span class="db-label" style="top: 0%;">0</span>
+      <span class="db-label" style="top: 27%;">-20</span>
+      <span class="db-label" style="top: 55%;">-40</span>
+      <span class="db-label" style="top: 82%;">-60</span>
+      <span class="db-label" style="top: 100%;">-70</span>
+
+      <!-- Hz labels -->
+      <span class="hz-label" style="left: 0%;">20</span>
+      <span class="hz-label" style="left: 13%;">50</span>
+      <span class="hz-label" style="left: 24%;">100</span>
+      <span class="hz-label" style="left: 46%;">500</span>
+      <span class="hz-label" style="left: 57%;">1k</span>
+      <span class="hz-label" style="left: 78%;">5k</span>
+      <span class="hz-label" style="left: 89%;">10k</span>
+      <span class="hz-label" style="left: 100%;">20k</span>
+
+      <!-- Horizontal grid lines -->
+      <div class="grid-h" style="top: 0%;"></div>
+      <div class="grid-h" style="top: 27%;"></div>
+      <div class="grid-h" style="top: 55%;"></div>
+      <div class="grid-h" style="top: 82%;"></div>
+      <div class="grid-h" style="top: 100%;"></div>
+
+      <!-- Vertical grid lines -->
+      <div class="grid-v" style="left: 0%;"></div>
+      <div class="grid-v" style="left: 13%;"></div>
+      <div class="grid-v" style="left: 24%;"></div>
+      <div class="grid-v" style="left: 46%;"></div>
+      <div class="grid-v" style="left: 57%;"></div>
+      <div class="grid-v" style="left: 78%;"></div>
+      <div class="grid-v" style="left: 89%;"></div>
+      <div class="grid-v" style="left: 100%;"></div>
+
+      <!-- Spectrum curves -->
+      <svg class="spectrum-svg" viewBox="0 0 1000 500" preserveAspectRatio="none">
+        <!-- Mid channel (green) fill -->
+        <path d="M 0 500 L 0 400 C 30 380, 60 320, 100 280 C 140 240, 180 180, 220 160 C 260 140, 300 150, 340 200 C 380 250, 400 210, 440 180 C 480 150, 520 200, 560 250 C 600 300, 640 280, 680 310 C 720 340, 760 360, 800 380 C 840 400, 880 420, 920 440 C 950 455, 980 470, 1000 480 L 1000 500 Z"
+              fill="rgba(61, 204, 110, 0.08)" />
+        <!-- Mid channel (green) stroke -->
+        <path d="M 0 400 C 30 380, 60 320, 100 280 C 140 240, 180 180, 220 160 C 260 140, 300 150, 340 200 C 380 250, 400 210, 440 180 C 480 150, 520 200, 560 250 C 600 300, 640 280, 680 310 C 720 340, 760 360, 800 380 C 840 400, 880 420, 920 440 C 950 455, 980 470, 1000 480"
+              fill="none" stroke="#3DCC6E" stroke-width="2.5" />
+
+        <!-- Side channel (amber) fill -->
+        <path d="M 0 500 L 0 440 C 30 430, 60 400, 100 370 C 140 340, 180 280, 220 250 C 260 220, 300 240, 340 290 C 380 340, 400 310, 440 280 C 480 250, 520 300, 560 340 C 600 370, 640 350, 680 380 C 720 400, 760 410, 800 420 C 840 435, 880 450, 920 460 C 950 468, 980 475, 1000 485 L 1000 500 Z"
+              fill="rgba(200, 168, 32, 0.06)" />
+        <!-- Side channel (amber) stroke -->
+        <path d="M 0 440 C 30 430, 60 400, 100 370 C 140 340, 180 280, 220 250 C 260 220, 300 240, 340 290 C 380 340, 400 310, 440 280 C 480 250, 520 300, 560 340 C 600 370, 640 350, 680 380 C 720 400, 760 410, 800 420 C 840 435, 880 450, 920 460 C 950 468, 980 475, 1000 485"
+              fill="none" stroke="#C8A820" stroke-width="2.5" />
+      </svg>
+
+      <!-- Level meters -->
+      <div class="level-meters">
+        <div class="level-bar mid"></div>
+        <div class="level-bar side"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <!-- Channel toggles -->
+    <div class="pill active-outline green" style="width:56px;">Mid</div>
+    <div class="pill active-outline amber" style="width:58px;">Side</div>
+    <div class="pill inactive" style="width:56px;">L+R</div>
+
+    <div class="footer-gap"></div>
+
+    <!-- Reference/Ghost -->
+    <div class="pill inactive" style="width:100px;">Reference</div>
+    <div class="pill active-outline blue" style="width:72px;">Ghost</div>
+
+    <div class="footer-gap"></div>
+
+    <!-- View modes -->
+    <div class="pill active-filled blue" style="width:90px;">Spectrum</div>
+    <div class="pill inactive" style="width:92px;">Sonogram</div>
+    <div class="pill inactive" style="width:72px;">Freeze</div>
+    <div class="pill inactive" style="width:84px;">Infinite</div>
+
+    <div class="footer-spacer"></div>
+
+    <!-- Right group -->
+    <div class="pill inactive" style="width:72px;">Meters</div>
+    <div class="pill inactive" style="width:56px;">Help</div>
+    <div class="pill inactive" style="width:84px;">Settings</div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,49 @@
+# Builds
+Builds/
+build/
+cmake-build-*/
+*.xcodeproj
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+
+# IDE
+.vscode/
+.idea/
+.cache/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+*.dSYM
+
+# Windows
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+
+# Plugin binaries
+*.vst3
+*.component
+*.aaxplugin
+
+# JUCE
+JuceLibraryCode/
+
+# Dependencies
+# Note: JUCE is included as a git submodule, not ignored
+
+# Testing
+*.log
+test_output/
+Testing/
+
+# Temporary files
+*.tmp
+*.temp
+~*

@@ -1,0 +1,200 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+  PLUGIN_NAME: gFractor
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+            cmake_args: ""
+            artifact_name: macOS
+            artifact_path: |
+              build/*_artefacts/Release/VST3/*.vst3
+              build/*_artefacts/Release/AU/*.component
+
+          - name: Windows
+            os: windows-latest
+            cmake_args: ""
+            artifact_name: Windows
+            artifact_path: |
+              build/*_artefacts/Release/VST3/*.vst3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup JUCE dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libfreetype6-dev \
+            libx11-dev \
+            libxcomposite-dev \
+            libxcursor-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libxrender-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            webkit2gtk-4.0
+
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build
+            ~/.ccache
+          key: ${{ runner.os }}-cmake-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ${{ matrix.cmake_args }}
+
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 4
+
+      - name: Run Tests
+        run: ctest --test-dir build --build-config ${{ env.BUILD_TYPE }} --output-on-failure
+
+      - name: List build artifacts
+        shell: bash
+        run: |
+          echo "Build artifacts:"
+          if [ -d "build" ]; then
+            find build -name "*.vst3" -o -name "*.component" -o -name "*.exe"
+          fi
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_NAME }}-${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: warn
+
+  # Code signing job (runs only on tags)
+  sign-macos:
+    name: Sign and Notarize (macOS)
+    needs: build
+    runs-on: macos-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_NAME }}-macOS
+          path: artifacts/
+
+      - name: Setup signing (macOS)
+        if: env.CODESIGN_IDENTITY != ''
+        env:
+          CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+        run: |
+          echo "Code signing not yet configured. Add secrets to enable signing."
+          echo "Required secrets: CODESIGN_IDENTITY, APPLE_ID, APPLE_PASSWORD, TEAM_ID"
+          # Uncomment when certificates are available:
+          # codesign --deep --force --verify --verbose \
+          #   --sign "$CODESIGN_IDENTITY" \
+          #   artifacts/**/*.vst3
+          # codesign --deep --force --verify --verbose \
+          #   --sign "$CODESIGN_IDENTITY" \
+          #   artifacts/**/*.component
+
+      - name: Notarize (macOS)
+        if: env.APPLE_ID != ''
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+        run: |
+          echo "Notarization not yet configured. Add secrets to enable notarization."
+          # Uncomment when ready:
+          # zip -r plugin.zip artifacts/
+          # xcrun notarytool submit plugin.zip \
+          #   --apple-id "$APPLE_ID" \
+          #   --password "$APPLE_PASSWORD" \
+          #   --team-id "$TEAM_ID" \
+          #   --wait
+
+  # Release creation (runs only on tags)
+  release:
+    name: Create Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Package artifacts
+        run: |
+          cd artifacts
+          for dir in */; do
+            zip -r "${dir%/}.zip" "$dir"
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            artifacts/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Validation job (linting, static analysis, etc.)
+  validate:
+    name: Code Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Check formatting
+        run: |
+          echo "Code formatting validation placeholder"
+          echo "Add clang-format or other linting tools here"
+
+      - name: Check for TODO/FIXME
+        run: |
+          if grep -r "FIXME\|TODO" Source/ Tests/ --include="*.cpp" --include="*.h"; then
+            echo "Found TODO/FIXME items (informational only)"
+          fi
