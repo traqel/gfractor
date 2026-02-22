@@ -43,6 +43,7 @@ public:
     PillButton &getMidPill() { return midPill; }
     PillButton &getSidePill() { return sidePill; }
     PillButton &getMetersPill() { return metersPill; }
+    PillButton &getTransientPill() { return transientPill; }
     PillButton &getFreezePill() { return freezePill; }
     PillButton &getHelpPill() { return helpPill; }
 
@@ -68,6 +69,7 @@ private:
     PillButton infinitePill{"Infinite", juce::Colour(ColorPalette::blueAccent), true};
 
     PillButton metersPill{"Stereo", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton transientPill{"Transient", juce::Colour(ColorPalette::blueAccent), true};
     PillButton helpPill{"Help", juce::Colour(ColorPalette::textDimmed), false};
     PillButton settingsPill{"Settings", juce::Colour(ColorPalette::textDimmed), false};
 

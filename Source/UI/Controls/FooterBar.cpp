@@ -66,6 +66,10 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     metersPill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(metersPill);
 
+    // Transient metering pill
+    transientPill.setToggleState(false, juce::dontSendNotification);
+    addAndMakeVisible(transientPill);
+
     // Freeze pill
     freezePill.setToggleState(false, juce::dontSendNotification);
     freezePill.onClick = [this]() {
@@ -136,8 +140,9 @@ void FooterBar::resized() {
     // Spacer — pushes Meters + Settings to the right
     fb.items.add(Item().withFlex(1.0f));
 
-    // ── Meters ────────────────────────────────────────────────────────────────
+    // ── Meters  Transient ─────────────────────────────────────────────────────
     fb.items.add(Item(72, ph, metersPill).withMargin(Margin(0, gs, 0, 0)));
+    fb.items.add(Item(90, ph, transientPill).withMargin(Margin(0, gs, 0, 0)));
 
     // ── Help  Settings ───────────────────────────────────────────────────────
     fb.items.add(Item(56, ph, helpPill).withMargin(Margin(0, gs, 0, 0)));
