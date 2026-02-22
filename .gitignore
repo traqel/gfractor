@@ -1,6 +1,7 @@
 # Builds
 Builds/
 build/
+build-*/
 cmake-build-*/
 *.xcodeproj
 *.vcxproj
