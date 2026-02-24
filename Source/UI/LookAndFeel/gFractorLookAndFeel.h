@@ -264,9 +264,12 @@ public:
 
     juce::Typeface::Ptr getTypefaceForFont (const juce::Font& font) override
     {
-        auto ibmFont = font;
-        ibmFont.setTypefaceName (Typography::fontFamily);
-        return juce::LookAndFeel_V4::getTypefaceForFont (ibmFont);
+        if (auto embeddedMonoTypeface = Typography::getEmbeddedJetBrainsMonoTypeface())
+            return embeddedMonoTypeface;
+
+        auto monoFont = font;
+        monoFont.setTypefaceName (Typography::resolveMonospaceTypefaceName());
+        return juce::LookAndFeel_V4::getTypefaceForFont (monoFont);
     }
 
 private:
