@@ -1,5 +1,6 @@
 #include "StereoMeteringPanel.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/Typography.h"
 
 //==============================================================================
 static constexpr int kFifoCapacity = 8192;
@@ -162,8 +163,8 @@ void StereoMeteringPanel::computeWidthPerOctave() {
 
 //==============================================================================
 void StereoMeteringPanel::resized() {
-    constexpr int corrH = 46;
-    constexpr int widthH = 72;
+    constexpr int corrH = 62;
+    constexpr int widthH = 94;
 
     const int w = getWidth();
     const int h = getHeight();
@@ -176,7 +177,7 @@ void StereoMeteringPanel::resized() {
     widthArea = getLocalBounds().withTrimmedTop(gonioSide + corrH);
 
     // Goniometer image: square, centred below the title label
-    constexpr int gonioTitleH = 14;
+    constexpr int gonioTitleH = 20;
     const int drawSide = juce::jmax(1, juce::jmin(w, gonioSide - gonioTitleH));
     gonioDrawArea = gonioArea.withTrimmedTop(gonioTitleH).withSizeKeepingCentre(drawSide, drawSide);
 
@@ -192,8 +193,8 @@ void StereoMeteringPanel::resized() {
 void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     // Title
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(12.0f)));
-    g.drawText("GONIOMETER", gonioArea.withHeight(14), juce::Justification::centred);
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.drawText("GONIOMETER", gonioArea.withHeight(20), juce::Justification::centred);
 
     // Background
     g.setColour(juce::Colour(ColorPalette::spectrumBg));
@@ -221,31 +222,31 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
 
     // Axis labels
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(9.0f)));
-    g.drawText("M", gonioDrawArea.withHeight(12).translated(0, -4),
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.drawText("M", gonioDrawArea.withHeight(18).translated(0, -6),
                juce::Justification::centred);
-    g.drawText("L", juce::Rectangle<int>(gonioDrawArea.getX() - 1,
-                                         static_cast<int>(cy) - 6, 10, 12),
+    g.drawText("L", juce::Rectangle<int>(gonioDrawArea.getX() - 6,
+                                         static_cast<int>(cy) - 9, 18, 18),
                juce::Justification::centred);
-    g.drawText("R", juce::Rectangle<int>(gonioDrawArea.getRight() - 9,
-                                         static_cast<int>(cy) - 6, 10, 12),
+    g.drawText("R", juce::Rectangle<int>(gonioDrawArea.getRight() - 12,
+                                         static_cast<int>(cy) - 9, 18, 18),
                juce::Justification::centred);
-    g.drawText("S", gonioDrawArea.withTrimmedTop(gonioDrawArea.getHeight() - 12),
+    g.drawText("S", gonioDrawArea.withTrimmedTop(gonioDrawArea.getHeight() - 18),
                juce::Justification::centred);
 }
 
 void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
-    constexpr int labelH = 14;
+    constexpr int labelH = 20;
     constexpr int pad = 4;
 
     auto area = corrArea;
 
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(12.0f)));
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
     g.drawText("CORRELATION", area.removeFromTop(labelH),
                juce::Justification::centred);
 
-    const auto labRow = area.removeFromBottom(14);
+    const auto labRow = area.removeFromBottom(20);
     const auto barBounds = area.reduced(pad, 2);
 
     // Background
@@ -290,7 +291,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     g.drawVerticalLine(juce::roundToInt(cx), barTop, barBot);
 
     // Scale labels -1, 0, +1
-    g.setFont(juce::Font(juce::FontOptions(12.0f)));
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.drawText("-1", labRow.withWidth(16), juce::Justification::centredLeft);
     g.drawText("0", labRow, juce::Justification::centred);
@@ -299,21 +300,21 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
 
     // Numeric readout
     g.setColour(juce::Colour(ColorPalette::textLight));
-    g.setFont(juce::Font(juce::FontOptions(9.0f)));
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
     g.drawText(juce::String(correlationDisplay, 2), barBounds,
                juce::Justification::centred);
 }
 
 void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
-    constexpr int labelH = 14;
-    constexpr int freqH = 14;
+    constexpr int labelH = 20;
+    constexpr int freqH = 20;
     constexpr int pad = 4;
 
     // Work on a local copy — removeFromTop/Bottom mutate the rectangle
     auto area = widthArea;
 
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(12.0f)));
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
     g.drawText("WIDTH / OCTAVE", area.removeFromTop(labelH),
                juce::Justification::centred);
 
@@ -331,7 +332,7 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
     const juce::Colour lo = juce::Colour(ColorPalette::midGreen);
     const juce::Colour hi = juce::Colour(ColorPalette::sideAmber);
 
-    g.setFont(juce::Font(juce::FontOptions(7.0f)));
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
 
     for (int b = 0; b < kNumBands; ++b) {
         const float w = bandWidths[static_cast<size_t>(b)];
@@ -348,11 +349,13 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
         drawLevelBar(g, trackRect, w, barCol, juce::Colour(ColorPalette::spectrumBg));
 
         // Frequency label
-        g.setColour(juce::Colour(ColorPalette::textMuted));
-        g.drawText(kFreqLabels[b],
-                   juce::Rectangle<float>(x, static_cast<float>(freqRow.getY()),
-                                          barW, static_cast<float>(freqH)),
-                   juce::Justification::centred);
+        if ((b % 2) == 0) {
+            g.setColour(juce::Colour(ColorPalette::textMuted));
+            g.drawText(kFreqLabels[b],
+                       juce::Rectangle<float>(x, static_cast<float>(freqRow.getY()),
+                                              barW * 2.0f, static_cast<float>(freqH)),
+                       juce::Justification::centred);
+        }
     }
 }
 

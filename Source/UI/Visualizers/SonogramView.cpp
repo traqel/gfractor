@@ -1,4 +1,5 @@
 #include "SonogramView.h"
+#include "../Theme/Typography.h"
 #include <cmath>
 
 SonogramView::SonogramView() {
@@ -169,7 +170,7 @@ void SonogramView::rebuildSonoGridImage() {
 
     sonoGridImage = juce::Image(juce::Image::ARGB, w, h, true);
     juce::Graphics ig(sonoGridImage);
-    ig.setFont(juce::Font(juce::FontOptions(14.0f)).boldened());
+    ig.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
 
     const float sw = static_cast<float>(w);
     const float sh = static_cast<float>(h);

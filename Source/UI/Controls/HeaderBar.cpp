@@ -1,12 +1,13 @@
 #include "HeaderBar.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/Spacing.h"
+#include "../Theme/Typography.h"
 
 HeaderBar::HeaderBar() {
     // Version label — use JUCE-provided version string from CMake
     versionLabel.setText("v" JucePlugin_VersionString, juce::dontSendNotification);
     versionLabel.setColour(juce::Label::textColourId, juce::Colour(ColorPalette::textDimmed));
-    versionLabel.setFont(juce::Font(juce::FontOptions(12.0f)));
+    versionLabel.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
     versionLabel.setJustificationType(juce::Justification::centredRight);
     addAndMakeVisible(versionLabel);
 }
@@ -39,7 +40,7 @@ void HeaderBar::paint(juce::Graphics &g) {
                100, logoH, juce::Justification::centredLeft);
 
     // Subtitle: "MID . SIDE SPECTRUM ANALYZER"
-    g.setFont(juce::Font(juce::FontOptions(9.0f)));
+    g.setFont(juce::Font(juce::FontOptions(11.0f)));
     g.setColour(juce::Colour(ColorPalette::textDimmed));
 
     const int subtitleX = logoX + static_cast<int>(gWidth) + 74;

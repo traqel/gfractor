@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../Theme/ColorPalette.h"
+#include "../Theme/Typography.h"
 
 /**
  * PillButton
@@ -48,7 +49,7 @@ protected:
             g.setColour(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
             g.drawRoundedRectangle(bounds, cornerRadius, 1.0f);
             g.setColour(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
-            g.setFont(juce::Font(juce::FontOptions(14.0f)).boldened());
+            g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
             g.drawText(getButtonText().toUpperCase(), getLocalBounds(), juce::Justification::centred);
             return;
         }
@@ -75,7 +76,7 @@ protected:
         g.setColour(on
                         ? juce::Colour(ColorPalette::textBright)
                         : juce::Colour(ColorPalette::textMuted));
-        g.setFont(juce::Font(juce::FontOptions(14.0f)).boldened());
+        g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
         g.drawText(getButtonText().toUpperCase(), getLocalBounds(),
                    juce::Justification::centred);
     }

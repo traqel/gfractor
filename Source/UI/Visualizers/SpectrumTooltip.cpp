@@ -1,4 +1,5 @@
 #include "SpectrumTooltip.h"
+#include "../Theme/Typography.h"
 #include <cmath>
 
 void SpectrumTooltip::updateFromMouse(const float mx, const float my, const DisplayRange &range,
@@ -106,11 +107,18 @@ void SpectrumTooltip::paintTooltip(juce::Graphics &g, const juce::Rectangle<floa
     const juce::String noteStr = freqToNote(freq);
 
     // Tooltip box layout
-    constexpr int ttW = 108;
-    constexpr int ttRowH = 15;
-    constexpr int ttPadX = 6;
-    constexpr int ttPadY = 4;
-    constexpr int ttH = ttRowH * 3 + ttPadY * 2;
+    const auto tooltipFont = juce::Font(juce::FontOptions(Typography::mainFontSize));
+    constexpr int ttPadX = 10;
+    constexpr int ttPadY = 7;
+    const int ttRowH = static_cast<int>(std::ceil(tooltipFont.getHeight())) + 4;
+    const auto textWidth = [&tooltipFont](const juce::String &text) {
+        juce::GlyphArrangement glyphs;
+        glyphs.addLineOfText(tooltipFont, text, 0.0f, 0.0f);
+        return static_cast<int>(std::ceil(glyphs.getBoundingBox(0, -1, false).getWidth()));
+    };
+    const int contentW = juce::jmax(textWidth(freqStr), textWidth(dbStr), textWidth(noteStr));
+    const int ttW = juce::jmax(146, contentW + ttPadX * 2);
+    const int ttH = ttRowH * 3 + ttPadY * 2;
 
     // Position: right of cursor, flip left if near right edge
     float ttX = mouseX + 12.0f;
@@ -125,10 +133,10 @@ void SpectrumTooltip::paintTooltip(juce::Graphics &g, const juce::Rectangle<floa
     g.setColour(juce::Colour(ColorPalette::border).withAlpha(0.5f));
     g.drawRoundedRectangle(ttX, ttY, ttW, ttH, 4.0f, 1.0f);
 
-    g.setFont(juce::Font(juce::FontOptions(11.0f)));
+    g.setFont(tooltipFont);
     const int ttTextX = static_cast<int>(ttX) + ttPadX;
     const int ttTextY = static_cast<int>(ttY) + ttPadY;
-    constexpr int rowW = ttW - ttPadX * 2;
+    const int rowW = ttW - ttPadX * 2;
 
     g.setColour(juce::Colour(ColorPalette::textLight));
     g.drawText(freqStr, ttTextX, ttTextY, rowW, ttRowH, juce::Justification::centredLeft);

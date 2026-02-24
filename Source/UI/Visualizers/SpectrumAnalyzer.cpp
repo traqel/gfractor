@@ -1,5 +1,6 @@
 #include "SpectrumAnalyzer.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/Typography.h"
 #include <cmath>
 #include <juce_dsp/juce_dsp.h>
 
@@ -512,7 +513,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
     gridImage = juce::Image(juce::Image::ARGB, compW, compH, true);
     juce::Graphics g(gridImage);
 
-    const auto labelFont = juce::Font(juce::FontOptions(14.0f)).boldened();
+    const auto labelFont = juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened();
     g.setFont(labelFont);
 
     // --- Vertical frequency grid lines + labels below ---

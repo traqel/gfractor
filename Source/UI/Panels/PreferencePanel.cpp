@@ -5,6 +5,7 @@
 #include "../../Utility/AnalyzerSettings.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/Spacing.h"
+#include "../Theme/Typography.h"
 
 //==============================================================================
 PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
@@ -18,14 +19,14 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
           settings.getSonoSpeed(),
           settings.getSlope()
       } {
-    constexpr auto textBoxWidth = 80;
+    constexpr auto textBoxWidth = 90;
     setOpaque(true);
 
     // --- dB range sliders ---
     addAndMakeVisible(minDbSlider);
     minDbSlider.setRange(-120.0, -12.0, 1.0);
     minDbSlider.setValue(settings.getMinDb(), juce::dontSendNotification);
-    minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 20);
+    minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minDbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     minDbSlider.onValueChange = [this]() {
         settingsRef.setDbRange(static_cast<float>(minDbSlider.getValue()),
@@ -35,7 +36,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
     addAndMakeVisible(maxDbSlider);
     maxDbSlider.setRange(-24.0, 12.0, 1.0);
     maxDbSlider.setValue(settings.getMaxDb(), juce::dontSendNotification);
-    maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 20);
+    maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxDbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     maxDbSlider.onValueChange = [this]() {
         settingsRef.setDbRange(static_cast<float>(minDbSlider.getValue()),
@@ -54,7 +55,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
     addAndMakeVisible(minFreqSlider);
     minFreqSlider.setRange(10.0, 200.0, 1.0);
     minFreqSlider.setValue(settings.getMinFreq(), juce::dontSendNotification);
-    minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 20);
+    minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minFreqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     minFreqSlider.setTextValueSuffix(" Hz");
     minFreqSlider.onValueChange = [this]() {
@@ -65,7 +66,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
     addAndMakeVisible(maxFreqSlider);
     maxFreqSlider.setRange(5000.0, 24000.0, 100.0);
     maxFreqSlider.setValue(settings.getMaxFreq(), juce::dontSendNotification);
-    maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 20);
+    maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxFreqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     maxFreqSlider.setTextValueSuffix(" Hz");
     maxFreqSlider.onValueChange = [this]() {
@@ -89,8 +90,8 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
 
     midSwatch.label = "Mid";
     sideSwatch.label = "Side";
-    refMidSwatch.label = "Ref Mid";
-    refSideSwatch.label = "Ref Side";
+    refMidSwatch.label = "Ref M";
+    refSideSwatch.label = "Ref S";
 
     midSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setMidColour(c); };
     sideSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setSideColour(c); };
@@ -158,7 +159,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
     addAndMakeVisible(slopeSlider);
     slopeSlider.setRange(-9.0, 9.0, 0.1);
     slopeSlider.setValue(settings.getSlope(), juce::dontSendNotification);
-    slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 80, 20);
+    slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
     slopeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     slopeSlider.setTextValueSuffix(" dB");
     slopeSlider.onValueChange = [this]() {
@@ -183,6 +184,28 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
     // --- Reset to defaults button ---
     addAndMakeVisible(resetButton);
     resetButton.onClick = [this]() { resetToDefaults(); };
+
+    const auto panelFont = juce::Font(juce::FontOptions(Typography::mainFontSize));
+    const auto applyLabelFont = [&](juce::Label &label) {
+        label.setFont(panelFont);
+        label.setMinimumHorizontalScale(1.0f);
+    };
+
+    applyLabelFont(minDbLabel);
+    applyLabelFont(maxDbLabel);
+    applyLabelFont(minFreqLabel);
+    applyLabelFont(maxFreqLabel);
+    applyLabelFont(coloursLabel);
+    applyLabelFont(fftOrderLabel);
+    applyLabelFont(smoothingLabel);
+    applyLabelFont(sonoSpeedLabel);
+    applyLabelFont(slopeLabel);
+
+    minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
 }
 
 //==============================================================================
@@ -193,18 +216,21 @@ void PreferencePanel::paint(juce::Graphics &g) {
 
     // Section header
     g.setColour(juce::Colour(ColorPalette::panelHeading));
-    g.setFont(juce::Font(juce::FontOptions(14.0f)).boldened());
-    g.drawText("Settings", getLocalBounds().removeFromTop(Spacing::rowHeight),
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
+    g.drawText("Settings", getLocalBounds().removeFromTop(30),
                juce::Justification::centred);
 }
 
 void PreferencePanel::resized() {
     auto bounds = getLocalBounds().reduced(Spacing::paddingS);
-    bounds.removeFromTop(Spacing::rowHeight); // header
+    constexpr int headerH = 30;
+    constexpr int rowH = 30;
+
+    bounds.removeFromTop(headerH); // header
 
     constexpr int labelW = 82;
     auto layoutRow = [&](juce::Label &label, Component &control) {
-        auto row = bounds.removeFromTop(Spacing::rowHeight);
+        auto row = bounds.removeFromTop(rowH);
         label.setBounds(row.removeFromLeft(labelW));
         control.setBounds(row);
     };
@@ -236,7 +262,7 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapS); // spacing
 
     // Color swatches row
-    auto colourRow = bounds.removeFromTop(Spacing::rowHeight);
+    auto colourRow = bounds.removeFromTop(rowH);
     coloursLabel.setBounds(colourRow.removeFromLeft(labelW));
     colourRow.removeFromLeft(Spacing::gapS);
 
@@ -252,11 +278,11 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapM); // spacing
 
     // Save / Cancel / Reset row
-    auto actionRow = bounds.removeFromTop(Spacing::rowHeight);
+    auto actionRow = bounds.removeFromTop(rowH);
     actionRow.removeFromLeft(labelW);
-    saveButton.setBounds(actionRow.removeFromLeft(65));
+    saveButton.setBounds(actionRow.removeFromLeft(74));
     actionRow.removeFromLeft(Spacing::gapS);
-    cancelButton.setBounds(actionRow.removeFromLeft(65));
+    cancelButton.setBounds(actionRow.removeFromLeft(74));
     actionRow.removeFromLeft(Spacing::gapS);
     resetButton.setBounds(actionRow);
 }
@@ -276,7 +302,7 @@ void PreferencePanel::ColourSwatch::paint(juce::Graphics &g) {
     g.setColour(juce::Colour(ColorPalette::swatchBorder));
     g.drawRoundedRectangle(b, 3.0f, 1.0f);
 
-    g.setFont(juce::Font(juce::FontOptions(10.0f)));
+    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
     g.setColour(colour.contrasting(0.8f));
     g.drawText(label, getLocalBounds(), juce::Justification::centred);
 }

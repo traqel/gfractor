@@ -20,7 +20,7 @@ public:
     void resized() override;
 
     static constexpr int panelWidth = 300;
-    static constexpr int panelHeight = 348;
+    static constexpr int panelHeight = 456;
 
     /** Called when the panel should close (set by PluginEditor) */
     std::function<void()> onClose;
