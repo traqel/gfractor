@@ -107,7 +107,7 @@ void SpectrumTooltip::paintTooltip(juce::Graphics &g, const juce::Rectangle<floa
     const juce::String noteStr = freqToNote(freq);
 
     // Tooltip box layout
-    const auto tooltipFont = juce::Font(juce::FontOptions(Typography::mainFontSize));
+    const auto tooltipFont = Typography::makeFont(Typography::mainFontSize);
     constexpr int ttPadX = 10;
     constexpr int ttPadY = 7;
     const int ttRowH = static_cast<int>(std::ceil(tooltipFont.getHeight())) + 4;

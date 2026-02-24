@@ -43,14 +43,21 @@ protected:
         constexpr float cornerRadius = 4.0f;
         const bool on = getToggleState();
 
+        const auto drawButtonLabel = [&]() {
+            auto font = Typography::makeBoldFont(Typography::mainFontSize);
+            g.setFont(font);
+
+            const auto textBounds = getLocalBounds().translated(0, 1);
+            g.drawText(getButtonText().toUpperCase(), textBounds, juce::Justification::centred);
+        };
+
         if (!isEnabled()) {
             g.setColour(juce::Colour(ColorPalette::pillInactiveBg));
             g.fillRoundedRectangle(bounds, cornerRadius);
             g.setColour(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
             g.drawRoundedRectangle(bounds, cornerRadius, 1.0f);
             g.setColour(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
-            g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
-            g.drawText(getButtonText().toUpperCase(), getLocalBounds(), juce::Justification::centred);
+            drawButtonLabel();
             return;
         }
 
@@ -76,9 +83,7 @@ protected:
         g.setColour(on
                         ? juce::Colour(ColorPalette::textBright)
                         : juce::Colour(ColorPalette::textMuted));
-        g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
-        g.drawText(getButtonText().toUpperCase(), getLocalBounds(),
-                   juce::Justification::centred);
+        drawButtonLabel();
     }
 
 private:

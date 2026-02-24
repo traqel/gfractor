@@ -148,7 +148,7 @@ void SpectrumAnalyzer::updateAuditLabel() {
     else
         cachedAuditLabel = juce::String(static_cast<int>(currentAuditFreq)) + " Hz";
 
-    static const auto labelFont = juce::Font(juce::FontOptions(12.0f)).boldened();
+    static const auto labelFont = Typography::makeBoldFont(12.0f);
     juce::GlyphArrangement glyphs;
     glyphs.addLineOfText(labelFont, cachedAuditLabel, 0.0f, 0.0f);
     cachedAuditLabelW = static_cast<int>(
@@ -171,7 +171,7 @@ void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
     const float peakX = tx + range.frequencyToX(currentAuditFreq, spectrumArea.getWidth());
     const float peakY = ty + range.dbToY(0.0f, spectrumArea.getHeight());
 
-    static const auto labelFont = juce::Font(juce::FontOptions(12.0f)).boldened();
+    static const auto labelFont = Typography::makeBoldFont(12.0f);
     constexpr int labelH = 16;
     constexpr int labelOffset = 6;
     g.setFont(labelFont);
@@ -206,7 +206,7 @@ void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
     drawLevelBar(g, {x1, y, barW, h}, sideT, activeSideCol, backgroundColour);
 
     // Labels above bars
-    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
+    g.setFont(Typography::makeBoldFont(9.0f));
     g.setColour(textColour);
     g.drawText("M", static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
                juce::Justification::centredBottom);
@@ -527,7 +527,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
     gridImage = juce::Image(juce::Image::ARGB, compW, compH, true);
     juce::Graphics g(gridImage);
 
-    const auto labelFont = juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened();
+    const auto labelFont = Typography::makeBoldFont(Typography::mainFontSize);
     g.setFont(labelFont);
 
     // --- Vertical frequency grid lines + labels below ---

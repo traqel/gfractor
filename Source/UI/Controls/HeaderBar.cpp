@@ -7,7 +7,7 @@ HeaderBar::HeaderBar() {
     // Version label — use JUCE-provided version string from CMake
     versionLabel.setText("v" JucePlugin_VersionString, juce::dontSendNotification);
     versionLabel.setColour(juce::Label::textColourId, juce::Colour(ColorPalette::textDimmed));
-    versionLabel.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    versionLabel.setFont(Typography::makeFont(Typography::mainFontSize));
     versionLabel.setJustificationType(juce::Justification::centredRight);
     addAndMakeVisible(versionLabel);
 }
@@ -17,7 +17,7 @@ void HeaderBar::paint(juce::Graphics &g) {
 
     // Logo: "g" in teal, "Fractor" in white bold italic
     constexpr float logoFontSize = 24.0f;
-    const auto logoFont = juce::Font(juce::FontOptions(logoFontSize)).boldened().italicised();
+    auto logoFont = Typography::makeBoldFont(logoFontSize);
 
     constexpr int logoX = Spacing::marginL;
     constexpr int logoY = Spacing::marginXS;
@@ -40,11 +40,11 @@ void HeaderBar::paint(juce::Graphics &g) {
                100, logoH, juce::Justification::centredLeft);
 
     // Subtitle: "MID . SIDE SPECTRUM ANALYZER"
-    g.setFont(juce::Font(juce::FontOptions(11.0f)));
-    g.setColour(juce::Colour(ColorPalette::textDimmed));
+    g.setFont(Typography::makeFont(Typography::smallFontSize));
+    g.setColour(juce::Colour(ColorPalette::textLight));
 
-    const int subtitleX = logoX + static_cast<int>(gWidth) + 74;
-    g.drawText("MID-SIDE SPECTRUM ANALYZER", subtitleX, logoY,
+    const int subtitleX = logoX + static_cast<int>(gWidth) + 76;
+    g.drawText("by GrowlAudio", subtitleX, logoY,
                200, logoH, juce::Justification::centredLeft);
 }
 

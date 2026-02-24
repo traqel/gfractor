@@ -19,7 +19,7 @@ void HelpPanel::paint(juce::Graphics &g) {
 
     // ── Title ────────────────────────────────────────────────────────────────
     g.setColour(juce::Colour(ColorPalette::panelHeading));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
+    g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
     g.drawText("Help", bounds.removeFromTop(Spacing::rowHeight),
                juce::Justification::centred);
 
@@ -34,7 +34,7 @@ void HelpPanel::paint(juce::Graphics &g) {
     constexpr int keyW = 120;
 
     auto drawSection = [&](const juce::String &title) {
-        g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
+        g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
         g.setColour(juce::Colour(ColorPalette::textMuted));
         g.drawText(title, bounds.removeFromTop(sectionH),
                    juce::Justification::centredLeft);
@@ -47,11 +47,11 @@ void HelpPanel::paint(juce::Graphics &g) {
         g.setColour(juce::Colour(ColorPalette::pillInactiveBg));
         g.fillRoundedRectangle(keyRect.toFloat(), 3.0f);
         g.setColour(juce::Colour(ColorPalette::midGreen));
-        g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
+        g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
         g.drawText(key, keyRect, juce::Justification::centred);
         // Description
         row.removeFromLeft(Spacing::gapS);
-        g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+        g.setFont(Typography::makeFont(Typography::mainFontSize));
         g.setColour(juce::Colour(ColorPalette::textLight));
         g.drawText(desc, row, juce::Justification::centredLeft);
     };

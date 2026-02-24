@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../Theme/ColorPalette.h"
+#include "../Theme/Typography.h"
 
 /**
  * gFractorLookAndFeel
@@ -218,7 +219,7 @@ public:
                      shouldDrawButtonAsDown);
 
         g.setColour (button.findColour (juce::ToggleButton::textColourId));
-        g.setFont (fontSize);
+        g.setFont (Typography::makeFont (fontSize));
 
         if (!button.isEnabled())
             g.setOpacity (0.5f);
@@ -259,6 +260,13 @@ public:
         return juce::jmin (12, slider.isHorizontal()
                                    ? static_cast<int> (static_cast<float> (slider.getHeight()) * 0.5f)
                                    : static_cast<int> (static_cast<float> (slider.getWidth()) * 0.5f));
+    }
+
+    juce::Typeface::Ptr getTypefaceForFont (const juce::Font& font) override
+    {
+        auto ibmFont = font;
+        ibmFont.setTypefaceName (Typography::fontFamily);
+        return juce::LookAndFeel_V4::getTypefaceForFont (ibmFont);
     }
 
 private:

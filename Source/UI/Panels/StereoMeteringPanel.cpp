@@ -193,7 +193,7 @@ void StereoMeteringPanel::resized() {
 void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     // Title
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.drawText("GONIOMETER", gonioArea.withHeight(20), juce::Justification::centred);
 
     // Background
@@ -222,7 +222,7 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
 
     // Axis labels
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.drawText("M", gonioDrawArea.withHeight(18).translated(0, -6),
                juce::Justification::centred);
     g.drawText("L", juce::Rectangle<int>(gonioDrawArea.getX() - 6,
@@ -242,7 +242,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     auto area = corrArea;
 
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.drawText("CORRELATION", area.removeFromTop(labelH),
                juce::Justification::centred);
 
@@ -291,7 +291,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     g.drawVerticalLine(juce::roundToInt(cx), barTop, barBot);
 
     // Scale labels -1, 0, +1
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.drawText("-1", labRow.withWidth(16), juce::Justification::centredLeft);
     g.drawText("0", labRow, juce::Justification::centred);
@@ -300,7 +300,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
 
     // Numeric readout
     g.setColour(juce::Colour(ColorPalette::textLight));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.drawText(juce::String(correlationDisplay, 2), barBounds,
                juce::Justification::centred);
 }
@@ -309,13 +309,14 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
     constexpr int labelH = 20;
     constexpr int freqH = 20;
     constexpr int pad = 4;
+    constexpr int labelTopPad = 2;
 
     // Work on a local copy — removeFromTop/Bottom mutate the rectangle
     auto area = widthArea;
 
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
-    g.drawText("WIDTH / OCTAVE", area.removeFromTop(labelH),
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
+    g.drawText("WIDTH / OCTAVE", area.removeFromTop(labelH).withTrimmedTop(labelTopPad),
                juce::Justification::centred);
 
     const auto freqRow = area.removeFromBottom(freqH);
@@ -332,7 +333,7 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
     const juce::Colour lo = juce::Colour(ColorPalette::midGreen);
     const juce::Colour hi = juce::Colour(ColorPalette::sideAmber);
 
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
 
     for (int b = 0; b < kNumBands; ++b) {
         const float w = bandWidths[static_cast<size_t>(b)];
@@ -372,6 +373,7 @@ void StereoMeteringPanel::paint(juce::Graphics &g) {
     paintCorrelation(g);
 
     // Divider between correlation and width chart
+    g.setColour(juce::Colour(ColorPalette::border));
     g.fillRect(0, corrArea.getBottom(), getWidth(), 1);
 
     paintWidthPerOctave(g);

@@ -170,7 +170,7 @@ void SonogramView::rebuildSonoGridImage() {
 
     sonoGridImage = juce::Image(juce::Image::ARGB, w, h, true);
     juce::Graphics ig(sonoGridImage);
-    ig.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
+    ig.setFont(Typography::makeBoldFont(Typography::mainFontSize));
 
     const float sw = static_cast<float>(w);
     const float sh = static_cast<float>(h);

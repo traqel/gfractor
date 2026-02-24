@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../../PluginProcessor.h"
+#include "../Theme/Typography.h"
 
 /**
  * PerformanceDisplay
@@ -49,7 +50,7 @@ public:
 
         if (processor == nullptr) {
             g.setColour(juce::Colours::white);
-            g.setFont(Typography::mainFontSize);
+            g.setFont(Typography::makeFont(Typography::smallFontSize));
             g.drawText("No processor", getLocalBounds(), juce::Justification::centred);
             return;
         }
@@ -58,14 +59,13 @@ public:
 
         // Draw metrics
         g.setColour(juce::Colours::lightgreen);
-        g.setFont(Typography::mainFontSize);
+        g.setFont(Typography::makeFont(Typography::smallFontSize));
 
         const auto bounds = getLocalBounds().reduced(5);
         constexpr int lineHeight = 14;
         int y = bounds.getY();
 
-        g.setFont(Typography::mainFontSize);
-        g.setFont(g.getCurrentFont().withStyle(juce::Font::plain));
+        g.setFont(Typography::makeFont(Typography::smallFontSize));
 
         // Average time
         const auto avgTimeMs = metrics.averageProcessTimeMs.load();

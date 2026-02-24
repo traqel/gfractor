@@ -135,7 +135,7 @@ void TransientMeteringPanel::paintPlot(juce::Graphics &g) const {
 
     // Axis labels
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
     // "TRANSIENT" along the left edge, top
     g.drawText("TRANSIENT",
                juce::Rectangle<float>(px + 4.0f, py + 2.0f, pw - 8.0f, 18.0f),
@@ -198,7 +198,7 @@ void TransientMeteringPanel::paintReadouts(juce::Graphics &g) const {
           juce::Colour(ColorPalette::blueAccent) },
     };
 
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
 
     for (int i = 0; i < 3; ++i) {
         const auto& row = rows[i];
@@ -245,7 +245,7 @@ void TransientMeteringPanel::paint(juce::Graphics &g) {
 
     // Title
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)));
+    g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.drawText("TRANSIENT MAP", titleArea, juce::Justification::centred);
 
     paintPlot(g);

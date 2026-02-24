@@ -185,7 +185,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
     addAndMakeVisible(resetButton);
     resetButton.onClick = [this]() { resetToDefaults(); };
 
-    const auto panelFont = juce::Font(juce::FontOptions(Typography::mainFontSize));
+    const auto panelFont = Typography::makeFont(Typography::mainFontSize);
     const auto applyLabelFont = [&](juce::Label &label) {
         label.setFont(panelFont);
         label.setMinimumHorizontalScale(1.0f);
@@ -216,7 +216,7 @@ void PreferencePanel::paint(juce::Graphics &g) {
 
     // Section header
     g.setColour(juce::Colour(ColorPalette::panelHeading));
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
+    g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
     g.drawText("Settings", getLocalBounds().removeFromTop(30),
                juce::Justification::centred);
 }
@@ -302,7 +302,7 @@ void PreferencePanel::ColourSwatch::paint(juce::Graphics &g) {
     g.setColour(juce::Colour(ColorPalette::swatchBorder));
     g.drawRoundedRectangle(b, 3.0f, 1.0f);
 
-    g.setFont(juce::Font(juce::FontOptions(Typography::mainFontSize)).boldened());
+    g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
     g.setColour(colour.contrasting(0.8f));
     g.drawText(label, getLocalBounds(), juce::Justification::centred);
 }
