@@ -300,6 +300,10 @@ private:
 
     // Infinite peak hold
     PeakHold peakHold;
+    int peakHoldThrottleCounter = 0;
+    bool pendingPeakHoldMainRebuild = false;
+    bool pendingPeakHoldGhostRebuild = false;
+    static constexpr int peakHoldRebuildIntervalFrames = 3; // ~20 Hz at 60 Hz UI timer
 
     void clearAllCurves();
 

@@ -138,13 +138,11 @@ private:
     PanelDivider panelDivider;
     PanelDivider transientDivider;
 
-#if JUCE_DEBUG
     // Performance display (debug builds only, toggled with Ctrl+Shift+P)
     PerformanceDisplay performanceDisplay;
     bool performanceDisplayVisible = true;
 
     void togglePerformanceDisplay();
-#endif
 
     //==============================================================================
     // Resize support

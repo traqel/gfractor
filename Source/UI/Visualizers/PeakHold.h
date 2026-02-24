@@ -24,9 +24,9 @@ public:
 
     void reset(int numBins, float minDb);
 
-    void accumulate(const std::vector<float> &midDb, const std::vector<float> &sideDb, int numBins);
+    bool accumulate(const std::vector<float> &midDb, const std::vector<float> &sideDb, int numBins);
 
-    void accumulateGhost(const std::vector<float> &midDb, const std::vector<float> &sideDb, int numBins);
+    bool accumulateGhost(const std::vector<float> &midDb, const std::vector<float> &sideDb, int numBins);
 
     void buildPaths(float width, float height, const BuildPathFn &buildPath);
 

@@ -32,21 +32,31 @@ void PeakHold::reset(const int numBins, const float minDb) {
     pathsDirty = ghostPathsDirty = true;
 }
 
-void PeakHold::accumulate(const std::vector<float> &midDb, const std::vector<float> &sideDb, const int numBins) {
+bool PeakHold::accumulate(const std::vector<float> &midDb, const std::vector<float> &sideDb, const int numBins) {
+    bool changed = false;
     for (int bin = 0; bin < numBins; ++bin) {
         const auto b = static_cast<size_t>(bin);
-        peakMidDb[b] = std::max(peakMidDb[b], midDb[b]);
-        peakSideDb[b] = std::max(peakSideDb[b], sideDb[b]);
+        const float nextMid = std::max(peakMidDb[b], midDb[b]);
+        const float nextSide = std::max(peakSideDb[b], sideDb[b]);
+        changed = changed || (nextMid > peakMidDb[b]) || (nextSide > peakSideDb[b]);
+        peakMidDb[b] = nextMid;
+        peakSideDb[b] = nextSide;
     }
+    return changed;
 }
 
-void PeakHold::accumulateGhost(const std::vector<float> &midDb, const std::vector<float> &sideDb,
+bool PeakHold::accumulateGhost(const std::vector<float> &midDb, const std::vector<float> &sideDb,
                                const int numBins) {
+    bool changed = false;
     for (int bin = 0; bin < numBins; ++bin) {
         const auto b = static_cast<size_t>(bin);
-        peakGhostMidDb[b] = std::max(peakGhostMidDb[b], midDb[b]);
-        peakGhostSideDb[b] = std::max(peakGhostSideDb[b], sideDb[b]);
+        const float nextMid = std::max(peakGhostMidDb[b], midDb[b]);
+        const float nextSide = std::max(peakGhostSideDb[b], sideDb[b]);
+        changed = changed || (nextMid > peakGhostMidDb[b]) || (nextSide > peakGhostSideDb[b]);
+        peakGhostMidDb[b] = nextMid;
+        peakGhostSideDb[b] = nextSide;
     }
+    return changed;
 }
 
 void PeakHold::buildPaths(const float width, const float height, const BuildPathFn &buildPath) {

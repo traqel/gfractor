@@ -328,17 +328,24 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
     const float w = spectrumArea.getWidth();
     const float h = spectrumArea.getHeight();
+    const bool canRebuildPeakHold = (++peakHoldThrottleCounter >= peakHoldRebuildIntervalFrames);
+    if (canRebuildPeakHold)
+        peakHoldThrottleCounter = 0;
 
     if (fftDataReady && w > 0 && h > 0) {
         buildPath(midPath, smoothedMidDb, w, h);
         buildPath(sidePath, smoothedSideDb, w, h);
 
         if (peakHold.isEnabled()) {
-            peakHold.accumulate(smoothedMidDb, smoothedSideDb, numBins);
-            peakHold.buildPaths(w, h, [this](juce::Path &p, const std::vector<float> &db,
-                                             const float pw, const float ph, const bool close) {
-                buildPath(p, db, pw, ph, close);
-            });
+            const bool peaksChanged = peakHold.accumulate(smoothedMidDb, smoothedSideDb, numBins);
+            pendingPeakHoldMainRebuild = pendingPeakHoldMainRebuild || peaksChanged;
+            if (pendingPeakHoldMainRebuild && canRebuildPeakHold) {
+                peakHold.buildPaths(w, h, [this](juce::Path &p, const std::vector<float> &db,
+                                                 const float pw, const float ph, const bool close) {
+                    buildPath(p, db, pw, ph, close);
+                });
+                pendingPeakHoldMainRebuild = false;
+            }
         }
         if (displayMode == DisplayMode::Sonogram) {
             const auto &instantMid = fftProcessor.getInstantMidDb();
@@ -355,9 +362,13 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         ghostSpectrum.buildPaths(w, h, pathBuilder);
 
         if (peakHold.isEnabled()) {
-            peakHold.accumulateGhost(ghostSpectrum.getSmoothedMidDb(),
-                                     ghostSpectrum.getSmoothedSideDb(), numBins);
-            peakHold.buildGhostPaths(w, h, pathBuilder);
+            const bool ghostPeaksChanged = peakHold.accumulateGhost(ghostSpectrum.getSmoothedMidDb(),
+                                                                     ghostSpectrum.getSmoothedSideDb(), numBins);
+            pendingPeakHoldGhostRebuild = pendingPeakHoldGhostRebuild || ghostPeaksChanged;
+            if (pendingPeakHoldGhostRebuild && canRebuildPeakHold) {
+                peakHold.buildGhostPaths(w, h, pathBuilder);
+                pendingPeakHoldGhostRebuild = false;
+            }
         }
     }
 
@@ -459,6 +470,9 @@ void SpectrumAnalyzer::clearAllCurves() {
     sidePath.clear();
     ghostSpectrum.clearPaths();
     peakHold.reset(numBins, range.minDb);
+    peakHoldThrottleCounter = 0;
+    pendingPeakHoldMainRebuild = false;
+    pendingPeakHoldGhostRebuild = false;
     tooltip.resetDotHistory();
     repaint();
 }
