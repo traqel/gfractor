@@ -138,10 +138,8 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                           juce::MidiBuffer &midiMessages) {
     juce::ignoreUnused(midiMessages);
 
-#if JUCE_DEBUG
     // Performance profiling (debug builds only)
     const auto startTime = juce::Time::getHighResolutionTicks();
-#endif
 
     juce::ScopedNoDenormals noDenormals;
     const auto totalNumInputChannels = getTotalNumInputChannels();
@@ -189,7 +187,6 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     // (Parameters are automatically updated via ParameterListener)
     dspProcessor.process(buffer);
 
-#if JUCE_DEBUG
     // Update performance metrics
     const auto elapsedTicks = juce::Time::getHighResolutionTicks() - startTime;
     const auto elapsedMs = juce::Time::highResolutionTicksToSeconds(elapsedTicks) * 1000.0;
@@ -209,7 +206,6 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
     // Increment sample count
     ++perfMetrics.sampleCount;
-#endif
 }
 
 //==============================================================================

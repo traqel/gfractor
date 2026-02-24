@@ -16,7 +16,7 @@ public:
     void paint(juce::Graphics &g) override;
 
     static constexpr int panelWidth = 340;
-    static constexpr int panelHeight = 408;
+    static constexpr int panelHeight = 436;
 
     /** Set by PluginEditor — called when the panel should close. */
     std::function<void()> onClose;

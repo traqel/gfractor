@@ -2,9 +2,6 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-// Only compile in debug builds
-#if JUCE_DEBUG
-
 #include "../../PluginProcessor.h"
 
 /**
@@ -22,10 +19,8 @@
  * Usage:
  * @code
  * // In your editor (debug builds only):
- * #if JUCE_DEBUG
  *     addAndMakeVisible (performanceDisplay);
  *     performanceDisplay.setProcessor (&processor);
- * #endif
  * @endcode
  */
 class PerformanceDisplay : public juce::Component,
@@ -132,5 +127,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PerformanceDisplay)
 };
-
-#endif // JUCE_DEBUG

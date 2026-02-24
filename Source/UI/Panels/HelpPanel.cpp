@@ -62,6 +62,7 @@ void HelpPanel::paint(juce::Graphics &g) {
     drawRow("S", "Toggle Side channel");
     drawRow("R", "Toggle Reference");
     drawRow("F", "Freeze / Unfreeze");
+    drawRow("Ctrl+Shift+P", "Toggle performance panel");
     drawRow("Ctrl (hold)", "Momentary reference");
     drawRow("Esc", "Close panel");
 
@@ -71,6 +72,7 @@ void HelpPanel::paint(juce::Graphics &g) {
     drawSection("MOUSE");
     drawRow("Hover", "Frequency & dB tooltip");
     drawRow("Right-drag", "Audition bell filter");
-    drawRow("Divider drag", "Resize meters panel");
+    drawRow("Click perf panel", "Reset performance metrics");
+    drawRow("Divider drag", "Resize meter side panels");
     drawRow("Corner drag", "Resize window");
 }

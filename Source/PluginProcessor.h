@@ -112,7 +112,6 @@ public:
     void setLRMode(const bool enabled) { dspProcessor.setLRMode(enabled); }
 
 
-#if JUCE_DEBUG
     //==============================================================================
     // Performance profiling (debug builds only)
     struct PerformanceMetrics {
@@ -131,7 +130,6 @@ public:
 
     const PerformanceMetrics &getPerformanceMetrics() const { return perfMetrics; }
     void resetPerformanceMetrics() { perfMetrics.reset(); }
-#endif
 
 private:
     //==============================================================================
@@ -159,11 +157,9 @@ private:
     // Sidechain availability (set from audio thread each processBlock)
     std::atomic<bool> sidechainAvailable{false};
 
-#if JUCE_DEBUG
     //==============================================================================
     // Performance metrics (debug builds only)
     PerformanceMetrics perfMetrics;
-#endif
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(gFractorAudioProcessor)

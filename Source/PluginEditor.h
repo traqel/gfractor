@@ -12,9 +12,7 @@
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
 #include "UI/Theme/ColorPalette.h"
 
-#if JUCE_DEBUG
 #include "UI/Controls/PerformanceDisplay.h"
-#endif
 
 /**
  * Main AudioProcessorEditor class for the gFractor plugin

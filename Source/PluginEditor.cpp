@@ -128,12 +128,10 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         resized();
     };
 
-#if JUCE_DEBUG
     // Performance display (debug builds only, starts visible, toggle with Ctrl+Shift+P)
     performanceDisplay.setProcessor(&audioProcessor);
     performanceDisplay.setVisible(performanceDisplayVisible);
     addChildComponent(performanceDisplay);
-#endif
 
     // Set up resize constraints
     resizeConstraints.setMinimumSize(minWidth, minHeight);
@@ -197,9 +195,7 @@ gFractorAudioProcessorEditor::~gFractorAudioProcessorEditor() {
     // Clear the audit filter callback (captures `this`)
     spectrumAnalyzer.onAuditFilter = nullptr;
 
-#if JUCE_DEBUG
     performanceDisplay.setProcessor(nullptr);
-#endif
 
     // Save current window size and metering panel state to global prefs
     AnalyzerSettings::saveWindowSize(getWidth(), getHeight());
@@ -271,7 +267,6 @@ void gFractorAudioProcessorEditor::resized() {
                              HelpPanel::panelHeight);
     }
 
-#if JUCE_DEBUG
     // Performance display (top right corner, fixed size)
     constexpr int perfWidth = 120;
     constexpr int perfHeight = 34;
@@ -279,7 +274,6 @@ void gFractorAudioProcessorEditor::resized() {
     performanceDisplay.setBounds(getWidth() - perfWidth - perfMargin,
                                  perfMargin,
                                  perfWidth, perfHeight);
-#endif
 }
 
 //==============================================================================
@@ -361,11 +355,9 @@ void gFractorAudioProcessorEditor::timerCallback() {
     spectrumAnalyzer.setSidechainAvailable(available);
 }
 
-#if JUCE_DEBUG
 void gFractorAudioProcessorEditor::togglePerformanceDisplay() {
     performanceDisplayVisible = !performanceDisplayVisible;
     performanceDisplay.setVisible(performanceDisplayVisible);
     if (performanceDisplayVisible)
         performanceDisplay.toFront(false);
 }
-#endif
