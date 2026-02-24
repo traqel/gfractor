@@ -7,6 +7,13 @@ SonogramView::SonogramView() {
     rebuildColourLut();
 }
 
+void SonogramView::applyTheme() {
+    gridColour = juce::Colour(ColorPalette::grid).withAlpha(0.5f);
+    textColour = juce::Colour(ColorPalette::textMuted);
+    rebuildSonoGridImage();
+    repaint();
+}
+
 //==============================================================================
 void SonogramView::pushBinData(const float *midDb, const float *sideDb, const int numBins) {
     if (numBins <= 0) return;

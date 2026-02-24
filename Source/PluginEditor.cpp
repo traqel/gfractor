@@ -12,7 +12,9 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
           // Settings callback — toggle preference panel overlay
           if (preferencePanel == nullptr) {
               helpPanel.reset(); // close help panel if open
-              preferencePanel = std::make_unique<PreferencePanel>(spectrumAnalyzer);
+              preferencePanel = std::make_unique<PreferencePanel>(spectrumAnalyzer, [this]() {
+                  applyTheme();
+              });
               preferencePanel->onClose = [this]() {
                   preferencePanel.reset();
                   panelBackdrop.reset();
@@ -33,8 +35,11 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
               panelBackdrop.reset();
           }
       }) {
+    ColorPalette::setTheme(AnalyzerSettings::loadTheme());
+
     // Set custom LookAndFeel
     setLookAndFeel(&gFractorLnf);
+    applyTheme();
 
     // Add spectrum analyzer (owned by editor)
     addAndMakeVisible(spectrumAnalyzer);
@@ -360,4 +365,11 @@ void gFractorAudioProcessorEditor::togglePerformanceDisplay() {
     performanceDisplay.setVisible(performanceDisplayVisible);
     if (performanceDisplayVisible)
         performanceDisplay.toFront(false);
+}
+
+void gFractorAudioProcessorEditor::applyTheme() {
+    gFractorLnf.applyTheme();
+    footerBar.applyTheme();
+    spectrumAnalyzer.applyTheme();
+    repaint();
 }

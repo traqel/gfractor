@@ -43,6 +43,19 @@ class gFractorLookAndFeel : public juce::LookAndFeel_V4
 public:
     gFractorLookAndFeel()
     {
+        applyTheme();
+    }
+
+    void applyTheme()
+    {
+        backgroundDark = juce::Colour (ColorPalette::background);
+        sliderBackground = juce::Colour (ColorPalette::grid);
+        trackColor = juce::Colour (ColorPalette::border);
+        accentColor = juce::Colour (ColorPalette::blueAccent);
+        textColor = juce::Colour (ColorPalette::textLight);
+        textColorDimmed = juce::Colour (ColorPalette::textMuted);
+        textBoxBackground = juce::Colour (ColorPalette::panel);
+
         // Color scheme - Modern dark theme
         setColour (juce::ResizableWindow::backgroundColourId, backgroundDark);
         setColour (juce::Slider::thumbColourId, accentColor);
@@ -55,6 +68,18 @@ public:
         setColour (juce::ToggleButton::textColourId, textColor);
         setColour (juce::ToggleButton::tickColourId, accentColor);
         setColour (juce::ToggleButton::tickDisabledColourId, textColorDimmed);
+
+        // ComboBox + popup menu theme colors
+        setColour (juce::ComboBox::backgroundColourId, textBoxBackground);
+        setColour (juce::ComboBox::textColourId, textColor);
+        setColour (juce::ComboBox::outlineColourId, trackColor);
+        setColour (juce::ComboBox::buttonColourId, accentColor.withAlpha (0.22f));
+        setColour (juce::ComboBox::arrowColourId, accentColor.brighter (0.35f));
+
+        setColour (juce::PopupMenu::backgroundColourId, backgroundDark.brighter (0.08f));
+        setColour (juce::PopupMenu::textColourId, textColor);
+        setColour (juce::PopupMenu::highlightedBackgroundColourId, accentColor.withAlpha (0.30f));
+        setColour (juce::PopupMenu::highlightedTextColourId, textColor);
     }
 
     //==============================================================================
@@ -276,13 +301,13 @@ private:
     //==============================================================================
     // Color Palette
 
-    const juce::Colour backgroundDark   { ColorPalette::background };
-    const juce::Colour sliderBackground { ColorPalette::grid };
-    const juce::Colour trackColor       { ColorPalette::border };
-    const juce::Colour accentColor      { ColorPalette::blueAccent };
-    const juce::Colour textColor        { ColorPalette::textLight };
-    const juce::Colour textColorDimmed  { ColorPalette::textMuted };
-    const juce::Colour textBoxBackground { ColorPalette::panel };
+    juce::Colour backgroundDark;
+    juce::Colour sliderBackground;
+    juce::Colour trackColor;
+    juce::Colour accentColor;
+    juce::Colour textColor;
+    juce::Colour textColorDimmed;
+    juce::Colour textBoxBackground;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (gFractorLookAndFeel)
 };

@@ -95,6 +95,8 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     settingsPill.onClick = std::move(settingsCallback);
     addAndMakeVisible(settingsPill);
 
+    applyTheme();
+
     startTimerHz(30);
 }
 
@@ -104,6 +106,23 @@ FooterBar::~FooterBar() {
 
 void FooterBar::paint(juce::Graphics &g) {
     g.fillAll(juce::Colour(ColorPalette::background));
+}
+
+void FooterBar::applyTheme() {
+    referencePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    ghostPill.setActiveColour(juce::Colour(ColorPalette::refMidBlue));
+    spectrumPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    sonogramPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    midPill.setActiveColour(juce::Colour(ColorPalette::midGreen));
+    sidePill.setActiveColour(juce::Colour(ColorPalette::sideAmber));
+    lrPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    freezePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    infinitePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    metersPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    transientPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    helpPill.setActiveColour(juce::Colour(ColorPalette::textDimmed));
+    settingsPill.setActiveColour(juce::Colour(ColorPalette::textDimmed));
+    repaint();
 }
 
 void FooterBar::resized() {

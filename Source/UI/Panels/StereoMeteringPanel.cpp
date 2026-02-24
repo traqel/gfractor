@@ -38,10 +38,17 @@ void StereoMeteringPanel::processDrainedData(const int numNewSamples) {
 void StereoMeteringPanel::updateGoniometerImage() const {
     if (!gonioImage.isValid()) return;
 
-    // Fade existing image by drawing semi-transparent black over it
+    const juce::Colour gonioBg(ColorPalette::spectrumBg);
+    if (gonioImageBgArgb != gonioBg.getARGB()) {
+        const juce::Graphics clearGc(gonioImage);
+        clearGc.fillAll(gonioBg);
+        gonioImageBgArgb = gonioBg.getARGB();
+    }
+
+    // Fade existing image towards current theme background
     {
         juce::Graphics gc(gonioImage);
-        gc.setColour(juce::Colours::black.withAlpha(0.15f));
+        gc.setColour(gonioBg.withAlpha(0.15f));
         gc.fillAll();
     }
 
@@ -184,8 +191,10 @@ void StereoMeteringPanel::resized() {
     // Recreate goniometer image at new size, fill with black
     gonioImage = juce::Image(juce::Image::ARGB, drawSide, drawSide, true);
     {
+        const juce::Colour gonioBg(ColorPalette::spectrumBg);
         const juce::Graphics gc(gonioImage);
-        gc.fillAll(juce::Colours::black);
+        gc.fillAll(gonioBg);
+        gonioImageBgArgb = gonioBg.getARGB();
     }
 }
 

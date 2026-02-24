@@ -1,6 +1,6 @@
 #include "PreferencePanel.h"
 
-#include <juce_gui_extra/misc/juce_ColourSelector.h>
+#include <utility>
 
 #include "../../Utility/AnalyzerSettings.h"
 #include "../Theme/ColorPalette.h"
@@ -8,7 +8,8 @@
 #include "../Theme/Typography.h"
 
 //==============================================================================
-PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
+PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
+                                 std::function<void()> themeChangedCallback)
     : settingsRef(settings),
       snapshot{
           settings.getMinDb(), settings.getMaxDb(),
@@ -17,8 +18,10 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
           settings.getRefMidColour(), settings.getRefSideColour(),
           settings.getSmoothing(), settings.getFftOrder(),
           settings.getSonoSpeed(),
-          settings.getSlope()
-      } {
+          settings.getSlope(),
+          ColorPalette::getTheme()
+      },
+      onThemeChanged(std::move(themeChangedCallback)) {
     constexpr auto textBoxWidth = 90;
     setOpaque(true);
 
@@ -170,10 +173,27 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
     slopeLabel.setText("Slope", juce::dontSendNotification);
     slopeLabel.setJustificationType(juce::Justification::centredRight);
 
+    // --- Theme combo box ---
+    addAndMakeVisible(themeCombo);
+    themeCombo.addItem("Dark", 1);
+    themeCombo.addItem("Light", 2);
+    themeCombo.addItem("Balanced", 3);
+    themeCombo.setSelectedId(themeToId(ColorPalette::getTheme()), juce::dontSendNotification);
+    themeCombo.onChange = [this]() {
+        ColorPalette::setTheme(idToTheme(themeCombo.getSelectedId()));
+        if (onThemeChanged)
+            onThemeChanged();
+    };
+
+    addAndMakeVisible(themeLabel);
+    themeLabel.setText("Theme", juce::dontSendNotification);
+    themeLabel.setJustificationType(juce::Justification::centredRight);
+
     // --- Save button ---
     addAndMakeVisible(saveButton);
     saveButton.onClick = [this]() {
         AnalyzerSettings::save(settingsRef);
+        AnalyzerSettings::saveTheme(ColorPalette::getTheme());
         if (onClose) onClose();
     };
 
@@ -200,6 +220,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings)
     applyLabelFont(smoothingLabel);
     applyLabelFont(sonoSpeedLabel);
     applyLabelFont(slopeLabel);
+    applyLabelFont(themeLabel);
 
     minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
@@ -258,6 +279,10 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapS); // spacing
 
     layoutRow(slopeLabel, slopeSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(themeLabel, themeCombo);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -385,6 +410,24 @@ int PreferencePanel::sonoSpeedToId(const SonoSpeed s) {
     return 2;
 }
 
+int PreferencePanel::themeToId(const ColorPalette::Theme theme) {
+    switch (theme) {
+        case ColorPalette::Theme::Dark: return 1;
+        case ColorPalette::Theme::Light: return 2;
+        case ColorPalette::Theme::Balanced: return 3;
+    }
+    return 1;
+}
+
+ColorPalette::Theme PreferencePanel::idToTheme(const int id) {
+    switch (id) {
+        case 1: return ColorPalette::Theme::Dark;
+        case 2: return ColorPalette::Theme::Light;
+        case 3: return ColorPalette::Theme::Balanced;
+        default: return ColorPalette::Theme::Dark;
+    }
+}
+
 SonoSpeed PreferencePanel::idToSonoSpeed(const int id) {
     switch (id) {
         case 1: return SonoSpeed::Slow;
@@ -414,6 +457,11 @@ void PreferencePanel::revertToSnapshot() {
 
     slopeSlider.setValue(snapshot.slope, juce::dontSendNotification);
     settingsRef.setSlope(snapshot.slope);
+
+    ColorPalette::setTheme(snapshot.theme);
+    themeCombo.setSelectedId(themeToId(snapshot.theme), juce::dontSendNotification);
+    if (onThemeChanged)
+        onThemeChanged();
 }
 
 void PreferencePanel::resetToDefaults() {
@@ -444,6 +492,11 @@ void PreferencePanel::resetToDefaults() {
     slopeSlider.setValue(0.0, juce::dontSendNotification);
     settingsRef.setSlope(0.0f);
 
+    ColorPalette::setTheme(ColorPalette::Theme::Dark);
+    themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Dark), juce::dontSendNotification);
+    if (onThemeChanged)
+        onThemeChanged();
+
     // Update color swatches
     midSwatch.colour = D::midColour();
     sideSwatch.colour = D::sideColour();
@@ -456,4 +509,5 @@ void PreferencePanel::resetToDefaults() {
     refSideSwatch.repaint();
 
     AnalyzerSettings::save(settingsRef);
+    AnalyzerSettings::saveTheme(ColorPalette::getTheme());
 }

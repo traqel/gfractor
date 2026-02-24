@@ -1,7 +1,10 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <functional>
 #include "../ISpectrumDisplaySettings.h"
+#include "../Theme/ColorPalette.h"
+#include "Controls/PillButton.h"
 
 /**
  * PreferencePanel
@@ -13,14 +16,15 @@
  */
 class PreferencePanel : public juce::Component {
 public:
-    explicit PreferencePanel(ISpectrumDisplaySettings &settings);
+    PreferencePanel(ISpectrumDisplaySettings &settings,
+                    std::function<void()> onThemeChanged = {});
 
     void paint(juce::Graphics &g) override;
 
     void resized() override;
 
     static constexpr int panelWidth = 300;
-    static constexpr int panelHeight = 456;
+    static constexpr int panelHeight = 492;
 
     /** Called when the panel should close (set by PluginEditor) */
     std::function<void()> onClose;
@@ -53,6 +57,7 @@ private:
         int fftOrder;
         SonoSpeed sonoSpeed;
         float slope;
+        ColorPalette::Theme theme;
     };
 
     ISpectrumDisplaySettings &settingsRef;
@@ -79,9 +84,12 @@ private:
     juce::Slider slopeSlider;
     juce::Label slopeLabel;
 
-    juce::TextButton saveButton{"Save"};
-    juce::TextButton cancelButton{"Cancel"};
-    juce::TextButton resetButton{"Reset"};
+    juce::ComboBox themeCombo;
+    juce::Label themeLabel;
+
+    PillButton saveButton{"Save", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton cancelButton{"Cancel", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton resetButton{"Reset", juce::Colour(ColorPalette::blueAccent), true};
 
     static int fftOrderToId(int order);
 
@@ -95,9 +103,15 @@ private:
 
     static SonoSpeed idToSonoSpeed(int id);
 
+    static int themeToId(ColorPalette::Theme theme);
+
+    static ColorPalette::Theme idToTheme(int id);
+
     void revertToSnapshot();
 
     void resetToDefaults();
+
+    std::function<void()> onThemeChanged;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PreferencePanel)
 };

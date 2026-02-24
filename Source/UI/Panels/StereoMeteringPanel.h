@@ -4,6 +4,7 @@
 #include <juce_dsp/juce_dsp.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
+#include <cstdint>
 #include <vector>
 
 #include "../Visualizers/AudioVisualizerBase.h"
@@ -74,6 +75,7 @@ private:
     // Goniometer (UI thread only)
     juce::Image gonioImage;
     juce::Rectangle<int> gonioDrawArea;
+    mutable std::uint32_t gonioImageBgArgb = 0;
 
     //==============================================================================
     // Correlation

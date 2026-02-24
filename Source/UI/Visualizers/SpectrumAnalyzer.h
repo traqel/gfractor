@@ -198,6 +198,8 @@ public:
         repaint();
     }
 
+    void applyTheme();
+
     float getSlope() const override { return slopeDb; }
 
     // ISpectrumDisplaySettings getters
@@ -282,10 +284,10 @@ private:
     bool showSide = true;
     bool showGhost = false;
     bool sidechainAvailable = false;
-    const juce::Colour backgroundColour{ColorPalette::spectrumBg};
-    const juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
-    const juce::Colour textColour{ColorPalette::textMuted};
-    const juce::Colour hintColour{ColorPalette::hintPink};
+    juce::Colour backgroundColour{ColorPalette::spectrumBg};
+    juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
+    juce::Colour textColour{ColorPalette::textMuted};
+    juce::Colour hintColour{ColorPalette::hintPink};
 
     // Right-side M/S peak level meters
     float meterMidDb = -100.0f;
@@ -316,7 +318,7 @@ private:
     float currentAuditFreq = 1000.0f;
     float currentAuditQ = 4.0f;
     juce::Path auditFilterPath;
-    const juce::Colour auditFilterColour{ColorPalette::textBright};
+    juce::Colour auditFilterColour{ColorPalette::textBright};
 
     juce::String cachedAuditLabel;
     int cachedAuditLabelW = 0;

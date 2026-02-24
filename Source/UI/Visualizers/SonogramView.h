@@ -39,6 +39,8 @@ public:
     /** Clear the sonogram image and reset the write position. */
     void clearImage();
 
+    void applyTheme();
+
     void paint(juce::Graphics &g) override;
 
     void resized() override;
@@ -82,8 +84,8 @@ private:
     std::array<uint32_t, 256> colourLut {};
 
     // Grid colors (match SpectrumAnalyzer's palette)
-    const juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
-    const juce::Colour textColour{ColorPalette::textMuted};
+    juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
+    juce::Colour textColour{ColorPalette::textMuted};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SonogramView)
 };

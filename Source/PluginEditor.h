@@ -159,6 +159,8 @@ private:
 
     void setReferenceMode(bool on);
 
+    void applyTheme();
+
     void timerCallback() override;
 
     //==============================================================================

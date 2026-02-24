@@ -8,10 +8,22 @@
 SpectrumAnalyzer::SpectrumAnalyzer()
     : AudioVisualizerBase(maxFifoCapacity, 1 << defaultFftOrder) {
     addChildComponent(sonogramView); // initially invisible
+    applyTheme();
     fftProcessor.setChannelMode(channelMode);
     fftProcessor.setSlope(slopeDb);
     SpectrumAnalyzer::setFftOrder(defaultFftOrder);
     setOpaque(true);
+}
+
+void SpectrumAnalyzer::applyTheme() {
+    backgroundColour = juce::Colour(ColorPalette::spectrumBg);
+    gridColour = juce::Colour(ColorPalette::grid).withAlpha(0.5f);
+    textColour = juce::Colour(ColorPalette::textMuted);
+    hintColour = juce::Colour(ColorPalette::hintPink);
+    auditFilterColour = juce::Colour(ColorPalette::textBright);
+    sonogramView.applyTheme();
+    rebuildGridImage();
+    repaint();
 }
 
 //==============================================================================

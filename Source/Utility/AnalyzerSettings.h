@@ -2,6 +2,7 @@
 
 #include <juce_data_structures/juce_data_structures.h>
 #include "../UI/ISpectrumDisplaySettings.h"
+#include "../UI/Theme/ColorPalette.h"
 
 /**
  * AnalyzerSettings
@@ -102,6 +103,30 @@ struct AnalyzerSettings {
             };
         }
         return {defaultW, defaultH};
+    }
+
+    static void saveTheme(const ColorPalette::Theme theme) {
+        if (const auto props = getPropertiesFile()) {
+            props->setValue("uiTheme", static_cast<int>(theme));
+            props->saveIfNeeded();
+        }
+    }
+
+    static ColorPalette::Theme loadTheme(const ColorPalette::Theme fallback = ColorPalette::Theme::Dark) {
+        if (const auto props = getPropertiesFile()) {
+            const int stored = props->getIntValue("uiTheme", static_cast<int>(fallback));
+            switch (stored) {
+                case static_cast<int>(ColorPalette::Theme::Dark):
+                    return ColorPalette::Theme::Dark;
+                case static_cast<int>(ColorPalette::Theme::Light):
+                    return ColorPalette::Theme::Light;
+                case static_cast<int>(ColorPalette::Theme::Balanced):
+                    return ColorPalette::Theme::Balanced;
+                default:
+                    return fallback;
+            }
+        }
+        return fallback;
     }
 
 private:

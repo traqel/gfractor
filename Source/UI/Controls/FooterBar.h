@@ -36,6 +36,8 @@ public:
 
     void setReferenceEnabled(bool enabled);
 
+    void applyTheme();
+
     /** Sync pill toggle states from the analyzer (call after AnalyzerSettings::load). */
     void syncAnalyzerState();
 
