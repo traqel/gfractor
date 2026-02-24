@@ -117,9 +117,13 @@ target_compile_definitions(${PLUGIN_NAME}
 
 # Platform-specific settings
 if(APPLE)
-    # macOS deployment target
+    # macOS deployment target (applies across generators, including Ninja)
+    if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment target" FORCE)
+    endif()
+
     set_target_properties(${PLUGIN_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "10.13"
+        MACOSX_DEPLOYMENT_TARGET "${CMAKE_OSX_DEPLOYMENT_TARGET}"
     )
 endif()
 
