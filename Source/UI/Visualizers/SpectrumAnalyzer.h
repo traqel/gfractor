@@ -7,18 +7,18 @@
 #include <vector>
 
 #include "AudioVisualizerBase.h"
-#include "../../DSP/FFTProcessor.h"
 #include "GhostSpectrum.h"
 #include "PeakHold.h"
 #include "SonogramView.h"
 #include "SpectrumTooltip.h"
-#include "../../Utility/ChannelMode.h"
-#include "../../Utility/DisplayRange.h"
-#include "../Theme/ColorPalette.h"
-#include "../../DSP/IAudioDataSink.h"
-#include "../../DSP/IGhostDataSink.h"
 #include "../ISpectrumControls.h"
 #include "../ISpectrumDisplaySettings.h"
+#include "../Theme/ColorPalette.h"
+#include "../../Utility/ChannelMode.h"
+#include "../../Utility/DisplayRange.h"
+#include "../../DSP/IAudioDataSink.h"
+#include "../../DSP/FFTProcessor.h"
+#include "../../DSP/IGhostDataSink.h"
 
 /**
  * Mid-Side Spectrum Analyzer Component

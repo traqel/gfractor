@@ -129,9 +129,9 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     };
 
 #if JUCE_DEBUG
-    // Performance display (debug builds only, starts hidden, toggle with Ctrl+Shift+P)
+    // Performance display (debug builds only, starts visible, toggle with Ctrl+Shift+P)
     performanceDisplay.setProcessor(&audioProcessor);
-    performanceDisplay.setVisible(false);
+    performanceDisplay.setVisible(performanceDisplayVisible);
     addChildComponent(performanceDisplay);
 #endif
 
@@ -272,12 +272,12 @@ void gFractorAudioProcessorEditor::resized() {
     }
 
 #if JUCE_DEBUG
-    // Performance display (bottom right corner, fixed size)
+    // Performance display (top right corner, fixed size)
     constexpr int perfWidth = 120;
-    constexpr int perfHeight = 50;
-    constexpr int perfMargin = 5;
+    constexpr int perfHeight = 34;
+    constexpr int perfMargin = 2;
     performanceDisplay.setBounds(getWidth() - perfWidth - perfMargin,
-                                 getHeight() - perfHeight - perfMargin,
+                                 perfMargin,
                                  perfWidth, perfHeight);
 #endif
 }
@@ -319,12 +319,10 @@ bool gFractorAudioProcessorEditor::keyPressed(const juce::KeyPress &key,
         return true;
     }
 
-#if JUCE_DEBUG
-    if (key == juce::KeyPress('p', juce::ModifierKeys::ctrlModifier | juce::ModifierKeys::shiftModifier, 0)) {
+    if (key == juce::KeyPress('p')) {
         togglePerformanceDisplay();
         return true;
     }
-#endif
 
     return false;
 }
@@ -367,5 +365,7 @@ void gFractorAudioProcessorEditor::timerCallback() {
 void gFractorAudioProcessorEditor::togglePerformanceDisplay() {
     performanceDisplayVisible = !performanceDisplayVisible;
     performanceDisplay.setVisible(performanceDisplayVisible);
+    if (performanceDisplayVisible)
+        performanceDisplay.toFront(false);
 }
 #endif

@@ -54,7 +54,7 @@ public:
 
         if (processor == nullptr) {
             g.setColour(juce::Colours::white);
-            g.setFont(12.0f);
+            g.setFont(Typography::mainFontSize);
             g.drawText("No processor", getLocalBounds(), juce::Justification::centred);
             return;
         }
@@ -63,20 +63,13 @@ public:
 
         // Draw metrics
         g.setColour(juce::Colours::lightgreen);
-        g.setFont(10.0f);
+        g.setFont(Typography::mainFontSize);
 
         const auto bounds = getLocalBounds().reduced(5);
         constexpr int lineHeight = 14;
         int y = bounds.getY();
 
-        // Title
-        g.setFont(11.0f);
-        g.setFont(g.getCurrentFont().boldened());
-        g.drawText("PERFORMANCE", bounds.withHeight(lineHeight).withY(y),
-                   juce::Justification::centredLeft);
-        y += lineHeight + 2;
-
-        g.setFont(10.0f);
+        g.setFont(Typography::mainFontSize);
         g.setFont(g.getCurrentFont().withStyle(juce::Font::plain));
 
         // Average time
