@@ -119,7 +119,7 @@ Scripts\build.bat --clean --release --test
 ### 1. Add JUCE Submodule (REQUIRED)
 
 ```bash
-cd /Volumes/Data/Development/gFractor
+cd /Volumes/Data/Development/growl-audio/gFractor
 git submodule add -b master https://github.com/juce-framework/JUCE.git JUCE
 git submodule update --init --recursive
 ```

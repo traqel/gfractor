@@ -3,6 +3,7 @@
 
 SonogramView::SonogramView() {
     setOpaque(true);
+    rebuildColourLut();
 }
 
 //==============================================================================
@@ -44,6 +45,7 @@ void SonogramView::setSonoSpeed(const SonoSpeed s) {
 void SonogramView::setDbRange(const float minDb, const float maxDb) {
     range.minDb = minDb;
     range.maxDb = juce::jmax(minDb + 1.0f, maxDb);
+    rebuildColourLut();
 }
 
 void SonogramView::setFreqRange(const float minFreq, const float maxFreq, const float sampleRate) {
@@ -52,6 +54,7 @@ void SonogramView::setFreqRange(const float minFreq, const float maxFreq, const 
     range.logRange = std::log2(range.maxFreq / range.minFreq);
     currentSampleRate = sampleRate;
     rebuildColBins();
+    rebuildSonoGridImage();
 }
 
 void SonogramView::setChannelMode(const ChannelMode mode) {
@@ -85,6 +88,7 @@ void SonogramView::resized() {
         image = juce::Image(juce::Image::ARGB, w, h, true);
         writeRow = 0;
         rebuildColBins();
+        rebuildSonoGridImage();
     }
 }
 
@@ -93,21 +97,25 @@ void SonogramView::writeSonogramRow() {
     if (!image.isValid() || colBins.empty()) return;
 
     const juce::Image::BitmapData bmd(image, juce::Image::BitmapData::writeOnly);
+    jassert(bmd.pixelStride == 4); // ARGB is always 4 bytes/pixel
+
     const int w = static_cast<int>(colBins.size());
+    auto* const rowPtr = reinterpret_cast<uint32_t*>(bmd.getLinePointer(writeRow));
 
     const bool noSignal = channelMode != ChannelMode::LR && !showMid && !showSide;
 
     if (noSignal) {
-        for (int col = 0; col < w; ++col)
-            bmd.setPixelColour(col, writeRow, juce::Colours::black);
+        std::fill(rowPtr, rowPtr + w, colourLut[0]);
     } else {
         const bool bothVisible = channelMode != ChannelMode::LR && showMid && showSide;
+        const float dbRangeRcp = 255.0f / (range.maxDb - range.minDb);
+
         for (int col = 0; col < w; ++col) {
             const float binF = colBins[static_cast<size_t>(col)];
             const int bin0 = static_cast<int>(binF);
             const float frac = binF - static_cast<float>(bin0);
 
-            auto lerp = [&](const std::vector<float> &data) {
+            auto lerp = [&](const std::vector<float>& data) {
                 return data[static_cast<size_t>(bin0)] * (1.0f - frac)
                        + data[static_cast<size_t>(bin0 + 1)] * frac;
             };
@@ -121,7 +129,10 @@ void SonogramView::writeSonogramRow() {
                 db = lerp(binMidDb);
             else
                 db = lerp(binSideDb);
-            bmd.setPixelColour(col, writeRow, dbToColour(db));
+
+            const auto lutIdx = static_cast<size_t>(
+                juce::jlimit(0, 255, static_cast<int>((db - range.minDb) * dbRangeRcp)));
+            rowPtr[col] = colourLut[lutIdx];
         }
     }
     writeRow = (writeRow + 1) % image.getHeight();
@@ -145,28 +156,40 @@ void SonogramView::paintSonogram(juce::Graphics &g) const {
     paintSonogramGrid(g);
 }
 
-void SonogramView::paintSonogramGrid(juce::Graphics &g) const {
-    static constexpr float freqLines[] = {20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000};
+void SonogramView::rebuildSonoGridImage() {
+    const int w = getWidth();
+    const int h = getHeight();
+    if (w <= 0 || h <= 0) {
+        sonoGridImage = {};
+        return;
+    }
+
+    static constexpr float freqLines[]  = {20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000};
     static const juce::String freqLabels[] = {"20", "50", "100", "200", "500", "1k", "2k", "5k", "10k", "20k"};
 
-    const auto sw = static_cast<float>(getWidth());
-    const auto sh = static_cast<float>(getHeight());
+    sonoGridImage = juce::Image(juce::Image::ARGB, w, h, true);
+    juce::Graphics ig(sonoGridImage);
+    ig.setFont(juce::Font(juce::FontOptions(14.0f)).boldened());
 
-    g.setFont(juce::Font(juce::FontOptions(14.0f)).boldened());
+    const float sw = static_cast<float>(w);
+    const float sh = static_cast<float>(h);
 
     for (int i = 0; i < 10; ++i) {
         const float freq = freqLines[i];
         if (freq < range.minFreq || freq > range.maxFreq) continue;
         const float x = range.frequencyToX(freq, sw);
-        g.setColour(gridColour);
-        g.drawVerticalLine(static_cast<int>(x), 0.0f, sh);
-        g.setColour(textColour);
-        // Labels are drawn below the component by SpectrumAnalyzer's grid,
-        // but we draw them at the bottom of our bounds for sonogram mode
-        g.drawText(freqLabels[i],
-                   static_cast<int>(x) - 15, static_cast<int>(sh) + 6,
-                   30, 20, juce::Justification::centredTop);
+        ig.setColour(gridColour);
+        ig.drawVerticalLine(static_cast<int>(x), 0.0f, sh);
+        ig.setColour(textColour);
+        ig.drawText(freqLabels[i],
+                    static_cast<int>(x) - 15, static_cast<int>(sh) + 6,
+                    30, 20, juce::Justification::centredTop);
     }
+}
+
+void SonogramView::paintSonogramGrid(juce::Graphics &g) const {
+    if (sonoGridImage.isValid())
+        g.drawImageAt(sonoGridImage, 0, 0);
 }
 
 //==============================================================================
@@ -183,6 +206,13 @@ void SonogramView::rebuildColBins() {
         const float freq = range.minFreq * std::pow(range.maxFreq / range.minFreq, t);
         colBins[static_cast<size_t>(col)] =
                 juce::jlimit(1.0f, static_cast<float>(currentNumBins - 2), freq / binWidth);
+    }
+}
+
+void SonogramView::rebuildColourLut() {
+    for (size_t i = 0; i < 256; ++i) {
+        const float db = range.minDb + (range.maxDb - range.minDb) * (static_cast<float>(i) / 255.0f);
+        colourLut[i] = dbToColour(db).getARGB();
     }
 }
 

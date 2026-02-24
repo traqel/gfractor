@@ -1,5 +1,13 @@
 #include "PeakHold.h"
 
+namespace {
+    struct BlurPass { float width, alpha; };
+    static constexpr BlurPass kBlurPasses[] = {
+        {9.0f, 0.04f}, {5.0f, 0.08f}, {2.5f, 0.18f}, {1.0f, 0.80f}
+    };
+    static constexpr float kWhiteMix = 0.45f;
+}
+
 void PeakHold::setEnabled(const bool enable) {
     enabled = enable;
     if (!enabled) {
@@ -7,6 +15,7 @@ void PeakHold::setEnabled(const bool enable) {
         peakSidePath.clear();
         peakGhostMidPath.clear();
         peakGhostSidePath.clear();
+        peakMidImage = peakSideImage = peakGhostMidImage = peakGhostSideImage = {};
     }
 }
 
@@ -19,6 +28,8 @@ void PeakHold::reset(const int numBins, const float minDb) {
     peakSidePath.clear();
     peakGhostMidPath.clear();
     peakGhostSidePath.clear();
+    peakMidImage = peakSideImage = peakGhostMidImage = peakGhostSideImage = {};
+    pathsDirty = ghostPathsDirty = true;
 }
 
 void PeakHold::accumulate(const std::vector<float> &midDb, const std::vector<float> &sideDb, const int numBins) {
@@ -41,69 +52,96 @@ void PeakHold::accumulateGhost(const std::vector<float> &midDb, const std::vecto
 void PeakHold::buildPaths(const float width, const float height, const BuildPathFn &buildPath) {
     buildPath(peakMidPath, peakMidDb, width, height, false);
     buildPath(peakSidePath, peakSideDb, width, height, false);
+    pathsDirty = true;
 }
 
 void PeakHold::buildGhostPaths(const float width, const float height, const BuildPathFn &buildPath) {
     buildPath(peakGhostMidPath, peakGhostMidDb, width, height, false);
     buildPath(peakGhostSidePath, peakGhostSideDb, width, height, false);
+    ghostPathsDirty = true;
+}
+
+void PeakHold::renderGlowImage(juce::Image& img, const juce::Path& path,
+                               const juce::Colour col, const int w, const int h) const {
+    if (path.isEmpty() || w <= 0 || h <= 0) {
+        img = {};
+        return;
+    }
+    img = juce::Image(juce::Image::ARGB, w, h, true);
+    juce::Graphics ig(img);
+    for (const auto& p : kBlurPasses) {
+        ig.setColour(col.withAlpha(p.alpha));
+        ig.strokePath(path, juce::PathStrokeType(p.width));
+    }
 }
 
 void PeakHold::paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
-                     const bool showMid, const bool showSide, const bool showGhost, const ChannelMode channelMode,
+                     const bool showMid, const bool showSide, const bool showGhost,
+                     const ChannelMode channelMode,
                      const juce::Colour &activeMidCol, const juce::Colour &activeSideCol,
                      const juce::Colour &ghostMidCol, const juce::Colour &ghostSideCol) const {
     if (!enabled)
         return;
 
-    const auto tx = spectrumArea.getX();
-    const auto ty = spectrumArea.getY();
+    // Mix toward white so peaks read as a distinct "ceiling" above the live curve.
+    const auto effMidCol       = activeMidCol.interpolatedWith(juce::Colours::white, kWhiteMix);
+    const auto effSideCol      = activeSideCol.interpolatedWith(juce::Colours::white, kWhiteMix);
+    const auto effGhostMidCol  = ghostMidCol.interpolatedWith(juce::Colours::white, kWhiteMix);
+    const auto effGhostSideCol = ghostSideCol.interpolatedWith(juce::Colours::white, kWhiteMix);
 
-    // Peak colors: mix toward white so they read as a distinct "ceiling" above the live curve
-    constexpr float whiteMix = 0.45f;
-    const auto peakMidCol = activeMidCol.interpolatedWith(juce::Colours::white, whiteMix);
-    const auto peakSideCol = activeSideCol.interpolatedWith(juce::Colours::white, whiteMix);
-    const auto peakGhostMidCol = ghostMidCol.interpolatedWith(juce::Colours::white, whiteMix);
-    const auto peakGhostSideCol = ghostSideCol.interpolatedWith(juce::Colours::white, whiteMix);
+    const int iw = static_cast<int>(spectrumArea.getWidth());
+    const int ih = static_cast<int>(spectrumArea.getHeight());
 
-    struct BlurPass {
-        float width;
-        float alpha;
-    };
-    static constexpr BlurPass passes[] = {
-        {9.0f, 0.04f},
-        {5.0f, 0.08f},
-        {2.5f, 0.18f},
-        {1.0f, 0.80f}, // core
-    };
+    // Rebuild images when paths changed or when colours / area changed.
+    const bool areaChanged    = (spectrumArea != lastSpectrumArea);
+    const bool coloursChanged = (effMidCol != lastEffMidCol || effSideCol != lastEffSideCol
+                              || effGhostMidCol != lastEffGhostMidCol
+                              || effGhostSideCol != lastEffGhostSideCol);
+    if (areaChanged || coloursChanged) {
+        pathsDirty       = true;
+        ghostPathsDirty  = true;
+        lastSpectrumArea    = spectrumArea;
+        lastEffMidCol       = effMidCol;
+        lastEffSideCol      = effSideCol;
+        lastEffGhostMidCol  = effGhostMidCol;
+        lastEffGhostSideCol = effGhostSideCol;
+    }
 
-    const auto drawBlurred = [&](const juce::Path &path, const juce::Colour col) {
-        for (const auto &p: passes)
-            g.setColour(col.withAlpha(p.alpha)),
-                    g.strokePath(path, juce::PathStrokeType(p.width),
-                                 juce::AffineTransform::translation(tx, ty));
-    };
+    if (pathsDirty) {
+        renderGlowImage(peakMidImage,  peakMidPath,  effMidCol,  iw, ih);
+        renderGlowImage(peakSideImage, peakSidePath, effSideCol, iw, ih);
+        pathsDirty = false;
+    }
+    if (ghostPathsDirty) {
+        renderGlowImage(peakGhostMidImage,  peakGhostMidPath,  effGhostMidCol,  iw, ih);
+        renderGlowImage(peakGhostSideImage, peakGhostSidePath, effGhostSideCol, iw, ih);
+        ghostPathsDirty = false;
+    }
 
-    // Ghost peak paths (drawn first, underneath main peaks)
+    const int tx = static_cast<int>(spectrumArea.getX());
+    const int ty = static_cast<int>(spectrumArea.getY());
+
+    // Ghost peaks (drawn first, underneath main peaks)
     if (showGhost) {
         if (channelMode == ChannelMode::LR) {
-            if (!peakGhostMidPath.isEmpty())
-                drawBlurred(peakGhostMidPath, peakGhostMidCol.withAlpha(0.5f));
+            if (peakGhostMidImage.isValid())
+                g.drawImageAt(peakGhostMidImage, tx, ty);
         } else {
-            if (showSide && !peakGhostSidePath.isEmpty())
-                drawBlurred(peakGhostSidePath, peakGhostSideCol.withAlpha(0.5f));
-            if (showMid && !peakGhostMidPath.isEmpty())
-                drawBlurred(peakGhostMidPath, peakGhostMidCol.withAlpha(0.5f));
+            if (showSide && peakGhostSideImage.isValid())
+                g.drawImageAt(peakGhostSideImage, tx, ty);
+            if (showMid && peakGhostMidImage.isValid())
+                g.drawImageAt(peakGhostMidImage, tx, ty);
         }
     }
 
     // Main peak paths
     if (channelMode == ChannelMode::LR) {
-        if (!peakMidPath.isEmpty())
-            drawBlurred(peakMidPath, peakMidCol);
+        if (peakMidImage.isValid())
+            g.drawImageAt(peakMidImage, tx, ty);
     } else {
-        if (showSide && !peakSidePath.isEmpty())
-            drawBlurred(peakSidePath, peakSideCol);
-        if (showMid && !peakMidPath.isEmpty())
-            drawBlurred(peakMidPath, peakMidCol);
+        if (showSide && peakSideImage.isValid())
+            g.drawImageAt(peakSideImage, tx, ty);
+        if (showMid && peakMidImage.isValid())
+            g.drawImageAt(peakMidImage, tx, ty);
     }
 }

@@ -49,4 +49,25 @@ private:
     juce::Path peakSidePath;
     juce::Path peakGhostMidPath;
     juce::Path peakGhostSidePath;
+
+    // Offscreen glow images — pre-rendered at hop rate, blitted at 60 Hz.
+    // Mutable because they are a rendering cache; paint() remains logically const.
+    mutable juce::Image peakMidImage;
+    mutable juce::Image peakSideImage;
+    mutable juce::Image peakGhostMidImage;
+    mutable juce::Image peakGhostSideImage;
+
+    // Set by buildPaths/buildGhostPaths; cleared after image rebuild in paint().
+    mutable bool pathsDirty      = true;
+    mutable bool ghostPathsDirty = true;
+
+    // Last-seen parameters used to detect when images must be rebuilt.
+    mutable juce::Rectangle<float> lastSpectrumArea;
+    mutable juce::Colour lastEffMidCol;
+    mutable juce::Colour lastEffSideCol;
+    mutable juce::Colour lastEffGhostMidCol;
+    mutable juce::Colour lastEffGhostSideCol;
+
+    void renderGlowImage(juce::Image& img, const juce::Path& path,
+                         juce::Colour col, int w, int h) const;
 };

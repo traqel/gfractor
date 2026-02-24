@@ -109,12 +109,23 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     const auto tx = spectrumArea.getX();
     const auto ty = spectrumArea.getY();
     const auto &activeSideColour = playRef ? refSideColour : sideColour;
-    const auto &activeMidColour = playRef ? refMidColour : midColour;
+    const auto &activeMidColour  = playRef ? refMidColour  : midColour;
     const float h = spectrumArea.getHeight();
 
-    const auto drawMain = [&](const juce::Path &path, const juce::Colour &col, const float fillAlpha) {
-        const juce::ColourGradient grad(col.withAlpha(fillAlpha), 0.0f, ty,
-                                        col.withAlpha(0.0f), 0.0f, ty + h, false);
+    if (activeMidColour != lastGradMidCol || activeSideColour != lastGradSideCol
+        || ty != lastGradTy || h != lastGradH) {
+        cachedMidGrad  = juce::ColourGradient(activeMidColour.withAlpha(0.30f),  0.0f, ty,
+                                              activeMidColour.withAlpha(0.0f),   0.0f, ty + h, false);
+        cachedSideGrad = juce::ColourGradient(activeSideColour.withAlpha(0.25f), 0.0f, ty,
+                                              activeSideColour.withAlpha(0.0f),  0.0f, ty + h, false);
+        lastGradMidCol  = activeMidColour;
+        lastGradSideCol = activeSideColour;
+        lastGradTy = ty;
+        lastGradH  = h;
+    }
+
+    const auto drawMain = [&](const juce::Path &path, const juce::ColourGradient &grad,
+                               const juce::Colour &col) {
         g.setGradientFill(grad);
         g.fillPath(path, juce::AffineTransform::translation(tx, ty));
         g.setColour(col);
@@ -123,11 +134,24 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     };
 
     if (channelMode == ChannelMode::LR) {
-        drawMain(midPath, activeMidColour, 0.30f);
+        drawMain(midPath, cachedMidGrad, activeMidColour);
     } else {
-        if (showSide) drawMain(sidePath, activeSideColour, 0.25f);
-        if (showMid) drawMain(midPath, activeMidColour, 0.30f);
+        if (showSide) drawMain(sidePath, cachedSideGrad, activeSideColour);
+        if (showMid)  drawMain(midPath,  cachedMidGrad,  activeMidColour);
     }
+}
+
+void SpectrumAnalyzer::updateAuditLabel() {
+    if (currentAuditFreq >= 1000.0f)
+        cachedAuditLabel = juce::String(currentAuditFreq / 1000.0f, 1) + " kHz";
+    else
+        cachedAuditLabel = juce::String(static_cast<int>(currentAuditFreq)) + " Hz";
+
+    static const auto labelFont = juce::Font(juce::FontOptions(12.0f)).boldened();
+    juce::GlyphArrangement glyphs;
+    glyphs.addLineOfText(labelFont, cachedAuditLabel, 0.0f, 0.0f);
+    cachedAuditLabelW = static_cast<int>(
+        std::ceil(glyphs.getBoundingBox(0, -1, false).getWidth())) + 8;
 }
 
 void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
@@ -146,26 +170,17 @@ void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
     const float peakX = tx + range.frequencyToX(currentAuditFreq, spectrumArea.getWidth());
     const float peakY = ty + range.dbToY(0.0f, spectrumArea.getHeight());
 
-    juce::String freqLabel;
-    if (currentAuditFreq >= 1000.0f)
-        freqLabel = juce::String(currentAuditFreq / 1000.0f, 1) + " kHz";
-    else
-        freqLabel = juce::String(static_cast<int>(currentAuditFreq)) + " Hz";
-
-    const auto labelFont = juce::Font(juce::FontOptions(12.0f)).boldened();
-    g.setFont(labelFont);
-    juce::GlyphArrangement glyphs;
-    glyphs.addLineOfText(labelFont, freqLabel, 0.0f, 0.0f);
-    const int labelW = static_cast<int>(std::ceil(glyphs.getBoundingBox(0, -1, false).getWidth())) + 8;
+    static const auto labelFont = juce::Font(juce::FontOptions(12.0f)).boldened();
     constexpr int labelH = 16;
     constexpr int labelOffset = 6;
+    g.setFont(labelFont);
     g.setColour(backgroundColour.withAlpha(0.75f));
-    g.fillRoundedRectangle(peakX - labelW * 0.5f, peakY - labelH - labelOffset,
-                           static_cast<float>(labelW), static_cast<float>(labelH), 3.0f);
+    g.fillRoundedRectangle(peakX - cachedAuditLabelW * 0.5f, peakY - labelH - labelOffset,
+                           static_cast<float>(cachedAuditLabelW), static_cast<float>(labelH), 3.0f);
     g.setColour(auditFilterColour);
-    g.drawText(freqLabel, static_cast<int>(peakX - labelW * 0.5f),
+    g.drawText(cachedAuditLabel, static_cast<int>(peakX - cachedAuditLabelW * 0.5f),
                static_cast<int>(peakY - labelH - labelOffset),
-               labelW, labelH, juce::Justification::centred);
+               cachedAuditLabelW, labelH, juce::Justification::centred);
 }
 
 void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
@@ -217,6 +232,7 @@ void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
         const float localY = event.position.y - spectrumArea.getY();
         currentAuditFreq = range.xToFrequency(localX, spectrumArea.getWidth());
         currentAuditQ = yToAuditQ(localY, spectrumArea.getHeight());
+        updateAuditLabel();
         buildAuditFilterPath(spectrumArea.getWidth(), spectrumArea.getHeight());
         if (onAuditFilter)
             onAuditFilter(true, currentAuditFreq, currentAuditQ);
@@ -232,6 +248,7 @@ void SpectrumAnalyzer::mouseDrag(const juce::MouseEvent &event) {
                                           event.position.y - spectrumArea.getY());
         currentAuditFreq = range.xToFrequency(localX, spectrumArea.getWidth());
         currentAuditQ = yToAuditQ(localY, spectrumArea.getHeight());
+        updateAuditLabel();
         buildAuditFilterPath(spectrumArea.getWidth(), spectrumArea.getHeight());
         if (onAuditFilter)
             onAuditFilter(true, currentAuditFreq, currentAuditQ);
@@ -252,17 +269,17 @@ void SpectrumAnalyzer::mouseUp(const juce::MouseEvent &event) {
 void SpectrumAnalyzer::mouseMove(const juce::MouseEvent &event) {
     if (spectrumArea.contains(event.position)) {
         tooltip.updateFromMouse(event.position.x, event.position.y, range, spectrumArea);
-        repaint();
+        repaint(spectrumArea.toNearestInt());
     } else if (tooltip.isVisible()) {
         tooltip.hide();
-        repaint();
+        repaint(spectrumArea.toNearestInt());
     }
 }
 
 void SpectrumAnalyzer::mouseExit(const juce::MouseEvent &) {
     if (tooltip.isVisible()) {
         tooltip.hide();
-        repaint();
+        repaint(spectrumArea.toNearestInt());
     }
 }
 

@@ -52,12 +52,16 @@ private:
 
     void rebuildColBins();
 
+    void rebuildColourLut();
+
     juce::Colour dbToColour(float db) const;
 
     // Sonogram image state
     juce::Image image;
     int writeRow = 0;
     std::vector<float> colBins; // fractional bin per pixel column
+    juce::Image sonoGridImage;
+    void rebuildSonoGridImage();
 
     // Per-bin data snapshot (copied each frame from pushBinData)
     std::vector<float> binMidDb;
@@ -71,6 +75,11 @@ private:
     bool showMid = true;
     bool showSide = true;
     ChannelMode channelMode = ChannelMode::MidSide;
+
+    // Pre-baked colour lookup table — indexed by normalised db in [0, 255].
+    // Rebuilt whenever the dB range changes. Avoids per-pixel gradient lerp
+    // and juce::Colour construction inside the hot writeSonogramRow() loop.
+    std::array<uint32_t, 256> colourLut {};
 
     // Grid colors (match SpectrumAnalyzer's palette)
     const juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};

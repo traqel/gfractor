@@ -314,6 +314,10 @@ private:
     juce::Path auditFilterPath;
     const juce::Colour auditFilterColour{ColorPalette::textBright};
 
+    juce::String cachedAuditLabel;
+    int cachedAuditLabelW = 0;
+    void updateAuditLabel();
+
     void buildAuditFilterPath(float width, float height);
 
     static constexpr float minAuditQ = 0.5f;
@@ -327,6 +331,13 @@ private:
     void rebuildGridImage();
 
     void paintMainPaths(juce::Graphics &g) const;
+
+    mutable juce::ColourGradient cachedMidGrad;
+    mutable juce::ColourGradient cachedSideGrad;
+    mutable juce::Colour lastGradMidCol;
+    mutable juce::Colour lastGradSideCol;
+    mutable float lastGradTy = -1.0f;
+    mutable float lastGradH  = -1.0f;
 
     void paintAuditFilter(juce::Graphics &g) const;
 
