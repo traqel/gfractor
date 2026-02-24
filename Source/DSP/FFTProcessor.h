@@ -44,7 +44,7 @@ public:
     void setMinDb(const float db) { minDb = db; }
 
     /** Set the temporal decay factor (0..1, higher = slower decay). */
-    void setTemporalDecay(const float decay) { temporalDecay = juce::jlimit(0.0f, 0.9999f, decay); }
+    void setTemporalDecay(const float decay) { temporalDecay = juce::jlimit(0.0f, 1.0f, decay); }
 
     /**
      * Process one FFT block from circular buffer data.

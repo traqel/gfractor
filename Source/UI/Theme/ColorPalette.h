@@ -110,34 +110,34 @@ namespace ColorPalette {
         return darkTheme;
     }
 
-    inline Theme currentTheme = Theme::Dark;
+    inline Theme currentTheme = Theme::Balanced;
 
-    inline std::uint32_t background = darkTheme.background;
-    inline std::uint32_t panel = darkTheme.panel;
-    inline std::uint32_t spectrumBg = darkTheme.spectrumBg;
-    inline std::uint32_t grid = darkTheme.grid;
-    inline std::uint32_t border = darkTheme.border;
-    inline std::uint32_t spectrumBorder = darkTheme.spectrumBorder;
+    inline std::uint32_t background = balancedTheme.background;
+    inline std::uint32_t panel = balancedTheme.panel;
+    inline std::uint32_t spectrumBg = balancedTheme.spectrumBg;
+    inline std::uint32_t grid = balancedTheme.grid;
+    inline std::uint32_t border = balancedTheme.border;
+    inline std::uint32_t spectrumBorder = balancedTheme.spectrumBorder;
 
-    inline std::uint32_t midGreen = darkTheme.midGreen;
-    inline std::uint32_t sideAmber = darkTheme.sideAmber;
-    inline std::uint32_t blueAccent = darkTheme.blueAccent;
+    inline std::uint32_t midGreen = balancedTheme.midGreen;
+    inline std::uint32_t sideAmber = balancedTheme.sideAmber;
+    inline std::uint32_t blueAccent = balancedTheme.blueAccent;
 
-    inline std::uint32_t refMidBlue = darkTheme.refMidBlue;
-    inline std::uint32_t refSidePink = darkTheme.refSidePink;
+    inline std::uint32_t refMidBlue = balancedTheme.refMidBlue;
+    inline std::uint32_t refSidePink = balancedTheme.refSidePink;
 
-    inline std::uint32_t textBright = darkTheme.textBright;
-    inline std::uint32_t textLight = darkTheme.textLight;
-    inline std::uint32_t textMuted = darkTheme.textMuted;
-    inline std::uint32_t textDimmed = darkTheme.textDimmed;
+    inline std::uint32_t textBright = balancedTheme.textBright;
+    inline std::uint32_t textLight = balancedTheme.textLight;
+    inline std::uint32_t textMuted = balancedTheme.textMuted;
+    inline std::uint32_t textDimmed = balancedTheme.textDimmed;
 
-    inline std::uint32_t pillInactiveBg = darkTheme.pillInactiveBg;
+    inline std::uint32_t pillInactiveBg = balancedTheme.pillInactiveBg;
 
-    inline std::uint32_t panelBorder = darkTheme.panelBorder;
-    inline std::uint32_t panelHeading = darkTheme.panelHeading;
-    inline std::uint32_t swatchBorder = darkTheme.swatchBorder;
+    inline std::uint32_t panelBorder = balancedTheme.panelBorder;
+    inline std::uint32_t panelHeading = balancedTheme.panelHeading;
+    inline std::uint32_t swatchBorder = balancedTheme.swatchBorder;
 
-    inline std::uint32_t hintPink = darkTheme.hintPink;
+    inline std::uint32_t hintPink = balancedTheme.hintPink;
 
     inline void setTheme(const Theme theme) {
         currentTheme = theme;

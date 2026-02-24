@@ -10,6 +10,7 @@ struct Defaults {
     static constexpr float minFreq = 20.0f;
     static constexpr float maxFreq = 20000.0f;
     static constexpr int fftOrder = 13;
+    static constexpr int overlapFactor = 4;
     static constexpr auto smoothing = SmoothingMode::None;
     static constexpr float curveDecay = 0.95f;
     static juce::Colour midColour() { return juce::Colour(ColorPalette::midGreen); }

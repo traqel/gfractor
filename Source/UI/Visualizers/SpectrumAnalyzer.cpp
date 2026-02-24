@@ -33,6 +33,7 @@ void SpectrumAnalyzer::setFftOrder(const int order) {
     fftSize = 1 << order;
     fifoCapacity = fftSize * 2;
     numBins = fftSize / 2 + 1;
+    hopSize = juce::jmax(1, fftSize / overlapFactor);
 
     // Delegate FFT setup to FFTProcessor
     fftProcessor.setFftOrder(order, range.minDb);

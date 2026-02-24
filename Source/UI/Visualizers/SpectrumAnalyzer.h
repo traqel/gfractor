@@ -130,12 +130,20 @@ public:
 
     int getFftOrder() const override { return fftOrder; }
 
+    void setOverlapFactor(int factor) override {
+        overlapFactor = juce::jlimit(minOverlapFactor, maxOverlapFactor, factor);
+        hopSize = juce::jmax(1, fftSize / overlapFactor);
+        hopCounter = 0;
+    }
+
+    int getOverlapFactor() const override { return overlapFactor; }
+
     void setSmoothing(SmoothingMode mode) override;
 
     SmoothingMode getSmoothing() const override { return smoothingMode; }
 
     void setCurveDecay(float decay) override {
-        curveDecay = juce::jlimit(0.0f, 0.9999f, decay);
+        curveDecay = juce::jlimit(0.0f, 1.0f, decay);
         fftProcessor.setTemporalDecay(curveDecay);
     }
 
@@ -211,13 +219,16 @@ private:
     static constexpr int defaultFftOrder = Defaults::fftOrder;
     static constexpr int maxFftOrder = 14;
     static constexpr int maxFifoCapacity = (1 << maxFftOrder) * 2; // 32768
-    static constexpr int hopSize = 128; // fixed hop, ~344 FFTs/sec @ 44.1kHz
+    static constexpr int minOverlapFactor = 2;
+    static constexpr int maxOverlapFactor = 8;
 
     // Runtime-configurable dimensions (updated by setFftOrder)
     int fftOrder = defaultFftOrder;
     int fftSize = 1 << defaultFftOrder;
     int fifoCapacity = fftSize * 2;
     int numBins = fftSize / 2 + 1;
+    int overlapFactor = Defaults::overlapFactor;
+    int hopSize = (1 << defaultFftOrder) / Defaults::overlapFactor;
 
     //==============================================================================
     // FFT processing — delegated to FFTProcessor (SRP: DSP separate from rendering)

@@ -16,7 +16,8 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
           settings.getMinFreq(), settings.getMaxFreq(),
           settings.getMidColour(), settings.getSideColour(),
           settings.getRefMidColour(), settings.getRefSideColour(),
-          settings.getSmoothing(), settings.getFftOrder(), settings.getCurveDecay(), settings.getSlope(),
+          settings.getSmoothing(), settings.getFftOrder(), settings.getOverlapFactor(),
+          settings.getCurveDecay(), settings.getSlope(),
           ColorPalette::getTheme()
       },
       onThemeChanged(std::move(themeChangedCallback)) {
@@ -124,6 +125,21 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     fftOrderLabel.setText("FFT", juce::dontSendNotification);
     fftOrderLabel.setJustificationType(juce::Justification::centredRight);
 
+    // --- Hann overlap combo box ---
+    addAndMakeVisible(overlapCombo);
+    overlapCombo.addItem("2x (50%)", 1);
+    overlapCombo.addItem("4x (75%)", 2);
+    overlapCombo.addItem("8x (87.5%)", 3);
+    overlapCombo.setSelectedId(overlapFactorToId(settings.getOverlapFactor()),
+                               juce::dontSendNotification);
+    overlapCombo.onChange = [this]() {
+        settingsRef.setOverlapFactor(idToOverlapFactor(overlapCombo.getSelectedId()));
+    };
+
+    addAndMakeVisible(overlapLabel);
+    overlapLabel.setText("Overlap", juce::dontSendNotification);
+    overlapLabel.setJustificationType(juce::Justification::centredRight);
+
     // --- Smoothing combo box ---
     addAndMakeVisible(smoothingCombo);
     smoothingCombo.addItem("Off", 1);
@@ -142,10 +158,12 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
 
     // --- Curve decay slider ---
     addAndMakeVisible(decaySlider);
-    decaySlider.setRange(0.80, 0.995, 0.005);
+    decaySlider.setRange(0.0, 1.0, 0.001);
+    decaySlider.setSkewFactorFromMidPoint(0.95);
     decaySlider.setValue(settings.getCurveDecay(), juce::dontSendNotification);
     decaySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
     decaySlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    decaySlider.setNumDecimalPlacesToDisplay(3);
     decaySlider.onValueChange = [this]() {
         settingsRef.setCurveDecay(static_cast<float>(decaySlider.getValue()));
     };
@@ -213,6 +231,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     applyLabelFont(maxFreqLabel);
     applyLabelFont(coloursLabel);
     applyLabelFont(fftOrderLabel);
+    applyLabelFont(overlapLabel);
     applyLabelFont(smoothingLabel);
     applyLabelFont(decayLabel);
     applyLabelFont(slopeLabel);
@@ -264,6 +283,10 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapS); // spacing
 
     layoutRow(fftOrderLabel, fftOrderCombo);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(overlapLabel, overlapCombo);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -397,6 +420,24 @@ SmoothingMode PreferencePanel::idToSmoothingMode(const int id) {
     }
 }
 
+int PreferencePanel::overlapFactorToId(const int factor) {
+    switch (factor) {
+        case 2: return 1;
+        case 4: return 2;
+        case 8: return 3;
+        default: return 2;
+    }
+}
+
+int PreferencePanel::idToOverlapFactor(const int id) {
+    switch (id) {
+        case 1: return 2;
+        case 2: return 4;
+        case 3: return 8;
+        default: return 4;
+    }
+}
+
 int PreferencePanel::themeToId(const ColorPalette::Theme theme) {
     switch (theme) {
         case ColorPalette::Theme::Dark: return 1;
@@ -429,6 +470,9 @@ void PreferencePanel::revertToSnapshot() {
     settingsRef.setFftOrder(snapshot.fftOrder);
     fftOrderCombo.setSelectedId(fftOrderToId(snapshot.fftOrder), juce::dontSendNotification);
 
+    settingsRef.setOverlapFactor(snapshot.overlapFactor);
+    overlapCombo.setSelectedId(overlapFactorToId(snapshot.overlapFactor), juce::dontSendNotification);
+
     settingsRef.setCurveDecay(snapshot.curveDecay);
     decaySlider.setValue(snapshot.curveDecay, juce::dontSendNotification);
 
@@ -457,6 +501,9 @@ void PreferencePanel::resetToDefaults() {
     settingsRef.setFftOrder(D::fftOrder);
     fftOrderCombo.setSelectedId(fftOrderToId(D::fftOrder), juce::dontSendNotification);
 
+    settingsRef.setOverlapFactor(D::overlapFactor);
+    overlapCombo.setSelectedId(overlapFactorToId(D::overlapFactor), juce::dontSendNotification);
+
     settingsRef.setCurveDecay(D::curveDecay);
     decaySlider.setValue(D::curveDecay, juce::dontSendNotification);
 
@@ -469,8 +516,8 @@ void PreferencePanel::resetToDefaults() {
     slopeSlider.setValue(0.0, juce::dontSendNotification);
     settingsRef.setSlope(0.0f);
 
-    ColorPalette::setTheme(ColorPalette::Theme::Dark);
-    themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Dark), juce::dontSendNotification);
+    ColorPalette::setTheme(ColorPalette::Theme::Balanced);
+    themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Balanced), juce::dontSendNotification);
     if (onThemeChanged)
         onThemeChanged();
 

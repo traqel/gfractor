@@ -41,6 +41,10 @@ struct ISpectrumDisplaySettings {
 
     virtual int getFftOrder() const = 0;
 
+    virtual void setOverlapFactor(int factor) = 0;
+
+    virtual int getOverlapFactor() const = 0;
+
     virtual void setSmoothing(SmoothingMode mode) = 0;
 
     virtual SmoothingMode getSmoothing() const = 0;
