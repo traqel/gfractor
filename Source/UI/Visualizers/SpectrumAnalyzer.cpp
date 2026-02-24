@@ -109,23 +109,23 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     const auto tx = spectrumArea.getX();
     const auto ty = spectrumArea.getY();
     const auto &activeSideColour = playRef ? refSideColour : sideColour;
-    const auto &activeMidColour  = playRef ? refMidColour  : midColour;
+    const auto &activeMidColour = playRef ? refMidColour : midColour;
     const float h = spectrumArea.getHeight();
 
     if (activeMidColour != lastGradMidCol || activeSideColour != lastGradSideCol
         || ty != lastGradTy || h != lastGradH) {
-        cachedMidGrad  = juce::ColourGradient(activeMidColour.withAlpha(0.30f),  0.0f, ty,
-                                              activeMidColour.withAlpha(0.0f),   0.0f, ty + h, false);
+        cachedMidGrad = juce::ColourGradient(activeMidColour.withAlpha(0.30f), 0.0f, ty,
+                                             activeMidColour.withAlpha(0.0f), 0.0f, ty + h, false);
         cachedSideGrad = juce::ColourGradient(activeSideColour.withAlpha(0.25f), 0.0f, ty,
-                                              activeSideColour.withAlpha(0.0f),  0.0f, ty + h, false);
-        lastGradMidCol  = activeMidColour;
+                                              activeSideColour.withAlpha(0.0f), 0.0f, ty + h, false);
+        lastGradMidCol = activeMidColour;
         lastGradSideCol = activeSideColour;
         lastGradTy = ty;
-        lastGradH  = h;
+        lastGradH = h;
     }
 
     const auto drawMain = [&](const juce::Path &path, const juce::ColourGradient &grad,
-                               const juce::Colour &col) {
+                              const juce::Colour &col) {
         g.setGradientFill(grad);
         g.fillPath(path, juce::AffineTransform::translation(tx, ty));
         g.setColour(col);
@@ -137,7 +137,7 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
         drawMain(midPath, cachedMidGrad, activeMidColour);
     } else {
         if (showSide) drawMain(sidePath, cachedSideGrad, activeSideColour);
-        if (showMid)  drawMain(midPath,  cachedMidGrad,  activeMidColour);
+        if (showMid) drawMain(midPath, cachedMidGrad, activeMidColour);
     }
 }
 
@@ -151,7 +151,7 @@ void SpectrumAnalyzer::updateAuditLabel() {
     juce::GlyphArrangement glyphs;
     glyphs.addLineOfText(labelFont, cachedAuditLabel, 0.0f, 0.0f);
     cachedAuditLabelW = static_cast<int>(
-        std::ceil(glyphs.getBoundingBox(0, -1, false).getWidth())) + 8;
+                            std::ceil(glyphs.getBoundingBox(0, -1, false).getWidth())) + 8;
 }
 
 void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
@@ -317,10 +317,13 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
     // Process ghost FIFO (opposite signal for comparison)
     const bool ghostFftReady = ghostSpectrum.processDrained(fftSize, hopSize,
-        [this](const std::vector<float> &srcL, const std::vector<float> &srcR, int wp,
-               std::vector<float> &outMid, std::vector<float> &outSide) {
-            fftProcessor.processBlock(srcL, srcR, wp, outMid, outSide);
-        });
+                                                            [this](const std::vector<float> &srcL,
+                                                                   const std::vector<float> &srcR, const int wp,
+                                                                   std::vector<float> &outMid,
+                                                                   std::vector<float> &outSide) {
+                                                                fftProcessor.processBlock(
+                                                                    srcL, srcR, wp, outMid, outSide);
+                                                            });
 
     const float w = spectrumArea.getWidth();
     const float h = spectrumArea.getHeight();
@@ -332,7 +335,7 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         if (peakHold.isEnabled()) {
             peakHold.accumulate(smoothedMidDb, smoothedSideDb, numBins);
             peakHold.buildPaths(w, h, [this](juce::Path &p, const std::vector<float> &db,
-                                             float pw, float ph, bool close) {
+                                             const float pw, const float ph, const bool close) {
                 buildPath(p, db, pw, ph, close);
             });
         }
@@ -345,14 +348,14 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
     if (ghostFftReady && w > 0 && h > 0) {
         auto pathBuilder = [this](juce::Path &p, const std::vector<float> &db,
-                                  float pw, float ph, bool close) {
+                                  const float pw, const float ph, const bool close) {
             buildPath(p, db, pw, ph, close);
         };
         ghostSpectrum.buildPaths(w, h, pathBuilder);
 
         if (peakHold.isEnabled()) {
             peakHold.accumulateGhost(ghostSpectrum.getSmoothedMidDb(),
-                                    ghostSpectrum.getSmoothedSideDb(), numBins);
+                                     ghostSpectrum.getSmoothedSideDb(), numBins);
             peakHold.buildGhostPaths(w, h, pathBuilder);
         }
     }

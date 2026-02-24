@@ -109,7 +109,7 @@ public:
     float getPeakSideDb() const override { return dspProcessor.getPeakSideDb(); }
 
     /** In L+R mode, audio output is always stereo (Mid/Side buttons only affect display). */
-    void setLRMode(bool enabled) { dspProcessor.setLRMode(enabled); }
+    void setLRMode(const bool enabled) { dspProcessor.setLRMode(enabled); }
 
 
 #if JUCE_DEBUG

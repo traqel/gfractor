@@ -18,7 +18,7 @@ TransientMeteringPanel::~TransientMeteringPanel() {
 void TransientMeteringPanel::updateCoefficients(const double sr) {
     const double validSr = sr > 0.0 ? sr : 44100.0;
     // coef = exp(-1 / (timeMs * 0.001 * sampleRate))
-    const auto coef = [&](double timeMs) -> float {
+    const auto coef = [&](const double timeMs) -> float {
         return static_cast<float>(std::exp(-1.0 / (timeMs * 0.001 * validSr)));
     };
     fastAttackCoef  = coef(1.0);   //   1 ms — tracks attack edge of transients

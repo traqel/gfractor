@@ -53,7 +53,7 @@ public:
         AudioVisualizerBase::pushStereoData(buffer);
     }
 
-    void setSampleRate(double sr) override {
+    void setSampleRate(const double sr) override {
         AudioVisualizerBase::setSampleRate(sr);
     }
 
@@ -126,7 +126,7 @@ public:
     }
 
     // int-based display/channel mode for ISpectrumControls
-    void setDisplayMode(int mode) override {
+    void setDisplayMode(const int mode) override {
         setDisplayMode(mode == 0 ? DisplayMode::Spectrum : DisplayMode::Sonogram);
     }
 
@@ -134,7 +134,7 @@ public:
         return displayMode == DisplayMode::Spectrum ? 0 : 1;
     }
 
-    void setChannelMode(int mode) override {
+    void setChannelMode(const int mode) override {
         setChannelMode(mode == 0 ? ChannelMode::MidSide : ChannelMode::LR);
     }
 
@@ -177,7 +177,7 @@ public:
 
     DisplayMode getDisplayModeEnum() const { return displayMode; }
 
-    void setChannelMode(ChannelMode mode) {
+    void setChannelMode(const ChannelMode mode) {
         channelMode = mode;
         fftProcessor.setChannelMode(mode);
         sonogramView.setChannelMode(mode);
@@ -192,7 +192,7 @@ public:
 
     /** Spectral slope tilt — -9 to +9 dB applied to displayed spectrum and sonogram.
      *  Positive tilts the display up toward high frequencies, negative toward lows. */
-    void setSlope(float db) override {
+    void setSlope(const float db) override {
         slopeDb = juce::jlimit(-9.0f, 9.0f, db);
         fftProcessor.setSlope(slopeDb);
         repaint();

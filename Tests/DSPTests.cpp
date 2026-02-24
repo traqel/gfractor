@@ -41,6 +41,7 @@ public:
         testDcOffset();
         testLargeBuffers();
         testHighSampleRate();
+        testSampleRateChange();
         testClippingBehavior();
     }
 
@@ -925,6 +926,62 @@ private:
 
         const float expectedGain = juce::Decibels::decibelsToGain(6.0f);
         expectWithinAbsoluteError(buffer.getSample(0, 256), 0.5f * expectedGain, 0.15f);
+    }
+
+    //==============================================================================
+    void testSampleRateChange() {
+        beginTest("Sample Rate Change");
+
+        gFractorDSP dsp;
+
+        auto runAtSampleRate = [&dsp](const double sampleRate, const int blockSize) {
+            const juce::dsp::ProcessSpec spec{
+                sampleRate,
+                static_cast<juce::uint32>(blockSize),
+                2
+            };
+
+            dsp.prepare(spec);
+            dsp.reset();
+            dsp.setBypassed(false);
+            dsp.setGain(0.0f);
+            dsp.setAuditFilter(true, 1000.0f, 4.0f);
+
+            juce::AudioBuffer<float> buffer(2, blockSize);
+
+            for (int sample = 0; sample < blockSize; ++sample) {
+                const auto phase = 2.0 * juce::MathConstants<double>::pi *
+                                   1000.0 * static_cast<double>(sample) / sampleRate;
+                const float value = static_cast<float>(std::sin(phase));
+                buffer.setSample(0, sample, value);
+                buffer.setSample(1, sample, value);
+            }
+
+            for (int i = 0; i < 8; ++i)
+                dsp.process(buffer);
+
+            float maxAbs = 0.0f;
+            bool allFinite = true;
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
+                for (int sample = 0; sample < buffer.getNumSamples(); ++sample) {
+                    const float s = buffer.getSample(ch, sample);
+                    maxAbs = juce::jmax(maxAbs, std::abs(s));
+                    allFinite = allFinite && std::isfinite(s);
+                }
+            }
+
+            return std::pair<float, bool>{maxAbs, allFinite};
+        };
+
+        const auto [max441, finite441] = runAtSampleRate(44100.0, 512);
+        const auto [max96k, finite96k] = runAtSampleRate(96000.0, 256);
+
+        expect(finite441);
+        expect(finite96k);
+        expectGreaterThan(max441, 0.001f);
+        expectGreaterThan(max96k, 0.001f);
+
+        dsp.setAuditFilter(false, 1000.0f, 4.0f);
     }
 
     //==============================================================================

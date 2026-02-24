@@ -119,9 +119,9 @@ void FFTProcessor::applyOctaveSmoothing(std::vector<float> &dbData) const {
 
     smoothingTemp[0] = dbData[0];
     for (int bin = 1; bin < numBins; ++bin) {
-        const auto &sr = smoothingRanges[static_cast<size_t>(bin)];
-        const float sum = smoothingPrefix[static_cast<size_t>(sr.hi + 1)] - smoothingPrefix[static_cast<size_t>(sr.lo)];
-        smoothingTemp[static_cast<size_t>(bin)] = sum / static_cast<float>(sr.hi - sr.lo + 1);
+        const auto &[lo, hi] = smoothingRanges[static_cast<size_t>(bin)];
+        const float sum = smoothingPrefix[static_cast<size_t>(hi + 1)] - smoothingPrefix[static_cast<size_t>(lo)];
+        smoothingTemp[static_cast<size_t>(bin)] = sum / static_cast<float>(hi - lo + 1);
     }
 
     std::swap(dbData, smoothingTemp);

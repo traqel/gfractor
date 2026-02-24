@@ -10,7 +10,7 @@ enum class ChannelMode { MidSide, LR };
 
 struct ChannelDecoder {
     /** Decode stereo L/R into the selected channel pair. */
-    static void decode(ChannelMode mode, float l, float r, float &out1, float &out2) {
+    static void decode(const ChannelMode mode, const float l, const float r, float &out1, float &out2) {
         if (mode == ChannelMode::LR) {
             out1 = l;
             out2 = r;

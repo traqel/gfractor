@@ -474,6 +474,81 @@ public:
 static PluginStateTests pluginStateTests;
 
 //==============================================================================
+// Sidechain Bus Tests
+//==============================================================================
+class SidechainBusTests : public juce::UnitTest {
+public:
+    SidechainBusTests() : UnitTest("Sidechain Bus Tests", "Core") {}
+
+    void runTest() override {
+        beginTest("Add/remove sidechain bus updates availability");
+        {
+            struct MinimalSidechainProcessor : juce::AudioProcessor {
+                MinimalSidechainProcessor()
+                    : AudioProcessor(BusesProperties()
+                                         .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                                         .withInput("Sidechain", juce::AudioChannelSet::stereo(), false)
+                                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)) {}
+
+                const juce::String getName() const override { return "Test"; }
+                void prepareToPlay(double, int) override {}
+                void releaseResources() override {}
+
+                void processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &) override {
+                    const auto sidechainBus = getBusBuffer(buffer, true, 1);
+                    sidechainAvailable.store(sidechainBus.getNumChannels() > 0, std::memory_order_relaxed);
+                }
+
+                double getTailLengthSeconds() const override { return 0.0; }
+                bool acceptsMidi() const override { return false; }
+                bool producesMidi() const override { return false; }
+                juce::AudioProcessorEditor *createEditor() override { return nullptr; }
+                bool hasEditor() const override { return false; }
+                int getNumPrograms() override { return 1; }
+                int getCurrentProgram() override { return 0; }
+                void setCurrentProgram(int) override {}
+                const juce::String getProgramName(int) override { return {}; }
+                void changeProgramName(int, const juce::String &) override {}
+                void getStateInformation(juce::MemoryBlock &) override {}
+                void setStateInformation(const void *, int) override {}
+
+                std::atomic<bool> sidechainAvailable{false};
+            };
+
+            MinimalSidechainProcessor proc;
+
+            auto processAndReadAvailability = [&proc]() {
+                const int numChannels =
+                    juce::jmax(proc.getTotalNumInputChannels(), proc.getTotalNumOutputChannels());
+
+                juce::AudioBuffer<float> buffer(numChannels, 64);
+                buffer.clear();
+                juce::MidiBuffer midi;
+                proc.processBlock(buffer, midi);
+
+                return proc.sidechainAvailable.load(std::memory_order_relaxed);
+            };
+
+            // Default: sidechain bus is disabled.
+            expectEquals(proc.getChannelCountOfBus(true, 1), 0);
+            expect(!processAndReadAvailability());
+
+            // Add sidechain (enable all non-main buses).
+            proc.enableAllBuses();
+            expectEquals(proc.getChannelCountOfBus(true, 1), 2);
+            expect(processAndReadAvailability());
+
+            // Remove sidechain again.
+            proc.disableNonMainBuses();
+            expectEquals(proc.getChannelCountOfBus(true, 1), 0);
+            expect(!processAndReadAvailability());
+        }
+    }
+};
+
+static SidechainBusTests sidechainBusTests;
+
+//==============================================================================
 // ParameterStability Tests
 //==============================================================================
 class ParameterStabilityTests : public juce::UnitTest {

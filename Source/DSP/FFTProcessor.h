@@ -32,16 +32,16 @@ public:
     void setSampleRate(double sr);
 
     /** Set channel decode mode. */
-    void setChannelMode(ChannelMode mode) { channelMode = mode; }
+    void setChannelMode(const ChannelMode mode) { channelMode = mode; }
 
     /** Set spectral slope tilt in dB/octave. */
-    void setSlope(float db) { slopeDb = db; precomputeSlopeGains(); }
+    void setSlope(const float db) { slopeDb = db; precomputeSlopeGains(); }
 
     /** Set smoothing mode and recompute ranges. */
     void setSmoothing(SmoothingMode mode);
 
     /** Set the minimum dB floor (used for gainToDecibels conversion). */
-    void setMinDb(float db) { minDb = db; }
+    void setMinDb(const float db) { minDb = db; }
 
     /** Set the temporal decay factor (0..1, higher = slower decay). */
     void setTemporalDecay(const float decay) { temporalDecay = decay; }

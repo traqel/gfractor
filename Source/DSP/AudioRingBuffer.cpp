@@ -63,7 +63,7 @@ int AudioRingBuffer::drain() {
     int start1, size1, start2, size2;
     fifo.prepareToRead(available, start1, size1, start2, size2);
 
-    auto copyToRolling = [&](int srcStart, int count) {
+    auto copyToRolling = [&](const int srcStart, const int count) {
         // Bounds-check FIFO source region
         if (srcStart < 0 || srcStart + count > fifoSize || count <= 0)
             return;
