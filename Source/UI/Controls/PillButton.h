@@ -47,7 +47,7 @@ protected:
             auto font = Typography::makeBoldFont(Typography::mainFontSize);
             g.setFont(font);
 
-            const auto textBounds = getLocalBounds().translated(0, 1);
+            const auto textBounds = getLocalBounds().translated(0, 0);
             g.drawText(getButtonText().toUpperCase(), textBounds, juce::Justification::centred);
         };
 

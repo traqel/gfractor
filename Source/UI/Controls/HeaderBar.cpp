@@ -43,7 +43,7 @@ void HeaderBar::paint(juce::Graphics &g) {
     g.setFont(Typography::makeFont(Typography::smallFontSize));
     g.setColour(juce::Colour(ColorPalette::textLight));
 
-    const int subtitleX = logoX + static_cast<int>(gWidth) + 76;
+    const int subtitleX = logoX + static_cast<int>(gWidth) + 90;
     g.drawText("by GrowlAudio", subtitleX, logoY,
                200, logoH, juce::Justification::centredLeft);
 }
