@@ -45,6 +45,10 @@ struct ISpectrumDisplaySettings {
 
     virtual SmoothingMode getSmoothing() const = 0;
 
+    virtual void setCurveDecay(float decay) = 0;
+
+    virtual float getCurveDecay() const = 0;
+
     virtual void setSlope(float db) = 0;
 
     virtual float getSlope() const = 0;

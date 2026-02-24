@@ -24,7 +24,7 @@ public:
     void resized() override;
 
     static constexpr int panelWidth = 300;
-    static constexpr int panelHeight = 492;
+    static constexpr int panelHeight = 528;
 
     /** Called when the panel should close (set by PluginEditor) */
     std::function<void()> onClose;
@@ -55,6 +55,7 @@ private:
         juce::Colour midColour, sideColour, refMidColour, refSideColour;
         SmoothingMode smoothing;
         int fftOrder;
+        float curveDecay;
         float slope;
         ColorPalette::Theme theme;
     };
@@ -76,6 +77,9 @@ private:
 
     juce::ComboBox smoothingCombo;
     juce::Label smoothingLabel;
+
+    juce::Slider decaySlider;
+    juce::Label decayLabel;
 
     juce::Slider slopeSlider;
     juce::Label slopeLabel;

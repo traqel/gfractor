@@ -11,6 +11,7 @@ struct Defaults {
     static constexpr float maxFreq = 20000.0f;
     static constexpr int fftOrder = 13;
     static constexpr auto smoothing = SmoothingMode::None;
+    static constexpr float curveDecay = 0.95f;
     static juce::Colour midColour() { return juce::Colour(ColorPalette::midGreen); }
     static juce::Colour sideColour() { return juce::Colour(ColorPalette::sideAmber); }
     static juce::Colour refMidColour() { return juce::Colour(ColorPalette::refMidBlue); }

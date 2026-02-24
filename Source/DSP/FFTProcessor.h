@@ -44,7 +44,7 @@ public:
     void setMinDb(const float db) { minDb = db; }
 
     /** Set the temporal decay factor (0..1, higher = slower decay). */
-    void setTemporalDecay(const float decay) { temporalDecay = decay; }
+    void setTemporalDecay(const float decay) { temporalDecay = juce::jlimit(0.0f, 0.9999f, decay); }
 
     /**
      * Process one FFT block from circular buffer data.
@@ -112,7 +112,7 @@ private:
     ChannelMode channelMode = ChannelMode::MidSide;
     SmoothingMode smoothingMode = Defaults::smoothing;
     float slopeDb = 0.0f;
-    float temporalDecay = 0.95f;
+    float temporalDecay = Defaults::curveDecay;
     float minDb = -90.0f;
     double sampleRate = 44100.0;
 };

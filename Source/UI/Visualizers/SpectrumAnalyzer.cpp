@@ -10,6 +10,7 @@ SpectrumAnalyzer::SpectrumAnalyzer()
     applyTheme();
     fftProcessor.setChannelMode(channelMode);
     fftProcessor.setSlope(slopeDb);
+    fftProcessor.setTemporalDecay(curveDecay);
     SpectrumAnalyzer::setFftOrder(defaultFftOrder);
     setOpaque(true);
 }

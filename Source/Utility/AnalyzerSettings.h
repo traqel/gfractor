@@ -25,6 +25,7 @@ struct AnalyzerSettings {
             props->setValue("refSideColour", static_cast<int>(settings.getRefSideColour().getARGB()));
             props->setValue("smoothingMode", static_cast<int>(settings.getSmoothing()));
             props->setValue("fftOrder", settings.getFftOrder());
+            props->setValue("curveDecay", settings.getCurveDecay());
             props->setValue("slopeDb", settings.getSlope());
             props->saveIfNeeded();
         }
@@ -59,6 +60,8 @@ struct AnalyzerSettings {
                     props->getIntValue("smoothingMode", static_cast<int>(D::smoothing))));
             if (props->containsKey("fftOrder"))
                 settings.setFftOrder(props->getIntValue("fftOrder", D::fftOrder));
+            if (props->containsKey("curveDecay"))
+                settings.setCurveDecay(static_cast<float>(props->getDoubleValue("curveDecay", D::curveDecay)));
             if (props->containsKey("slopeDb"))
                 settings.setSlope(static_cast<float>(props->getDoubleValue("slopeDb", 0.0)));
         }

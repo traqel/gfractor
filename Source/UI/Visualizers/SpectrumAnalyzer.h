@@ -134,6 +134,13 @@ public:
 
     SmoothingMode getSmoothing() const override { return smoothingMode; }
 
+    void setCurveDecay(float decay) override {
+        curveDecay = juce::jlimit(0.0f, 0.9999f, decay);
+        fftProcessor.setTemporalDecay(curveDecay);
+    }
+
+    float getCurveDecay() const override { return curveDecay; }
+
     void setDbRange(float newMinDb, float newMaxDb) override;
 
     void setFreqRange(float newMinFreq, float newMaxFreq) override;
@@ -324,6 +331,7 @@ private:
     void paintAuditFilter(juce::Graphics &g) const;
 
     SmoothingMode smoothingMode = Defaults::smoothing;
+    float curveDecay = Defaults::curveDecay;
 
     //==============================================================================
     // Ghost spectrum — shows the "other" signal for visual comparison

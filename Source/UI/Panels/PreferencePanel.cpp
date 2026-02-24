@@ -16,7 +16,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
           settings.getMinFreq(), settings.getMaxFreq(),
           settings.getMidColour(), settings.getSideColour(),
           settings.getRefMidColour(), settings.getRefSideColour(),
-          settings.getSmoothing(), settings.getFftOrder(), settings.getSlope(),
+          settings.getSmoothing(), settings.getFftOrder(), settings.getCurveDecay(), settings.getSlope(),
           ColorPalette::getTheme()
       },
       onThemeChanged(std::move(themeChangedCallback)) {
@@ -140,6 +140,20 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     smoothingLabel.setText("Smooth", juce::dontSendNotification);
     smoothingLabel.setJustificationType(juce::Justification::centredRight);
 
+    // --- Curve decay slider ---
+    addAndMakeVisible(decaySlider);
+    decaySlider.setRange(0.80, 0.995, 0.005);
+    decaySlider.setValue(settings.getCurveDecay(), juce::dontSendNotification);
+    decaySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
+    decaySlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    decaySlider.onValueChange = [this]() {
+        settingsRef.setCurveDecay(static_cast<float>(decaySlider.getValue()));
+    };
+
+    addAndMakeVisible(decayLabel);
+    decayLabel.setText("Decay", juce::dontSendNotification);
+    decayLabel.setJustificationType(juce::Justification::centredRight);
+
     // --- Slope slider ---
     addAndMakeVisible(slopeSlider);
     slopeSlider.setRange(-9.0, 9.0, 0.1);
@@ -200,6 +214,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     applyLabelFont(coloursLabel);
     applyLabelFont(fftOrderLabel);
     applyLabelFont(smoothingLabel);
+    applyLabelFont(decayLabel);
     applyLabelFont(slopeLabel);
     applyLabelFont(themeLabel);
 
@@ -207,6 +222,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    decaySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
     slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
 }
 
@@ -252,6 +268,10 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapS); // spacing
 
     layoutRow(smoothingLabel, smoothingCombo);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(decayLabel, decaySlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -409,6 +429,9 @@ void PreferencePanel::revertToSnapshot() {
     settingsRef.setFftOrder(snapshot.fftOrder);
     fftOrderCombo.setSelectedId(fftOrderToId(snapshot.fftOrder), juce::dontSendNotification);
 
+    settingsRef.setCurveDecay(snapshot.curveDecay);
+    decaySlider.setValue(snapshot.curveDecay, juce::dontSendNotification);
+
     slopeSlider.setValue(snapshot.slope, juce::dontSendNotification);
     settingsRef.setSlope(snapshot.slope);
 
@@ -433,6 +456,9 @@ void PreferencePanel::resetToDefaults() {
 
     settingsRef.setFftOrder(D::fftOrder);
     fftOrderCombo.setSelectedId(fftOrderToId(D::fftOrder), juce::dontSendNotification);
+
+    settingsRef.setCurveDecay(D::curveDecay);
+    decaySlider.setValue(D::curveDecay, juce::dontSendNotification);
 
     // Update sliders to reflect defaults
     minDbSlider.setValue(D::minDb, juce::dontSendNotification);
