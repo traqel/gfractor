@@ -139,6 +139,9 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     resizeConstraints.setMinimumSize(minWidth, minHeight);
     resizeConstraints.setMaximumSize(maxWidth, maxHeight);
 
+    // Apply limits to host/window-level resizing as well (not only corner drag).
+    setResizeLimits(minWidth, minHeight, maxWidth, maxHeight);
+
     // Add resize corner
     resizeCorner = std::make_unique<juce::ResizableCornerComponent>(this, &resizeConstraints);
     addAndMakeVisible(resizeCorner.get());
@@ -157,8 +160,10 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     }
 
     // Restore saved window size from global prefs
-    const auto savedSize = AnalyzerSettings::loadWindowSize(defaultWidth, defaultHeight);
-    setSize(savedSize.x, savedSize.y);
+    const auto savedSize = AnalyzerSettings::loadWindowSize(minWidth, minHeight);
+    const int clampedW = juce::jlimit(minWidth, maxWidth, savedSize.x);
+    const int clampedH = juce::jlimit(minHeight, maxHeight, savedSize.y);
+    setSize(clampedW, clampedH);
 
     // Make editor resizable
     setResizable(true, true);
