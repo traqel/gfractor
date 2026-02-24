@@ -10,6 +10,8 @@
 #include <juce_core/juce_core.h>
 
 #include "DSP/AudioRingBuffer.h"
+#include "DSP/gFractorDSP.h"
+#include "DSP/IAudioDataSink.h"
 #include "Utility/ChannelMode.h"
 #include "UI/Visualizers/PeakHold.h"
 #include "State/PluginState.h"
@@ -547,6 +549,263 @@ public:
 };
 
 static SidechainBusTests sidechainBusTests;
+
+//==============================================================================
+// Plugin Crash-Lifecycle Tests
+//==============================================================================
+class PluginCrashLifecycleTests : public juce::UnitTest {
+public:
+    PluginCrashLifecycleTests() : UnitTest("Plugin Crash Lifecycle Tests", "Core") {}
+
+    void runTest() override {
+        beginTest("Add/remove sidechain while processing");
+        {
+            HarnessProcessor proc;
+            proc.prepareToPlay(44100.0, 128);
+
+            // Sidechain disabled (main bus only).
+            {
+                juce::AudioBuffer<float> block(2, 128);
+                fillMainInput(block, 0.2f);
+                juce::MidiBuffer midi;
+                proc.processBlock(block, midi);
+
+                expect(!proc.isSidechainAvailableForTest());
+                expect(allFinite(block));
+            }
+
+            // Sidechain enabled while running.
+            {
+                proc.enableAllBuses();
+                proc.prepareToPlay(44100.0, 128);
+
+                juce::AudioBuffer<float> block(4, 128);
+                fillMainInput(block, 0.1f);
+                fillSidechainInput(block, 0.8f);
+                juce::MidiBuffer midi;
+
+                proc.setReferenceModeForTest(true);
+                proc.processBlock(block, midi);
+
+                expect(proc.isSidechainAvailableForTest());
+                expect(allFinite(block));
+            }
+
+            // Sidechain removed again.
+            {
+                proc.disableNonMainBuses();
+                proc.prepareToPlay(44100.0, 128);
+
+                juce::AudioBuffer<float> block(2, 128);
+                fillMainInput(block, 0.3f);
+                juce::MidiBuffer midi;
+                proc.processBlock(block, midi);
+
+                expect(!proc.isSidechainAvailableForTest());
+                expect(allFinite(block));
+            }
+        }
+
+        beginTest("Repeated prepare with sample-rate and block-size changes");
+        {
+            HarnessProcessor proc;
+            CountingSink sink;
+            proc.registerAudioDataSinkForTest(&sink);
+
+            const struct Config {
+                double sampleRate;
+                int blockSize;
+            } configs[] = {
+                {44100.0, 512},
+                {96000.0, 256},
+                {48000.0, 1024},
+            };
+
+            for (const auto &cfg: configs) {
+                proc.prepareToPlay(cfg.sampleRate, cfg.blockSize);
+
+                juce::AudioBuffer<float> block(2, cfg.blockSize);
+                fillMainInput(block, 0.25f);
+                juce::MidiBuffer midi;
+                proc.processBlock(block, midi);
+
+                expect(allFinite(block));
+            }
+
+            expectEquals(sink.sampleRateUpdates, 3);
+            expectEquals(sink.pushCalls, 3);
+            expectWithinAbsoluteError(sink.lastSampleRate, 48000.0, 0.001);
+
+            proc.unregisterAudioDataSinkForTest(&sink);
+        }
+
+        beginTest("Register/unregister sinks around processing");
+        {
+            HarnessProcessor proc;
+            CountingSink sinkA;
+            CountingSink sinkB;
+
+            proc.prepareToPlay(44100.0, 64);
+
+            proc.registerAudioDataSinkForTest(&sinkA);
+            proc.registerAudioDataSinkForTest(&sinkB);
+
+            // Prepare again so sinks receive sample-rate callback.
+            proc.prepareToPlay(44100.0, 64);
+
+            juce::AudioBuffer<float> block(2, 64);
+            fillMainInput(block, 0.4f);
+            juce::MidiBuffer midi;
+            proc.processBlock(block, midi);
+
+            expectEquals(sinkA.pushCalls, 1);
+            expectEquals(sinkB.pushCalls, 1);
+            expectEquals(sinkA.sampleRateUpdates, 1);
+            expectEquals(sinkB.sampleRateUpdates, 1);
+
+            // Remove one sink; only remaining sink should continue receiving data.
+            proc.unregisterAudioDataSinkForTest(&sinkA);
+
+            fillMainInput(block, 0.5f);
+            proc.processBlock(block, midi);
+
+            expectEquals(sinkA.pushCalls, 1);
+            expectEquals(sinkB.pushCalls, 2);
+            expect(allFinite(block));
+        }
+    }
+
+private:
+    struct CountingSink : IAudioDataSink {
+        void pushStereoData(const juce::AudioBuffer<float> &) override { ++pushCalls; }
+        void setSampleRate(const double sr) override {
+            ++sampleRateUpdates;
+            lastSampleRate = sr;
+        }
+
+        int pushCalls = 0;
+        int sampleRateUpdates = 0;
+        double lastSampleRate = 0.0;
+    };
+
+    struct HarnessProcessor : juce::AudioProcessor {
+        HarnessProcessor()
+            : AudioProcessor(BusesProperties()
+                                 .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                                 .withInput("Sidechain", juce::AudioChannelSet::stereo(), false)
+                                 .withOutput("Output", juce::AudioChannelSet::stereo(), true)) {
+            dsp.setGain(0.0f);
+            dsp.setBypassed(false);
+        }
+
+        const juce::String getName() const override { return "HarnessProcessor"; }
+
+        void prepareToPlay(const double sampleRate, const int samplesPerBlock) override {
+            juce::dsp::ProcessSpec spec{};
+            spec.sampleRate = sampleRate;
+            spec.maximumBlockSize = static_cast<juce::uint32>(samplesPerBlock);
+            spec.numChannels = static_cast<juce::uint32>(getTotalNumInputChannels());
+            dsp.prepare(spec);
+
+            const juce::SpinLock::ScopedLockType lock(sinkLock);
+            for (auto *sink: sinks)
+                sink->setSampleRate(sampleRate);
+        }
+
+        void releaseResources() override {}
+
+        void processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &) override {
+            const auto sidechainBus = getBusBuffer(buffer, true, 1);
+            const bool hasSidechain = sidechainBus.getNumChannels() > 0;
+            sidechainAvailable.store(hasSidechain, std::memory_order_relaxed);
+
+            if (referenceMode.load(std::memory_order_relaxed) && hasSidechain) {
+                auto mainInput = getBusBuffer(buffer, true, 0);
+                for (int ch = 0; ch < mainInput.getNumChannels(); ++ch) {
+                    if (ch < sidechainBus.getNumChannels())
+                        mainInput.copyFrom(ch, 0, sidechainBus, ch, 0, buffer.getNumSamples());
+                    else
+                        mainInput.clear(ch, 0, buffer.getNumSamples());
+                }
+            }
+
+            {
+                const juce::SpinLock::ScopedLockType lock(sinkLock);
+                for (auto *sink: sinks)
+                    sink->pushStereoData(buffer);
+            }
+
+            dsp.process(buffer);
+        }
+
+        double getTailLengthSeconds() const override { return 0.0; }
+        bool acceptsMidi() const override { return false; }
+        bool producesMidi() const override { return false; }
+        juce::AudioProcessorEditor *createEditor() override { return nullptr; }
+        bool hasEditor() const override { return false; }
+        int getNumPrograms() override { return 1; }
+        int getCurrentProgram() override { return 0; }
+        void setCurrentProgram(int) override {}
+        const juce::String getProgramName(int) override { return {}; }
+        void changeProgramName(int, const juce::String &) override {}
+        void getStateInformation(juce::MemoryBlock &) override {}
+        void setStateInformation(const void *, int) override {}
+
+        void registerAudioDataSinkForTest(IAudioDataSink *sink) {
+            if (sink == nullptr)
+                return;
+            const juce::SpinLock::ScopedLockType lock(sinkLock);
+            sinks.push_back(sink);
+        }
+
+        void unregisterAudioDataSinkForTest(IAudioDataSink *sink) {
+            const juce::SpinLock::ScopedLockType lock(sinkLock);
+            sinks.erase(std::remove(sinks.begin(), sinks.end(), sink), sinks.end());
+        }
+
+        void setReferenceModeForTest(const bool enabled) {
+            referenceMode.store(enabled, std::memory_order_relaxed);
+        }
+
+        bool isSidechainAvailableForTest() const {
+            return sidechainAvailable.load(std::memory_order_relaxed);
+        }
+
+    private:
+        gFractorDSP dsp;
+        juce::SpinLock sinkLock;
+        std::vector<IAudioDataSink *> sinks;
+        std::atomic<bool> referenceMode{false};
+        std::atomic<bool> sidechainAvailable{false};
+    };
+
+    static bool allFinite(const juce::AudioBuffer<float> &buffer) {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample) {
+                if (!std::isfinite(buffer.getSample(ch, sample)))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    static void fillMainInput(juce::AudioBuffer<float> &buffer, const float value) {
+        const int channels = juce::jmin(2, buffer.getNumChannels());
+        for (int ch = 0; ch < channels; ++ch) {
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+                buffer.setSample(ch, sample, value);
+        }
+    }
+
+    static void fillSidechainInput(juce::AudioBuffer<float> &buffer, const float value) {
+        for (int ch = 2; ch < buffer.getNumChannels(); ++ch) {
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+                buffer.setSample(ch, sample, value);
+        }
+    }
+};
+
+static PluginCrashLifecycleTests pluginCrashLifecycleTests;
 
 //==============================================================================
 // ParameterStability Tests

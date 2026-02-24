@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "Utility/DisplayRange.h"
+#include "Utility/AnalyzerSettings.h"
 #include "Utility/SpectrumAnalyzerDefaults.h"
 #include "DSP/FFTProcessor.h"
 
@@ -35,6 +36,7 @@ public:
         testFFTProcessorBinAccuracy();
         testFFTProcessorSlopeTilt();
         testFFTProcessorTemporalDecay();
+        testAnalyzerSettingsCorruption();
         testCorrelationCalculation();
     }
 
@@ -381,6 +383,38 @@ private:
     }
 
     //==============================================================================
+    void testAnalyzerSettingsCorruption() {
+        beginTest("AnalyzerSettings corruption fallback and recovery");
+
+        ScopedSettingsFileBackup backup;
+
+        const auto settingsFile = getSettingsFilePath();
+        settingsFile.getParentDirectory().createDirectory();
+
+        const bool wroteCorrupt = settingsFile.replaceWithText(
+            "this is not a valid settings file\n<broken><xml>",
+            false,
+            false,
+            "\n");
+        expect(wroteCorrupt);
+
+        const auto loadedDefaultSize = AnalyzerSettings::loadWindowSize(1200, 640);
+        expectEquals(loadedDefaultSize.x, 1200);
+        expectEquals(loadedDefaultSize.y, 640);
+
+        int panelW = 180;
+        bool visible = false;
+        AnalyzerSettings::loadMeteringState(panelW, visible, 180);
+        expectEquals(panelW, 180);
+        expect(!visible);
+
+        AnalyzerSettings::saveWindowSize(777, 333);
+        const auto loadedSavedSize = AnalyzerSettings::loadWindowSize(1200, 640);
+        expectEquals(loadedSavedSize.x, 777);
+        expectEquals(loadedSavedSize.y, 333);
+    }
+
+    //==============================================================================
     // Helper methods
 
     static float computeCorrelation(const std::vector<float> &L, const std::vector<float> &R) {
@@ -393,6 +427,43 @@ private:
         const double denom = std::sqrt(sumL2 * sumR2);
         if (denom < 1.0e-10) return 0.0f;
         return juce::jlimit(-1.0f, 1.0f, static_cast<float>(sumLR / denom));
+    }
+
+    struct ScopedSettingsFileBackup {
+        ScopedSettingsFileBackup() {
+            originalFile = getSettingsFilePath();
+            backupFile = originalFile.getSiblingFile("gFractor.settings.testbackup");
+
+            if (originalFile.existsAsFile()) {
+                hadOriginal = true;
+                originalFile.copyFileTo(backupFile);
+            }
+        }
+
+        ~ScopedSettingsFileBackup() {
+            if (hadOriginal) {
+                backupFile.copyFileTo(originalFile);
+                backupFile.deleteFile();
+            } else {
+                originalFile.deleteFile();
+                backupFile.deleteFile();
+            }
+        }
+
+        juce::File originalFile;
+        juce::File backupFile;
+        bool hadOriginal = false;
+    };
+
+    static juce::File getSettingsFilePath() {
+        juce::PropertiesFile::Options options;
+        options.applicationName = "gFractor";
+        options.folderName = "GrowlAudio/gFractor";
+        options.filenameSuffix = ".settings";
+        options.osxLibrarySubFolder = "Application Support";
+
+        juce::PropertiesFile props(options);
+        return props.getFile();
     }
 };
 
