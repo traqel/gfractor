@@ -3,7 +3,7 @@
 /**
  * Shared channel mode enum and decoder utility.
  *
- * Used by SpectrumAnalyzer, SonogramView, GhostSpectrum, PeakHold,
+ * Used by SpectrumAnalyzer, GhostSpectrum, PeakHold,
  * and FooterBar to avoid coupling to concrete types.
  */
 enum class ChannelMode { MidSide, LR };

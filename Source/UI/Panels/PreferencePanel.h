@@ -55,7 +55,6 @@ private:
         juce::Colour midColour, sideColour, refMidColour, refSideColour;
         SmoothingMode smoothing;
         int fftOrder;
-        SonoSpeed sonoSpeed;
         float slope;
         ColorPalette::Theme theme;
     };
@@ -78,9 +77,6 @@ private:
     juce::ComboBox smoothingCombo;
     juce::Label smoothingLabel;
 
-    juce::ComboBox sonoSpeedCombo;
-    juce::Label sonoSpeedLabel;
-
     juce::Slider slopeSlider;
     juce::Label slopeLabel;
 
@@ -98,10 +94,6 @@ private:
     static int smoothingModeToId(SmoothingMode m);
 
     static SmoothingMode idToSmoothingMode(int id);
-
-    static int sonoSpeedToId(SonoSpeed s);
-
-    static SonoSpeed idToSonoSpeed(int id);
 
     static int themeToId(ColorPalette::Theme theme);
 

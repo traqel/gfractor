@@ -45,10 +45,6 @@ struct ISpectrumDisplaySettings {
 
     virtual SmoothingMode getSmoothing() const = 0;
 
-    virtual void setSonoSpeed(SonoSpeed speed) = 0;
-
-    virtual SonoSpeed getSonoSpeed() const = 0;
-
     virtual void setSlope(float db) = 0;
 
     virtual float getSlope() const = 0;

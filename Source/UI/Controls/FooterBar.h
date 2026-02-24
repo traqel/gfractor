@@ -62,8 +62,6 @@ private:
     // Left group — pill buttons
     PillButton referencePill{"Reference", juce::Colour(ColorPalette::blueAccent), true};
     PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refMidBlue), true};
-    PillButton spectrumPill{"Spectrum", juce::Colour(ColorPalette::blueAccent), false};
-    PillButton sonogramPill{"Sonogram", juce::Colour(ColorPalette::blueAccent), false};
     PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
     PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
     PillButton lrPill{"L+R", juce::Colour(ColorPalette::blueAccent), true};

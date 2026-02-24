@@ -45,23 +45,6 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     };
     addAndMakeVisible(ghostPill);
 
-    // Spectrum / Sonogram — segmented radio control
-    spectrumPill.setToggleState(true, juce::dontSendNotification);
-    spectrumPill.onClick = [this]() {
-        spectrumPill.setToggleState(true, juce::dontSendNotification);
-        sonogramPill.setToggleState(false, juce::dontSendNotification);
-        controlsRef.setDisplayMode(0); // 0 = Spectrum
-    };
-    addAndMakeVisible(spectrumPill);
-
-    sonogramPill.setToggleState(false, juce::dontSendNotification);
-    sonogramPill.onClick = [this]() {
-        spectrumPill.setToggleState(false, juce::dontSendNotification);
-        sonogramPill.setToggleState(true, juce::dontSendNotification);
-        controlsRef.setDisplayMode(1); // 1 = Sonogram
-    };
-    addAndMakeVisible(sonogramPill);
-
     // Meters pill
     metersPill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(metersPill);
@@ -111,8 +94,6 @@ void FooterBar::paint(juce::Graphics &g) {
 void FooterBar::applyTheme() {
     referencePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     ghostPill.setActiveColour(juce::Colour(ColorPalette::refMidBlue));
-    spectrumPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
-    sonogramPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     midPill.setActiveColour(juce::Colour(ColorPalette::midGreen));
     sidePill.setActiveColour(juce::Colour(ColorPalette::sideAmber));
     lrPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
@@ -150,9 +131,7 @@ void FooterBar::resized() {
     fb.items.add(Item(100, ph, referencePill).withMargin(Margin(0, gs, 0, 0)));
     fb.items.add(Item(72, ph, ghostPill).withMargin(Margin(0, gl, 0, 0)));
 
-    // ── [Spectrum  Sonogram  Freeze] ──────────────────────────────────────────
-    fb.items.add(Item(90, ph, spectrumPill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(92, ph, sonogramPill).withMargin(Margin(0, gs, 0, 0)));
+    // ── [Freeze] ───────────────────────────────────────────────────────────────
     fb.items.add(Item(72, ph, freezePill).withMargin(Margin(0, gs, 0, 0)));
     fb.items.add(Item(84, ph, infinitePill).withMargin(Margin(0, 0, 0, 0)));
 
@@ -192,9 +171,7 @@ void FooterBar::timerCallback() {
 }
 
 void FooterBar::syncAnalyzerState() {
-    const bool isSono = controlsRef.getDisplayMode() == 1;
-    spectrumPill.setToggleState(!isSono, juce::dontSendNotification);
-    sonogramPill.setToggleState(isSono, juce::dontSendNotification);
+    // No-op: analyzer display mode toggle removed.
 }
 
 void FooterBar::setReferenceState(const bool on) {

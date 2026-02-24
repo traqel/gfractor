@@ -16,9 +16,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
           settings.getMinFreq(), settings.getMaxFreq(),
           settings.getMidColour(), settings.getSideColour(),
           settings.getRefMidColour(), settings.getRefSideColour(),
-          settings.getSmoothing(), settings.getFftOrder(),
-          settings.getSonoSpeed(),
-          settings.getSlope(),
+          settings.getSmoothing(), settings.getFftOrder(), settings.getSlope(),
           ColorPalette::getTheme()
       },
       onThemeChanged(std::move(themeChangedCallback)) {
@@ -142,22 +140,6 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     smoothingLabel.setText("Smooth", juce::dontSendNotification);
     smoothingLabel.setJustificationType(juce::Justification::centredRight);
 
-    // --- Sono speed combo box ---
-    addAndMakeVisible(sonoSpeedCombo);
-    sonoSpeedCombo.addItem("Slow", 1);
-    sonoSpeedCombo.addItem("Normal", 2);
-    sonoSpeedCombo.addItem("Fast", 3);
-    sonoSpeedCombo.addItem("Faster", 4);
-    sonoSpeedCombo.setSelectedId(sonoSpeedToId(settings.getSonoSpeed()),
-                                 juce::dontSendNotification);
-    sonoSpeedCombo.onChange = [this]() {
-        settingsRef.setSonoSpeed(idToSonoSpeed(sonoSpeedCombo.getSelectedId()));
-    };
-
-    addAndMakeVisible(sonoSpeedLabel);
-    sonoSpeedLabel.setText("Sono Spd", juce::dontSendNotification);
-    sonoSpeedLabel.setJustificationType(juce::Justification::centredRight);
-
     // --- Slope slider ---
     addAndMakeVisible(slopeSlider);
     slopeSlider.setRange(-9.0, 9.0, 0.1);
@@ -218,7 +200,6 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     applyLabelFont(coloursLabel);
     applyLabelFont(fftOrderLabel);
     applyLabelFont(smoothingLabel);
-    applyLabelFont(sonoSpeedLabel);
     applyLabelFont(slopeLabel);
     applyLabelFont(themeLabel);
 
@@ -271,10 +252,6 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapS); // spacing
 
     layoutRow(smoothingLabel, smoothingCombo);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
-    layoutRow(sonoSpeedLabel, sonoSpeedCombo);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -400,16 +377,6 @@ SmoothingMode PreferencePanel::idToSmoothingMode(const int id) {
     }
 }
 
-int PreferencePanel::sonoSpeedToId(const SonoSpeed s) {
-    switch (s) {
-        case SonoSpeed::Slow: return 1;
-        case SonoSpeed::Normal: return 2;
-        case SonoSpeed::Fast: return 3;
-        case SonoSpeed::Faster: return 4;
-    }
-    return 2;
-}
-
 int PreferencePanel::themeToId(const ColorPalette::Theme theme) {
     switch (theme) {
         case ColorPalette::Theme::Dark: return 1;
@@ -428,16 +395,6 @@ ColorPalette::Theme PreferencePanel::idToTheme(const int id) {
     }
 }
 
-SonoSpeed PreferencePanel::idToSonoSpeed(const int id) {
-    switch (id) {
-        case 1: return SonoSpeed::Slow;
-        case 2: return SonoSpeed::Normal;
-        case 3: return SonoSpeed::Fast;
-        case 4: return SonoSpeed::Faster;
-        default: return SonoSpeed::Normal;
-    }
-}
-
 //==============================================================================
 void PreferencePanel::revertToSnapshot() {
     settingsRef.setDbRange(snapshot.minDb, snapshot.maxDb);
@@ -451,9 +408,6 @@ void PreferencePanel::revertToSnapshot() {
 
     settingsRef.setFftOrder(snapshot.fftOrder);
     fftOrderCombo.setSelectedId(fftOrderToId(snapshot.fftOrder), juce::dontSendNotification);
-
-    settingsRef.setSonoSpeed(snapshot.sonoSpeed);
-    sonoSpeedCombo.setSelectedId(sonoSpeedToId(snapshot.sonoSpeed), juce::dontSendNotification);
 
     slopeSlider.setValue(snapshot.slope, juce::dontSendNotification);
     settingsRef.setSlope(snapshot.slope);
@@ -479,9 +433,6 @@ void PreferencePanel::resetToDefaults() {
 
     settingsRef.setFftOrder(D::fftOrder);
     fftOrderCombo.setSelectedId(fftOrderToId(D::fftOrder), juce::dontSendNotification);
-
-    settingsRef.setSonoSpeed(D::sonoSpeed);
-    sonoSpeedCombo.setSelectedId(sonoSpeedToId(D::sonoSpeed), juce::dontSendNotification);
 
     // Update sliders to reflect defaults
     minDbSlider.setValue(D::minDb, juce::dontSendNotification);

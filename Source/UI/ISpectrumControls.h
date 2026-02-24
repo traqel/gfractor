@@ -17,10 +17,6 @@ struct ISpectrumControls {
 
     virtual bool isInfinitePeakEnabled() const = 0;
 
-    virtual void setDisplayMode(int mode) = 0;
-
-    virtual int getDisplayMode() const = 0;
-
     virtual void setChannelMode(int mode) = 0;
 
     virtual void setSidechainAvailable(bool available) = 0;

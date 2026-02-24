@@ -7,7 +7,6 @@
 //==============================================================================
 SpectrumAnalyzer::SpectrumAnalyzer()
     : AudioVisualizerBase(maxFifoCapacity, 1 << defaultFftOrder) {
-    addChildComponent(sonogramView); // initially invisible
     applyTheme();
     fftProcessor.setChannelMode(channelMode);
     fftProcessor.setSlope(slopeDb);
@@ -21,7 +20,6 @@ void SpectrumAnalyzer::applyTheme() {
     textColour = juce::Colour(ColorPalette::textMuted);
     hintColour = juce::Colour(ColorPalette::hintPink);
     auditFilterColour = juce::Colour(ColorPalette::textBright);
-    sonogramView.applyTheme();
     rebuildGridImage();
     repaint();
 }
@@ -57,14 +55,13 @@ void SpectrumAnalyzer::setFftOrder(const int order) {
     if (spectrumArea.getWidth() > 0) {
         precomputePathPoints();
         rebuildGridImage();
-        sonogramView.setFreqRange(range.minFreq, range.maxFreq, static_cast<float>(getSampleRate()));
     }
     repaint();
 }
 
 SpectrumAnalyzer::~SpectrumAnalyzer() {
     // Stop the timer BEFORE member destruction — otherwise the 60Hz callback
-    // can fire while ghostSpectrum, fftProcessor, sonogramView etc. are
+    // can fire while ghostSpectrum, fftProcessor etc. are
     // already destroyed, causing SIGABRT / use-after-free.
     stopVisualizerTimer();
 }
@@ -77,7 +74,6 @@ void SpectrumAnalyzer::pushGhostData(const juce::AudioBuffer<float> &buffer) {
 //==============================================================================
 void SpectrumAnalyzer::onSampleRateChanged() {
     fftProcessor.setSampleRate(getSampleRate());
-    sonogramView.setFreqRange(range.minFreq, range.maxFreq, static_cast<float>(getSampleRate()));
     if (spectrumArea.getWidth() > 0)
         precomputePathPoints();
 }
@@ -86,36 +82,33 @@ void SpectrumAnalyzer::onSampleRateChanged() {
 void SpectrumAnalyzer::paint(juce::Graphics &g) {
     g.fillAll(backgroundColour);
 
-    if (displayMode != DisplayMode::Sonogram) {
-        if (!gridImage.isNull())
-            g.drawImageAt(gridImage, 0, 0);
-        tooltip.paintRangeBars(g, spectrumArea, range,
-                               showMid, showSide, showGhost, playRef,
-                               midColour, sideColour, refMidColour, refSideColour);
-        if (showGhost)
-            ghostSpectrum.paint(g, spectrumArea, showMid, showSide,
-                                channelMode,
-                                playRef ? midColour : refMidColour,
-                                playRef ? sideColour : refSideColour);
-        paintMainPaths(g);
-        peakHold.paint(g, spectrumArea, showMid, showSide, showGhost,
-                       channelMode,
-                       playRef ? refMidColour : midColour,
-                       playRef ? refSideColour : sideColour,
-                       playRef ? midColour : refMidColour,
-                       playRef ? sideColour : refSideColour);
-        paintAuditFilter(g);
-        tooltip.paintTooltip(g, spectrumArea, range, fftSize, numBins,
-                             getSampleRate(), smoothedMidDb, smoothedSideDb,
-                             showMid, showSide, playRef,
-                             midColour, sideColour, refMidColour, refSideColour);
-    }
+    if (!gridImage.isNull())
+        g.drawImageAt(gridImage, 0, 0);
+    tooltip.paintRangeBars(g, spectrumArea, range,
+                           showMid, showSide, showGhost, playRef,
+                           midColour, sideColour, refMidColour, refSideColour);
+    if (showGhost)
+        ghostSpectrum.paint(g, spectrumArea, showMid, showSide,
+                            channelMode,
+                            playRef ? midColour : refMidColour,
+                            playRef ? sideColour : refSideColour);
+    paintMainPaths(g);
+    peakHold.paint(g, spectrumArea, showMid, showSide, showGhost,
+                   channelMode,
+                   playRef ? refMidColour : midColour,
+                   playRef ? refSideColour : sideColour,
+                   playRef ? midColour : refMidColour,
+                   playRef ? sideColour : refSideColour);
+    paintAuditFilter(g);
+    tooltip.paintTooltip(g, spectrumArea, range, fftSize, numBins,
+                         getSampleRate(), smoothedMidDb, smoothedSideDb,
+                         showMid, showSide, playRef,
+                         midColour, sideColour, refMidColour, refSideColour);
     paintLevelMeters(g);
 }
 
 void SpectrumAnalyzer::resized() {
     rebuildGridImage();
-    sonogramView.setBounds(spectrumArea.toNearestInt());
 }
 
 void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
@@ -359,11 +352,6 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
                 pendingPeakHoldMainRebuild = false;
             }
         }
-        if (displayMode == DisplayMode::Sonogram) {
-            const auto &instantMid = fftProcessor.getInstantMidDb();
-            const auto &instantSide = fftProcessor.getInstantSideDb();
-            sonogramView.pushBinData(instantMid.data(), instantSide.data(), numBins);
-        }
     }
 
     if (ghostFftReady && w > 0 && h > 0) {
@@ -588,24 +576,10 @@ void SpectrumAnalyzer::rebuildGridImage() {
 
 
 //==============================================================================
-void SpectrumAnalyzer::setDisplayMode(const DisplayMode mode) {
-    displayMode = mode;
-    if (mode == DisplayMode::Sonogram)
-        sonogramView.clearImage();
-    sonogramView.setVisible(mode == DisplayMode::Sonogram);
-    repaint();
-}
-
-void SpectrumAnalyzer::setSonoSpeed(const SonoSpeed speed) {
-    sonogramView.setSonoSpeed(speed);
-}
-
-//==============================================================================
 void SpectrumAnalyzer::setDbRange(const float newMinDb, const float newMaxDb) {
     range.minDb = newMinDb;
     range.maxDb = juce::jmax(newMinDb + 1.0f, newMaxDb);
     fftProcessor.setMinDb(range.minDb);
-    sonogramView.setDbRange(range.minDb, range.maxDb);
     rebuildGridImage();
     repaint();
 }
@@ -614,7 +588,6 @@ void SpectrumAnalyzer::setFreqRange(const float newMinFreq, const float newMaxFr
     range.minFreq = juce::jmax(1.0f, newMinFreq);
     range.maxFreq = juce::jmax(range.minFreq + 1.0f, newMaxFreq);
     range.logRange = std::log2(range.maxFreq / range.minFreq);
-    sonogramView.setFreqRange(range.minFreq, range.maxFreq, static_cast<float>(getSampleRate()));
     if (spectrumArea.getWidth() > 0)
         precomputePathPoints();
     rebuildGridImage();

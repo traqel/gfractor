@@ -9,7 +9,6 @@
 #include "AudioVisualizerBase.h"
 #include "GhostSpectrum.h"
 #include "PeakHold.h"
-#include "SonogramView.h"
 #include "SpectrumTooltip.h"
 #include "../ISpectrumControls.h"
 #include "../ISpectrumDisplaySettings.h"
@@ -41,8 +40,6 @@ class SpectrumAnalyzer : public AudioVisualizerBase,
                          public ISpectrumControls,
                          public ISpectrumDisplaySettings {
 public:
-    enum class DisplayMode { Spectrum, Sonogram };
-
     SpectrumAnalyzer();
 
     ~SpectrumAnalyzer() override;
@@ -101,13 +98,11 @@ public:
     /** Show/hide mid and side spectrum paths (main + ghost) */
     void setMidVisible(const bool visible) override {
         showMid = visible;
-        sonogramView.setMidVisible(visible);
         repaint();
     }
 
     void setSideVisible(const bool visible) override {
         showSide = visible;
-        sonogramView.setSideVisible(visible);
         repaint();
     }
 
@@ -123,15 +118,6 @@ public:
     void setPeakLevels(const float midDb, const float sideDb) override {
         meterMidDb = midDb;
         meterSideDb = sideDb;
-    }
-
-    // int-based display/channel mode for ISpectrumControls
-    void setDisplayMode(const int mode) override {
-        setDisplayMode(mode == 0 ? DisplayMode::Spectrum : DisplayMode::Sonogram);
-    }
-
-    int getDisplayMode() const override {
-        return displayMode == DisplayMode::Spectrum ? 0 : 1;
     }
 
     void setChannelMode(const int mode) override {
@@ -172,25 +158,15 @@ public:
         repaint();
     }
 
-    // Enum-based display/channel mode (used internally and by editor)
-    void setDisplayMode(DisplayMode mode);
-
-    DisplayMode getDisplayModeEnum() const { return displayMode; }
-
     void setChannelMode(const ChannelMode mode) {
         channelMode = mode;
         fftProcessor.setChannelMode(mode);
-        sonogramView.setChannelMode(mode);
         clearAllCurves();
     }
 
     ChannelMode getChannelModeEnum() const { return channelMode; }
 
-    void setSonoSpeed(SonoSpeed speed) override;
-
-    SonoSpeed getSonoSpeed() const override { return sonogramView.getSonoSpeed(); }
-
-    /** Spectral slope tilt — -9 to +9 dB applied to displayed spectrum and sonogram.
+    /** Spectral slope tilt — -9 to +9 dB applied to displayed spectrum.
      *  Positive tilts the display up toward high frequencies, negative toward lows. */
     void setSlope(const float db) override {
         slopeDb = juce::jlimit(-9.0f, 9.0f, db);
@@ -355,11 +331,6 @@ private:
 
 
     ChannelMode channelMode = ChannelMode::MidSide;
-
-    //==============================================================================
-    // Sonogram (spectrogram) view — delegated to child component
-    DisplayMode displayMode = DisplayMode::Spectrum;
-    SonogramView sonogramView;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrumAnalyzer)
