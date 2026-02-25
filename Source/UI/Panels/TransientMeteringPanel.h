@@ -6,6 +6,7 @@
 #include <array>
 
 #include "../Visualizers/AudioVisualizerBase.h"
+#include "../Theme/LayoutConstants.h"
 #include "../../DSP/IAudioDataSink.h"
 
 /**
@@ -58,7 +59,7 @@ private:
 
     //==============================================================================
     // Tuning constants
-    static constexpr int   kTrailSize      = 120;    // ~2 s at 60 Hz
+    static constexpr int   kTrailSize      = Layout::TransientMetering::trailSize;
     static constexpr float kEnergyFloorDb  = -60.0f; // dBFS noise floor
     static constexpr float kGateStartDb    = -60.0f; // gate ramp start
     static constexpr float kGateFullDb     = -50.0f; // gate fully open above this

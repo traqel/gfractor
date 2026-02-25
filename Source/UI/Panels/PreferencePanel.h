@@ -4,6 +4,7 @@
 #include <functional>
 #include "../ISpectrumDisplaySettings.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "Controls/PillButton.h"
 
 /**
@@ -25,8 +26,8 @@ public:
 
     void resized() override;
 
-    static constexpr int panelWidth = 300;
-    static constexpr int panelHeight = 564;
+    static constexpr int panelWidth = Layout::PreferencePanel::panelWidth;
+    static constexpr int panelHeight = Layout::PreferencePanel::panelHeight;
 
     /** Called when the panel should close (set by PluginEditor) */
     std::function<void()> onClose;

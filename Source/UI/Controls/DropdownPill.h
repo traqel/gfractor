@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
 #include "Theme/Spacing.h"
 
@@ -35,7 +36,7 @@ public:
         const auto bounds = getLocalBounds().toFloat().reduced(0.5f);
         const int w = getWidth();
         const int h = getHeight();
-        constexpr int arrowZoneW = 18;
+        constexpr int arrowZoneW = Layout::DropdownPill::arrowZoneWidth;
         const int dividerX = w - arrowZoneW;
 
         // Background
@@ -57,7 +58,7 @@ public:
                                  ? juce::Colour(ColorPalette::textBright)
                                  : juce::Colour(ColorPalette::textMuted).withAlpha(0.3f);
         g.setColour(textCol.withAlpha(0.25f));
-        constexpr int dividerInset = 5;
+        constexpr int dividerInset = Layout::DropdownPill::dividerInset;
         g.drawLine(static_cast<float>(dividerX), static_cast<float>(dividerInset),
                    static_cast<float>(dividerX), static_cast<float>(h - dividerInset), 1.0f);
 

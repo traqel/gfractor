@@ -5,6 +5,7 @@
 #include "PillButton.h"
 #include "DropdownPill.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../ISpectrumControls.h"
 #include "../../DSP/IPeakLevelSource.h"
 
@@ -51,7 +52,7 @@ public:
     PillButton &getHelpPill() { return helpPill; }
 
     /** Left margin from SpectrumAnalyzer — used for button alignment. */
-    static constexpr int analyzerLeftMargin = 40;
+    static constexpr int analyzerLeftMargin = Layout::SpectrumAnalyzer::leftMargin;
 
 private:
     void timerCallback() override;

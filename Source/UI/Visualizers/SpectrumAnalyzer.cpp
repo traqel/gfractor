@@ -3,6 +3,7 @@
 #include <cmath>
 #include <juce_dsp/juce_dsp.h>
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
 
 //==============================================================================
@@ -181,8 +182,8 @@ void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
     const float peakY = ty + range.dbToY(0.0f, spectrumArea.getHeight());
 
     static const auto labelFont = Typography::makeBoldFont(12.0f);
-    constexpr int labelH = 16;
-    constexpr int labelOffset = 6;
+    constexpr int labelH = Layout::SpectrumAnalyzer::labelHeight;
+    constexpr int labelOffset = Layout::SpectrumAnalyzer::labelOffset;
     g.setFont(labelFont);
     g.setColour(backgroundColour.withAlpha(0.75f));
     g.fillRoundedRectangle(peakX - cachedAuditLabelW * 0.5f, peakY - labelH - labelOffset,
@@ -194,9 +195,9 @@ void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
 }
 
 void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
-    constexpr float barW = 7.0f;
-    constexpr float gap = 2.0f;
-    constexpr float padLeft = 3.0f; // gap from spectrumArea right edge
+    constexpr float barW = Layout::SpectrumAnalyzer::barWidth;
+    constexpr float gap = Layout::SpectrumAnalyzer::barGap;
+    constexpr float padLeft = Layout::SpectrumAnalyzer::barPaddingLeft;
 
     const float x0 = spectrumArea.getRight() + padLeft; // mid-bar left
     const float x1 = x0 + barW + gap; // sidebar left
@@ -453,7 +454,7 @@ void SpectrumAnalyzer::buildPath(juce::Path &path,
 
     // Catmull-Rom to cubic Bezier
     for (int i = 0; i < numPathPoints - 1; ++i) {
-        constexpr auto curveTension = 6.0f;
+        constexpr auto curveTension = Layout::SpectrumAnalyzer::curveTension;
         const auto &p0 = pts[static_cast<size_t>(juce::jmax(0, i - 1))];
         const auto &p1 = pts[static_cast<size_t>(i)];
         const auto &p2 = pts[static_cast<size_t>(i + 1)];
@@ -570,8 +571,8 @@ void SpectrumAnalyzer::rebuildGridImage() {
             {"High", 6000.0f, 12000.0f},
             {"Air", 12000.0f, 20000.0f},
         };
-        constexpr float barY = 3.0f;
-        constexpr float barH = 16.0f;
+        constexpr float barY = Layout::SpectrumAnalyzer::barY;
+        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
 
         for (int i = 0; i < 7; ++i) {
             const float lo = juce::jmax(kBands[i].lo, range.minFreq);

@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../../PluginProcessor.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
 
 /**
@@ -62,7 +63,7 @@ public:
         g.setFont(Typography::makeFont(Typography::smallFontSize));
 
         const auto bounds = getLocalBounds().reduced(5);
-        constexpr int lineHeight = 14;
+        constexpr int lineHeight = Layout::PerformanceDisplay::lineHeight;
         int y = bounds.getY();
 
         g.setFont(Typography::makeFont(Typography::smallFontSize));

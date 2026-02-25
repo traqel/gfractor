@@ -13,6 +13,7 @@
 #include "../ISpectrumControls.h"
 #include "../ISpectrumDisplaySettings.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../../Utility/ChannelMode.h"
 #include "../../Utility/DisplayRange.h"
 #include "../../DSP/IAudioDataSink.h"
@@ -212,7 +213,7 @@ public:
     juce::Colour getRefSideColour() const override { return refSideColour; }
 
     /** Left margin reserved for dB axis labels — used by FooterBar to align its buttons. */
-    static constexpr int leftMargin = 40;
+    static constexpr int leftMargin = Layout::SpectrumAnalyzer::leftMargin;
 
 protected:
     //==============================================================================
@@ -225,10 +226,10 @@ private:
     //==============================================================================
     // FFT configuration
     static constexpr int defaultFftOrder = Defaults::fftOrder;
-    static constexpr int maxFftOrder = 14;
+    static constexpr int maxFftOrder = Layout::SpectrumAnalyzer::fftMaxOrder;
     static constexpr int maxFifoCapacity = (1 << maxFftOrder) * 2; // 32768
-    static constexpr int minOverlapFactor = 2;
-    static constexpr int maxOverlapFactor = 8;
+    static constexpr int minOverlapFactor = Layout::SpectrumAnalyzer::minOverlapFactor;
+    static constexpr int maxOverlapFactor = Layout::SpectrumAnalyzer::maxOverlapFactor;
 
     // Runtime-configurable dimensions (updated by setFftOrder)
     int fftOrder = defaultFftOrder;
@@ -254,15 +255,15 @@ private:
     juce::Image gridImage;
 
     // Layout margins for labels outside spectrum area
-    static constexpr int topMargin = 24;
-    static constexpr int rightMargin = 22; // widened to fit M/S level meters
-    static constexpr int bottomMargin = 26;
+    static constexpr int topMargin = Layout::SpectrumAnalyzer::topMargin;
+    static constexpr int rightMargin = Layout::SpectrumAnalyzer::rightMargin;
+    static constexpr int bottomMargin = Layout::SpectrumAnalyzer::bottomMargin;
     juce::Rectangle<float> spectrumArea;
 
     DisplayRange range;
 
     // Log-spaced path decimation (numPathPoints is fixed — doesn't depend on fftSize)
-    static constexpr int numPathPoints = 256;
+    static constexpr int numPathPoints = Layout::SpectrumAnalyzer::numPathPoints;
 
     struct PathPoint {
         float x;
@@ -309,7 +310,7 @@ private:
     int peakHoldThrottleCounter = 0;
     bool pendingPeakHoldMainRebuild = false;
     bool pendingPeakHoldGhostRebuild = false;
-    static constexpr int peakHoldRebuildIntervalFrames = 3; // ~20 Hz at 60 Hz UI timer
+    static constexpr int peakHoldRebuildIntervalFrames = Layout::SpectrumAnalyzer::peakHoldRebuildInterval;
 
     void clearAllCurves();
 
@@ -319,8 +320,8 @@ private:
 
 
     bool auditingActive = false;
-    float currentAuditFreq = 1000.0f;
-    float currentAuditQ = 4.0f;
+    float currentAuditFreq = Layout::SpectrumAnalyzer::defaultAuditFreq;
+    float currentAuditQ = Layout::SpectrumAnalyzer::defaultAuditQ;
     juce::Path auditFilterPath;
     juce::Colour auditFilterColour{ColorPalette::textBright};
 
@@ -331,8 +332,8 @@ private:
 
     void buildAuditFilterPath(float width, float height);
 
-    static constexpr float minAuditQ = 0.5f;
-    static constexpr float maxAuditQ = 10.0f;
+    static constexpr float minAuditQ = Layout::SpectrumAnalyzer::minAuditQ;
+    static constexpr float maxAuditQ = Layout::SpectrumAnalyzer::maxAuditQ;
 
     static float yToAuditQ(float localY, float height);
 

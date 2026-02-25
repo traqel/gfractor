@@ -1,5 +1,6 @@
 #include "FooterBar.h"
 #include "../../PluginProcessor.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 
 FooterBar::FooterBar(gFractorAudioProcessor &processor,
@@ -112,7 +113,7 @@ void FooterBar::applyTheme() {
 }
 
 void FooterBar::resized() {
-    constexpr int labelH = 12;
+    constexpr int labelH = Layout::FooterBar::labelHeight;
     const auto area = getLocalBounds().withTrimmedTop(labelH).withTrimmedBottom(labelH);
 
     juce::FlexBox fb;

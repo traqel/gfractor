@@ -4,6 +4,7 @@
 
 #include "../../Utility/AnalyzerSettings.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/Typography.h"
 
@@ -25,7 +26,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
       },
       onThemeChanged(std::move(themeChangedCallback)),
       onBandHintsChanged(std::move(bandHintsChangedCallback)) {
-    constexpr auto textBoxWidth = 90;
+    constexpr auto textBoxWidth = Layout::PreferencePanel::textBoxWidth;
     setOpaque(true);
 
     // --- dB range sliders ---
@@ -278,14 +279,13 @@ void PreferencePanel::paint(juce::Graphics &g) {
 
 void PreferencePanel::resized() {
     auto bounds = getLocalBounds().reduced(Spacing::paddingS);
-    constexpr int headerH = 30;
-    constexpr int rowH = 30;
+    constexpr int headerH = Layout::PreferencePanel::headerHeight;
 
     bounds.removeFromTop(headerH); // header
 
-    constexpr int labelW = 82;
+    constexpr int labelW = Layout::PreferencePanel::labelColumnWidth;
     auto layoutRow = [&](juce::Label &label, Component &control) {
-        auto row = bounds.removeFromTop(rowH);
+        auto row = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
         label.setBounds(row.removeFromLeft(labelW));
         control.setBounds(row);
     };
@@ -329,7 +329,7 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapS); // spacing
 
     // Color swatches row - all 4 swatches with equal spacing
-    auto colourRow = bounds.removeFromTop(rowH);
+    auto colourRow = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
     coloursLabel.setBounds(colourRow.removeFromLeft(labelW));
 
     constexpr int swatchGap = Spacing::gapS;
@@ -347,11 +347,11 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapM); // spacing
 
     // Save / Cancel / Reset row
-    auto actionRow = bounds.removeFromTop(rowH);
+    auto actionRow = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
     actionRow.removeFromLeft(labelW);
-    saveButton.setBounds(actionRow.removeFromLeft(74));
+    saveButton.setBounds(actionRow.removeFromLeft(Layout::PreferencePanel::buttonWidth));
     actionRow.removeFromLeft(Spacing::gapS);
-    cancelButton.setBounds(actionRow.removeFromLeft(74));
+    cancelButton.setBounds(actionRow.removeFromLeft(Layout::PreferencePanel::buttonWidth));
     actionRow.removeFromLeft(Spacing::gapS);
     resetButton.setBounds(actionRow);
 }

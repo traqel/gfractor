@@ -1,5 +1,6 @@
 #include "HeaderBar.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/Typography.h"
 
@@ -16,7 +17,7 @@ void HeaderBar::paint(juce::Graphics &g) {
     g.fillAll(juce::Colour(ColorPalette::background));
 
     // Logo: "g" in teal, "Fractor" in white bold italic
-    constexpr float logoFontSize = 24.0f;
+    constexpr float logoFontSize = Layout::HeaderBar::logoFontSize;
     auto logoFont = Typography::makeBoldFont(logoFontSize);
 
     constexpr int logoX = Spacing::marginL;
