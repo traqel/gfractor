@@ -313,6 +313,8 @@ private:
 
     bool showBandHints = true;
     int selectedBand = -1; // -1 means none selected, 0-6 are the 7 frequency bands
+    float selectedBandLo = 0.0f; // Low frequency of selected band
+    float selectedBandHi = 0.0f; // High frequency of selected band
     bool frozen = false;
 
     // Infinite peak hold
@@ -361,6 +363,8 @@ private:
     mutable float lastGradH = -1.0f;
 
     void paintAuditFilter(juce::Graphics &g) const;
+
+    void paintSelectedBand(juce::Graphics &g) const;
 
     SmoothingMode smoothingMode = Defaults::smoothing;
     float curveDecay = Defaults::curveDecay;

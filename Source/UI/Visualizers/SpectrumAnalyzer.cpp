@@ -105,6 +105,7 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
                    playRef ? midColour : refMidColour,
                    playRef ? sideColour : refSideColour);
     paintAuditFilter(g);
+    paintSelectedBand(g);
     tooltip.paintTooltip(g, spectrumArea, range, fftSize, numBins,
                          getSampleRate(), smoothedMidDb, smoothedSideDb,
                          showMid, showSide, playRef,
@@ -194,6 +195,39 @@ void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
                cachedAuditLabelW, labelH, juce::Justification::centred);
 }
 
+void SpectrumAnalyzer::paintSelectedBand(juce::Graphics &g) const {
+    if (selectedBand < 0 || selectedBandHi <= selectedBandLo)
+        return;
+
+    const float sx = spectrumArea.getX();
+    const float sy = spectrumArea.getY();
+    const float sw = spectrumArea.getWidth();
+    const float sh = spectrumArea.getHeight();
+
+    // Clamp to visible frequency range
+    const float lo = juce::jmax(selectedBandLo, range.minFreq);
+    const float hi = juce::jmin(selectedBandHi, range.maxFreq);
+    if (lo >= hi)
+        return;
+
+    const float xLo = sx + range.frequencyToX(lo, sw);
+    const float xHi = sx + range.frequencyToX(hi, sw);
+    const float bandW = xHi - xLo;
+
+    // Draw semi-transparent fill for the selected band frequency range
+    g.setColour(juce::Colour(ColorPalette::blueAccent).withAlpha(0.12f));
+    g.fillRect(xLo, sy, bandW, sh);
+
+    // Draw vertical lines at band boundaries
+    g.setColour(juce::Colour(ColorPalette::blueAccent).withAlpha(0.6f));
+    if (lo > range.minFreq) {
+        g.drawVerticalLine(static_cast<int>(xLo), sy, sy + sh);
+    }
+    if (hi < range.maxFreq) {
+        g.drawVerticalLine(static_cast<int>(xHi), sy, sy + sh);
+    }
+}
+
 void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
     constexpr float barW = Layout::SpectrumAnalyzer::barWidth;
     constexpr float gap = Layout::SpectrumAnalyzer::barGap;
@@ -232,13 +266,15 @@ float SpectrumAnalyzer::yToAuditQ(const float localY, const float height) {
 
 void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
     // Check if click is in band hints area (at barY from top of component)
-    constexpr float barY = Layout::SpectrumAnalyzer::barY;
-    constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
-    const float bandHintsTop = barY;
-    const float bandHintsBottom = barY + barH;
+    // Only process if band hints are enabled in preferences
+    if (showBandHints) {
+        constexpr float barY = Layout::SpectrumAnalyzer::barY;
+        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
+        const float bandHintsTop = barY;
+        const float bandHintsBottom = barY + barH;
 
-    if (event.position.y >= bandHintsTop && event.position.y <= bandHintsBottom
-        && event.position.x >= spectrumArea.getX() && event.position.x <= spectrumArea.getRight()) {
+        if (event.position.y >= bandHintsTop && event.position.y <= bandHintsBottom
+            && event.position.x >= spectrumArea.getX() && event.position.x <= spectrumArea.getRight()) {
         // Click in band hints area - map x position to band index
         struct Band {
             const char *name;
@@ -262,6 +298,8 @@ void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
         for (int i = 0; i < 7; ++i) {
             if (clickFreq >= kBands[i].lo && clickFreq < kBands[i].hi) {
                 selectedBand = i;
+                selectedBandLo = kBands[i].lo;
+                selectedBandHi = kBands[i].hi;
                 rebuildGridImage();
                 repaint();
 
@@ -295,6 +333,7 @@ void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
             onAuditFilter(true, currentAuditFreq, currentAuditQ);
         repaint();
     }
+    } // showBandHints
 }
 
 void SpectrumAnalyzer::mouseDrag(const juce::MouseEvent &event) {
@@ -317,6 +356,8 @@ void SpectrumAnalyzer::mouseUp(const juce::MouseEvent &event) {
     // Clear band selection on mouse up
     if (selectedBand >= 0) {
         selectedBand = -1;
+        selectedBandLo = 0.0f;
+        selectedBandHi = 0.0f;
         rebuildGridImage();
         repaint();
         if (onBandFilter)
@@ -637,16 +678,25 @@ void SpectrumAnalyzer::rebuildGridImage() {
             const float xLo = sx + range.frequencyToX(lo, sw);
             const float xHi = sx + range.frequencyToX(hi, sw);
 
-            // Highlight selected band with accent color
-            if (i == selectedBand) {
-                g.setColour(juce::Colour(ColorPalette::blueAccent).withAlpha(0.4f));
-                g.fillRoundedRectangle(xLo, barY, xHi - xLo, barH, Radius::cornerRadius);
-            }
-
             // Alternating fill on even bands
             if (i % 2 == 0) {
                 g.setColour(bandHeaderColor.withAlpha(0.5f));
                 g.fillRoundedRectangle(xLo, barY, xHi - xLo, barH, Radius::cornerRadius);
+            }
+
+            // Highlight selected band with accent color (drawn on top)
+            if (i == selectedBand) {
+                g.setColour(juce::Colour(ColorPalette::blueAccent).withAlpha(0.4f));
+                g.fillRoundedRectangle(xLo, barY, xHi - xLo, barH, Radius::cornerRadius);
+
+                // Draw accent-colored vertical lines at band boundaries
+                g.setColour(juce::Colour(ColorPalette::blueAccent));
+                if (lo > range.minFreq) {
+                    g.drawVerticalLine(static_cast<int>(xLo), barY, barY + barH);
+                }
+                if (hi < range.maxFreq) {
+                    g.drawVerticalLine(static_cast<int>(xHi), barY, barY + barH);
+                }
             }
 
             // Band label
@@ -656,8 +706,8 @@ void SpectrumAnalyzer::rebuildGridImage() {
                        static_cast<int>(xHi - xLo), static_cast<int>(barH),
                        juce::Justification::centred, false);
 
-            // Divider at the right boundary (only when it falls inside the view)
-            if (kBands[i].hi > range.minFreq && kBands[i].hi < range.maxFreq) {
+            // Divider at the right boundary (only when it falls inside the view and not selected)
+            if (i != selectedBand && kBands[i].hi > range.minFreq && kBands[i].hi < range.maxFreq) {
                 g.setColour(gridColour);
                 const float divX = sx + range.frequencyToX(kBands[i].hi, sw);
                 g.drawVerticalLine(static_cast<int>(divX), barY, barY + barH);
