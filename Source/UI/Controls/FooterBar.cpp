@@ -6,8 +6,7 @@
 
 FooterBar::FooterBar(gFractorAudioProcessor &processor,
                      ISpectrumControls &controls,
-                     IPeakLevelSource &peakSource,
-                     std::function<void()> settingsCallback)
+                     IPeakLevelSource &peakSource)
     : processorRef(processor),
       controlsRef(controls),
       peakSourceRef(peakSource) {
@@ -114,7 +113,6 @@ void FooterBar::resized() {
     constexpr auto ph = static_cast<float>(Spacing::pillHeight);
     constexpr auto gs = static_cast<float>(Spacing::gapS);
     constexpr auto gl = static_cast<float>(Spacing::gapL);
-    constexpr auto ms = static_cast<float>(Spacing::marginS);
 
     // ── [Mode ▾] dropdown — left edge aligns with SpectrumAnalyzer dB axis ──
     fb.items.add(Item(64, ph, modePill).withMargin(Margin(0, gl, 0, analyzerLeftMargin)));

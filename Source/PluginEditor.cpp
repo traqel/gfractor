@@ -8,7 +8,7 @@
 gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcessor &p)
     : AudioProcessorEditor(&p),
       audioProcessor(p),
-      footerBar(audioProcessor, spectrumAnalyzer, audioProcessor, nullptr) {
+      footerBar(audioProcessor, spectrumAnalyzer, audioProcessor) {
     ColorPalette::setTheme(AnalyzerSettings::loadTheme());
 
     // Set custom LookAndFeel

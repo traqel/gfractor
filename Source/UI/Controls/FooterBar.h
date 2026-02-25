@@ -26,8 +26,7 @@ class FooterBar : public juce::Component,
 public:
     FooterBar(gFractorAudioProcessor &processor,
               ISpectrumControls &controls,
-              IPeakLevelSource &peakSource,
-              std::function<void()> settingsCallback);
+              IPeakLevelSource &peakSource);
 
     ~FooterBar() override;
 
