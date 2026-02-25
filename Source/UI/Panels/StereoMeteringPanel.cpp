@@ -262,9 +262,9 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     g.setColour(juce::Colour(ColorPalette::spectrumBg));
     g.fillRect(barBounds);
 
-    const float barW = static_cast<float>(barBounds.getWidth());
-    const float barTop = static_cast<float>(barBounds.getY());
-    const float barBot = static_cast<float>(barBounds.getBottom());
+    const auto barW = static_cast<float>(barBounds.getWidth());
+    const auto barTop = static_cast<float>(barBounds.getY());
+    const auto barBot = static_cast<float>(barBounds.getBottom());
     const float barH = barBot - barTop;
     const float cx = barBounds.getX() + barW * 0.5f;
     const float fillT = (correlationDisplay + 1.0f) * 0.5f;
