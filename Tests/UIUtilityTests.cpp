@@ -18,6 +18,8 @@
 #include "Utility/SpectrumAnalyzerDefaults.h"
 #include "DSP/FFTProcessor.h"
 #include "UI/Visualizers/SpectrumAnalyzer.h"
+#include "UI/Theme/ColorPalette.h"
+#include "UI/Theme/Typography.h"
 
 class UIUtilityTests : public juce::UnitTest {
 public:
@@ -41,6 +43,8 @@ public:
         testCorrelationCalculation();
         testSpectrumAnalyzerBandLookup();
         testSpectrumAnalyzerBandInfo();
+        testColorPaletteThemeSwitching();
+        testTypographyFontCreation();
     }
 
 private:
@@ -538,6 +542,84 @@ private:
             expectWithinAbsoluteError(info.centerFreq, 16000.0f, 0.1f);
             expectWithinAbsoluteError(info.q, 16000.0f / 8000.0f, 0.01f); // Q = 2.0
         }
+    }
+
+    //==============================================================================
+    void testColorPaletteThemeSwitching() {
+        beginTest("ColorPalette Theme Switching");
+
+        // Save original theme
+        const auto originalTheme = ColorPalette::getTheme();
+
+        // Test Dark theme
+        ColorPalette::setTheme(ColorPalette::Theme::Dark);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Dark));
+        // Verify colors are non-zero (valid ARGB)
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+        expect(ColorPalette::midGreen > 0);
+        expect(ColorPalette::sideAmber > 0);
+        expect(ColorPalette::blueAccent > 0);
+
+        // Test Light theme
+        ColorPalette::setTheme(ColorPalette::Theme::Light);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Light));
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+
+        // Test Balanced theme
+        ColorPalette::setTheme(ColorPalette::Theme::Balanced);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Balanced));
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+
+        // Verify theme names
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Dark)), juce::String("Dark"));
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Light)), juce::String("Light"));
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Balanced)), juce::String("Balanced"));
+
+        // Restore original theme
+        ColorPalette::setTheme(originalTheme);
+    }
+
+    //==============================================================================
+    void testTypographyFontCreation() {
+        beginTest("Typography Font Creation");
+
+        // Test font creation with various sizes
+        {
+            const auto font = Typography::makeFont(14.0f);
+            expectGreaterThan(font.getHeight(), 0.0f);
+            expectGreaterThan(font.getHorizontalScale(), 0.0f);
+        }
+
+        {
+            const auto font = Typography::makeFont(24.0f);
+            expectEquals(font.getHeight(), 24.0f);
+        }
+
+        {
+            const auto font = Typography::makeFont(10.0f);
+            expectEquals(font.getHeight(), 10.0f);
+        }
+
+        // Test bold font creation
+        {
+            const auto boldFont = Typography::makeBoldFont(14.0f);
+            expectGreaterThan(boldFont.getHeight(), 0.0f);
+        }
+
+        // Verify font family is set
+        {
+            const auto font = Typography::makeFont(14.0f);
+            const juce::String typefaceName = font.getTypefaceName();
+            // Typeface name should not be empty
+            expectGreaterThan(typefaceName.length(), 0);
+        }
+
+        // Test constant values
+        expectEquals(Typography::mainFontSize, 14.0f);
+        expectEquals(Typography::smallFontSize, 12.0f);
     }
 
     //==============================================================================
