@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PillButton.h"
+#include "DropdownPill.h"
 #include "../Theme/ColorPalette.h"
 #include "../ISpectrumControls.h"
 #include "../../DSP/IPeakLevelSource.h"
@@ -62,9 +63,9 @@ private:
     // Left group — pill buttons
     PillButton referencePill{"Reference", juce::Colour(ColorPalette::blueAccent), true};
     PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refMidBlue), true};
+    DropdownPill modePill{{"M/S", "L/R"}, juce::Colour(ColorPalette::blueAccent)};
     PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
     PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
-    PillButton lrPill{"L+R", juce::Colour(ColorPalette::blueAccent), true};
     PillButton freezePill{"Freeze", juce::Colour(ColorPalette::blueAccent), true};
     PillButton infinitePill{"Infinite", juce::Colour(ColorPalette::blueAccent), true};
 

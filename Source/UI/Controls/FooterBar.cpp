@@ -13,6 +13,17 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     referencePill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(referencePill);
 
+    // Mode dropdown — 0 = M/S (default), 1 = L/R
+    modePill.setSelectedIndex(0);
+    modePill.onChange = [this](const int index) {
+        const bool lr = (index == 1);
+        midPill.setEnabled(!lr);
+        sidePill.setEnabled(!lr);
+        controlsRef.setChannelMode(lr ? 1 : 0);
+        processorRef.setLRMode(lr);
+    };
+    addAndMakeVisible(modePill);
+
     // Mid pill — APVTS-bound
     midPill.attachToParameter(processorRef.getAPVTS(), "outputMidEnable");
     midPill.onClick = [this]() {
@@ -26,17 +37,6 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
         controlsRef.setSideVisible(sidePill.getToggleState());
     };
     addAndMakeVisible(sidePill);
-
-    // L+R mode pill — toggles between M/S and L+R display
-    lrPill.setToggleState(false, juce::dontSendNotification);
-    lrPill.onClick = [this]() {
-        const bool lr = lrPill.getToggleState();
-        controlsRef.setChannelMode(lr ? 1 : 0); // 1 = LR, 0 = MidSide
-        processorRef.setLRMode(lr);
-        midPill.setEnabled(!lr);
-        sidePill.setEnabled(!lr);
-    };
-    addAndMakeVisible(lrPill);
 
     // Ghost pill — show/hide secondary channel spectrogram
     ghostPill.setToggleState(true, juce::dontSendNotification);
@@ -94,9 +94,9 @@ void FooterBar::paint(juce::Graphics &g) {
 void FooterBar::applyTheme() {
     referencePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     ghostPill.setActiveColour(juce::Colour(ColorPalette::refMidBlue));
+    modePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     midPill.setActiveColour(juce::Colour(ColorPalette::midGreen));
     sidePill.setActiveColour(juce::Colour(ColorPalette::sideAmber));
-    lrPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     freezePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     infinitePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     metersPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
@@ -122,10 +122,12 @@ void FooterBar::resized() {
     constexpr auto gl = static_cast<float>(Spacing::gapL);
     constexpr auto ms = static_cast<float>(Spacing::marginS);
 
-    // ── [Mid-Side] — left edge aligns with SpectrumAnalyzer dB axis ─────────
-    fb.items.add(Item(56, ph, midPill).withMargin(Margin(0, gs, 0, analyzerLeftMargin)));
-    fb.items.add(Item(58, ph, sidePill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(56, ph, lrPill).withMargin(Margin(0, gl, 0, 0)));
+    // ── [Mode ▾] dropdown — left edge aligns with SpectrumAnalyzer dB axis ──
+    fb.items.add(Item(64, ph, modePill).withMargin(Margin(0, gl, 0, analyzerLeftMargin)));
+
+    // ── [Mid  Side] mute group ────────────────────────────────────────────────
+    fb.items.add(Item(56, ph, midPill).withMargin(Margin(0, gs, 0, 0)));
+    fb.items.add(Item(58, ph, sidePill).withMargin(Margin(0, gl, 0, 0)));
 
     // ── [Reference  Ghost] ───────────────────────────────────────────────────
     fb.items.add(Item(100, ph, referencePill).withMargin(Margin(0, gs, 0, 0)));
