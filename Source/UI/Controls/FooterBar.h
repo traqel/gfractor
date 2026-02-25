@@ -66,8 +66,8 @@ private:
     DropdownPill modePill{{"M/S", "L/R"}, juce::Colour(ColorPalette::blueAccent)};
     PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
     PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
-    PillButton freezePill{"Freeze", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton infinitePill{"Infinite", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton freezePill{juce::String::fromUTF8("\xe2\x8f\xb8"), juce::Colour(ColorPalette::blueAccent), true}; // ⏸
+    PillButton infinitePill{"Hold", juce::Colour(ColorPalette::blueAccent), true};
 
     PillButton metersPill{"Stereo", juce::Colour(ColorPalette::blueAccent), true};
     PillButton transientPill{"Transient", juce::Colour(ColorPalette::blueAccent), true};

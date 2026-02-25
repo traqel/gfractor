@@ -56,7 +56,12 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     // Freeze pill
     freezePill.setToggleState(false, juce::dontSendNotification);
     freezePill.onClick = [this]() {
-        controlsRef.setFrozen(freezePill.getToggleState());
+        const bool frozen = freezePill.getToggleState();
+        controlsRef.setFrozen(frozen);
+        // Show ▶ when frozen (click to resume), ⏸ when running (click to freeze)
+        freezePill.setButtonText(frozen
+            ? juce::String::fromUTF8("\xe2\x96\xb6")   // ▶
+            : juce::String::fromUTF8("\xe2\x8f\xb8")); // ⏸
     };
     addAndMakeVisible(freezePill);
 
