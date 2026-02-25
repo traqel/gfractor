@@ -138,7 +138,7 @@ private:
 
     // Performance display (debug builds only, toggled with Ctrl+Shift+P)
     PerformanceDisplay performanceDisplay;
-    bool performanceDisplayVisible = true;
+    bool performanceDisplayVisible = false;
 
     void togglePerformanceDisplay();
 

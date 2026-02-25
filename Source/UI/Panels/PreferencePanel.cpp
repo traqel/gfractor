@@ -328,18 +328,20 @@ void PreferencePanel::resized() {
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    // Color swatches row
+    // Color swatches row - all 4 swatches with equal spacing
     auto colourRow = bounds.removeFromTop(rowH);
     coloursLabel.setBounds(colourRow.removeFromLeft(labelW));
-    colourRow.removeFromLeft(Spacing::gapS);
 
-    const int swatchW = (colourRow.getWidth() - 3 * Spacing::gapS) / 4;
+    constexpr int swatchGap = Spacing::gapS;
+    const int totalSwatchAreaW = colourRow.getWidth();
+    const int swatchW = (totalSwatchAreaW - 3 * swatchGap) / 4;
+
     midSwatch.setBounds(colourRow.removeFromLeft(swatchW));
-    colourRow.removeFromLeft(Spacing::gapS);
+    colourRow.removeFromLeft(swatchGap);
     sideSwatch.setBounds(colourRow.removeFromLeft(swatchW));
-    colourRow.removeFromLeft(Spacing::gapS);
+    colourRow.removeFromLeft(swatchGap);
     refMidSwatch.setBounds(colourRow.removeFromLeft(swatchW));
-    colourRow.removeFromLeft(Spacing::gapS);
+    colourRow.removeFromLeft(swatchGap);
     refSideSwatch.setBounds(colourRow);
 
     bounds.removeFromTop(Spacing::gapM); // spacing
