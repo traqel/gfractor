@@ -1,5 +1,4 @@
 #include "SpectrumAnalyzer.h"
-#include "Theme/Spacing.h"
 #include <cmath>
 #include <juce_dsp/juce_dsp.h>
 #include "../Theme/ColorPalette.h"
@@ -214,8 +213,13 @@ void SpectrumAnalyzer::paintSelectedBand(juce::Graphics &g) const {
     const float xHi = sx + range.frequencyToX(hi, sw);
     const float bandW = xHi - xLo;
 
-    // Draw semi-transparent fill for the selected band frequency range
-    g.setColour(juce::Colour(ColorPalette::blueAccent).withAlpha(0.12f));
+    // Draw vertical gradient fill for the selected band frequency range
+    const auto gradient = juce::ColourGradient::vertical(
+        juce::Colour(ColorPalette::blueAccent).withAlpha(0.0f),  // top (transparent)
+        sy,
+        juce::Colour(ColorPalette::blueAccent).withAlpha(0.15f), // bottom
+        sy + sh);
+    g.setGradientFill(gradient);
     g.fillRect(xLo, sy, bandW, sh);
 
     // Draw vertical lines at band boundaries
@@ -275,68 +279,118 @@ void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
 
         if (event.position.y >= bandHintsTop && event.position.y <= bandHintsBottom
             && event.position.x >= spectrumArea.getX() && event.position.x <= spectrumArea.getRight()) {
-        // Click in band hints area - map x position to band index
-        struct Band {
-            const char *name;
-            float lo;
-            float hi;
-        };
-        static constexpr Band kBands[] = {
-            {"Sub", 20.0f, 80.0f},
-            {"Low", 80.0f, 300.0f},
-            {"Low-Mid", 300.0f, 600.0f},
-            {"Mid", 600.0f, 2000.0f},
-            {"Hi-Mid", 2000.0f, 6000.0f},
-            {"High", 6000.0f, 12000.0f},
-            {"Air", 12000.0f, 20000.0f},
-        };
+            // Click in band hints area - map x position to band index
+            struct Band {
+                const char *name;
+                float lo;
+                float hi;
+            };
+            static constexpr Band kBands[] = {
+                {"Sub", 20.0f, 80.0f},
+                {"Low", 80.0f, 300.0f},
+                {"Low-Mid", 300.0f, 600.0f},
+                {"Mid", 600.0f, 2000.0f},
+                {"Hi-Mid", 2000.0f, 6000.0f},
+                {"High", 6000.0f, 12000.0f},
+                {"Air", 12000.0f, 20000.0f},
+            };
 
-        const float clickFreq = range.xToFrequency(
-            event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
+            const float clickFreq = range.xToFrequency(
+                event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
 
-        // Find which band was clicked
-        for (int i = 0; i < 7; ++i) {
-            if (clickFreq >= kBands[i].lo && clickFreq < kBands[i].hi) {
-                selectedBand = i;
-                selectedBandLo = kBands[i].lo;
-                selectedBandHi = kBands[i].hi;
-                rebuildGridImage();
-                repaint();
+            // Find which band was clicked
+            for (int i = 0; i < 7; ++i) {
+                if (clickFreq >= kBands[i].lo && clickFreq < kBands[i].hi) {
+                    selectedBand = i;
+                    selectedBandLo = kBands[i].lo;
+                    selectedBandHi = kBands[i].hi;
+                    rebuildGridImage();
+                    repaint();
 
-                // Calculate center frequency and Q for the band
-                const float centerFreq = (kBands[i].lo + kBands[i].hi) * 0.5f;
-                const float bandWidth = kBands[i].hi - kBands[i].lo;
-                const float q = centerFreq / bandWidth;
+                    // Calculate center frequency and Q for the band
+                    const float centerFreq = (kBands[i].lo + kBands[i].hi) * 0.5f;
+                    const float bandWidth = kBands[i].hi - kBands[i].lo;
+                    const float q = centerFreq / bandWidth;
 
-                if (onBandFilter)
-                    onBandFilter(true, centerFreq, q);
-                return;
+                    if (onBandFilter)
+                        onBandFilter(true, centerFreq, q);
+                    return;
+                }
             }
         }
-    }
 
-    if (!event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
-        clearAllCurves();
-        return;
-    }
+        if (!event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
+            clearAllCurves();
+            return;
+        }
 
-    if (event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
-        auditingActive = true;
-        tooltip.hide();
-        const float localX = event.position.x - spectrumArea.getX();
-        const float localY = event.position.y - spectrumArea.getY();
-        currentAuditFreq = range.xToFrequency(localX, spectrumArea.getWidth());
-        currentAuditQ = yToAuditQ(localY, spectrumArea.getHeight());
-        updateAuditLabel();
-        buildAuditFilterPath(spectrumArea.getWidth(), spectrumArea.getHeight());
-        if (onAuditFilter)
-            onAuditFilter(true, currentAuditFreq, currentAuditQ);
-        repaint();
-    }
+        if (event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
+            auditingActive = true;
+            tooltip.hide();
+            const float localX = event.position.x - spectrumArea.getX();
+            const float localY = event.position.y - spectrumArea.getY();
+            currentAuditFreq = range.xToFrequency(localX, spectrumArea.getWidth());
+            currentAuditQ = yToAuditQ(localY, spectrumArea.getHeight());
+            updateAuditLabel();
+            buildAuditFilterPath(spectrumArea.getWidth(), spectrumArea.getHeight());
+            if (onAuditFilter)
+                onAuditFilter(true, currentAuditFreq, currentAuditQ);
+            repaint();
+        }
     } // showBandHints
 }
 
 void SpectrumAnalyzer::mouseDrag(const juce::MouseEvent &event) {
+    // Handle band switching while dragging in band hints area
+    if (showBandHints && selectedBand >= 0) {
+        constexpr float barY = Layout::SpectrumAnalyzer::barY;
+        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
+        const float bandHintsTop = barY;
+        const float bandHintsBottom = barY + barH;
+
+        if (event.position.y >= bandHintsTop && event.position.y <= bandHintsBottom
+            && event.position.x >= spectrumArea.getX() && event.position.x <= spectrumArea.getRight()) {
+            // Band definitions: name, lo freq, hi freq
+            static constexpr std::array<std::tuple<const char *, float, float>, 7> kBands = {
+                {
+                    {"Sub", 20.0f, 80.0f},
+                    {"Low", 80.0f, 300.0f},
+                    {"Low-Mid", 300.0f, 600.0f},
+                    {"Mid", 600.0f, 2000.0f},
+                    {"Hi-Mid", 2000.0f, 6000.0f},
+                    {"High", 6000.0f, 12000.0f},
+                    {"Air", 12000.0f, 20000.0f},
+                }
+            };
+
+            const float dragFreq = range.xToFrequency(
+                event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
+
+            // Find which band we're dragging over
+            for (int i = 0; i < 7; ++i) {
+                const float lo = std::get<1>(kBands[i]);
+                const float hi = std::get<2>(kBands[i]);
+                if (dragFreq >= lo && dragFreq < hi) {
+                    if (selectedBand != i) {
+                        selectedBand = i;
+                        selectedBandLo = lo;
+                        selectedBandHi = hi;
+                        rebuildGridImage();
+                        repaint();
+
+                        const float centerFreq = (lo + hi) * 0.5f;
+                        const float bandWidth = hi - lo;
+                        const float q = centerFreq / bandWidth;
+
+                        if (onBandFilter)
+                            onBandFilter(true, centerFreq, q);
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
     if (auditingActive) {
         const float localX = juce::jlimit(0.0f, spectrumArea.getWidth(),
                                           event.position.x - spectrumArea.getX());
@@ -638,7 +692,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
 
     // Render at physical pixel resolution so text stays sharp on HiDPI displays.
     const float pixelScale = [this] {
-        if (const auto* d = juce::Desktop::getInstance().getDisplays().getDisplayForRect(getScreenBounds()))
+        if (const auto *d = juce::Desktop::getInstance().getDisplays().getDisplayForRect(getScreenBounds()))
             return static_cast<float>(d->scale);
         return 1.0f;
     }();
@@ -678,17 +732,8 @@ void SpectrumAnalyzer::rebuildGridImage() {
             const float xLo = sx + range.frequencyToX(lo, sw);
             const float xHi = sx + range.frequencyToX(hi, sw);
 
-            // Alternating fill on even bands
-            if (i % 2 == 0) {
-                g.setColour(bandHeaderColor.withAlpha(0.5f));
-                g.fillRoundedRectangle(xLo, barY, xHi - xLo, barH, Radius::cornerRadius);
-            }
-
             // Highlight selected band with accent color (drawn on top)
             if (i == selectedBand) {
-                g.setColour(juce::Colour(ColorPalette::blueAccent).withAlpha(0.4f));
-                g.fillRoundedRectangle(xLo, barY, xHi - xLo, barH, Radius::cornerRadius);
-
                 // Draw accent-colored vertical lines at band boundaries
                 g.setColour(juce::Colour(ColorPalette::blueAccent));
                 if (lo > range.minFreq) {
