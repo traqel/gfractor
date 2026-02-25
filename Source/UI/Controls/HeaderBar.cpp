@@ -6,7 +6,6 @@
 
 HeaderBar::HeaderBar(std::function<void()> settingsCallback,
                      std::function<void()> helpCallback) {
-
     // Settings button - non-toggle
     settingsPill.setClickingTogglesState(false);
     settingsPill.setToggleState(false, juce::dontSendNotification);
@@ -60,7 +59,7 @@ void HeaderBar::resized() {
     // Use FlexBox: logo (flex) + settings + help
     juce::FlexBox fb;
     fb.flexDirection = juce::FlexBox::Direction::row;
-    fb.alignItems = juce::FlexBox::AlignItems::center;
+    fb.alignItems = juce::FlexBox::AlignItems::flexEnd;
     fb.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
 
     using Item = juce::FlexItem;
@@ -72,10 +71,10 @@ void HeaderBar::resized() {
     fb.items.add(Item().withFlex(1.0f).withHeight(h));
 
     // Settings button
-    fb.items.add(Item(50, h, settingsPill).withMargin(Margin(0, Spacing::gapXS, 0, 0)));
+    fb.items.add(Item(42, h, settingsPill).withMargin(Margin(0, Spacing::gapM, Spacing::gapS, 0)));
 
     // Help button
-    fb.items.add(Item(50, h, helpPill));
+    fb.items.add(Item(42, h, helpPill).withMargin(Margin(0, Spacing::gapM, Spacing::gapS, 0)));
 
     const auto bounds = getLocalBounds();
     fb.performLayout(bounds);

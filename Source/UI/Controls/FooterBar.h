@@ -68,7 +68,7 @@ private:
     PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
     PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
     PillButton freezePill{
-        juce::String::fromUTF8(Symbols::pauseUTF8), juce::Colour(ColorPalette::blueAccent), true, 18.0f
+        juce::String::fromUTF8(Symbols::pauseUTF8), juce::Colour(ColorPalette::blueAccent), true
     };
     PillButton infinitePill{"Hold", juce::Colour(ColorPalette::blueAccent), true};
 

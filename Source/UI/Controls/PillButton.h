@@ -45,12 +45,20 @@ protected:
         const auto bounds = getLocalBounds().toFloat().reduced(0.5f);
         const bool on = getToggleState();
 
-        const auto drawButtonLabel = [&]() {
+        const auto drawButtonLabel = [&](juce::Colour textColour) {
             const auto font = Typography::makeBoldFont(buttonFontSize);
-            g.setFont(font);
+            const auto text = getButtonText();
 
-            const auto textBounds = getLocalBounds();
-            g.drawText(getButtonText().toUpperCase(), textBounds, juce::Justification::centred);
+            // Use TextLayout for better vertical centering
+            juce::AttributedString attrString;
+            attrString.append(text, font, textColour);
+            attrString.setJustification(juce::Justification::centred);
+
+            juce::TextLayout textLayout;
+            textLayout.createLayout(attrString,
+                                    static_cast<float>(getWidth()),
+                                    static_cast<float>(getHeight()));
+            textLayout.draw(g, getLocalBounds().toFloat());
         };
 
         if (!isEnabled()) {
@@ -58,8 +66,7 @@ protected:
             g.fillRoundedRectangle(bounds, Radius::cornerRadius);
             g.setColour(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
             g.drawRoundedRectangle(bounds, Radius::cornerRadius, 1.0f);
-            g.setColour(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
-            drawButtonLabel();
+            drawButtonLabel(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
             return;
         }
 
@@ -82,10 +89,9 @@ protected:
         }
 
         // Text
-        g.setColour(on
-                        ? juce::Colour(ColorPalette::textBright)
-                        : juce::Colour(ColorPalette::textMuted));
-        drawButtonLabel();
+        const auto textColour = on ? juce::Colour(ColorPalette::textBright)
+                                   : juce::Colour(ColorPalette::textMuted);
+        drawButtonLabel(textColour);
     }
 
 private:
