@@ -1,4 +1,5 @@
 #include "StereoMeteringPanel.h"
+#include "../../DSP/DSPConstants.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
@@ -146,9 +147,7 @@ void StereoMeteringPanel::computeWidthPerOctave() {
     };
 
     const float binHz = static_cast<float>(sampleRate) / static_cast<float>(kFftSize);
-    static constexpr float kSqrtHalf = 0.70710678118f;
-    static constexpr float kSqrtTwo = 1.41421356237f;
-    static constexpr float kEps = 1.0e-10f;
+    using namespace DSP::Correlation;
     const int numBins = kFftSize / 2 + 1;
 
     for (size_t b = 0; b < static_cast<size_t>(kNumBands); ++b) {

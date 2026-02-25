@@ -1,4 +1,5 @@
 #include "FFTProcessor.h"
+#include "DSPConstants.h"
 #include <cmath>
 
 FFTProcessor::FFTProcessor() {
@@ -6,7 +7,7 @@ FFTProcessor::FFTProcessor() {
 }
 
 void FFTProcessor::setFftOrder(const int order, const float newMinDb) {
-    jassert(order >= 10 && order <= 14);
+    jassert(order >= DSP::FFT::minOrder && order <= DSP::FFT::maxOrder);
 
     fftOrder = order;
     fftSize = 1 << order;
@@ -85,7 +86,7 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
     }
 
     // Convert to dB and apply temporal smoothing
-    const float normFactor = 4.0f / static_cast<float>(fftSize);
+    const float normFactor = DSP::FFT::normFactor / static_cast<float>(fftSize);
     for (int bin = 0; bin < numBins; ++bin) {
         const float midDbVal = juce::Decibels::gainToDecibels(
             fftDataMid[static_cast<size_t>(bin)] * normFactor, minDb);
@@ -133,7 +134,7 @@ void FFTProcessor::precomputeSlopeGains() {
         std::fill(slopeGains.begin(), slopeGains.end(), 1.0f);
         return;
     }
-    constexpr float pivotHz = 1000.0f;
+    constexpr float pivotHz = DSP::FFT::slopePivotHz;
     const auto sr = static_cast<float>(sampleRate);
     const auto fs = static_cast<float>(fftSize);
     slopeGains[0] = 1.0f;
@@ -149,11 +150,11 @@ void FFTProcessor::precomputeSmoothingRanges() {
     float ratio = 1.0f;
     switch (smoothingMode) {
         case SmoothingMode::None: break;
-        case SmoothingMode::ThirdOctave: ratio = 1.12246205f;
+        case SmoothingMode::ThirdOctave: ratio = DSP::FFT::Smoothing::thirdOctave;
             break;
-        case SmoothingMode::SixthOctave: ratio = 1.05946309f;
+        case SmoothingMode::SixthOctave: ratio = DSP::FFT::Smoothing::sixthOctave;
             break;
-        case SmoothingMode::TwelfthOctave: ratio = 1.02930224f;
+        case SmoothingMode::TwelfthOctave: ratio = DSP::FFT::Smoothing::twelfthOctave;
             break;
     }
 
