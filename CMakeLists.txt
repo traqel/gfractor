@@ -54,7 +54,7 @@ juce_add_plugin(${PLUGIN_NAME}
     NEEDS_MIDI_INPUT FALSE                  # Set TRUE if you need MIDI input
     NEEDS_MIDI_OUTPUT FALSE                 # Set TRUE if you need MIDI output
     IS_MIDI_EFFECT FALSE                    # Set TRUE for MIDI-only effects
-    EDITOR_WANTS_KEYBOARD_FOCUS FALSE       # Set TRUE if editor needs keyboard
+    EDITOR_WANTS_KEYBOARD_FOCUS TRUE        # Editor registers key listeners for shortcuts (f/m/s/r/p)
 
     # macOS audio permissions
     MICROPHONE_PERMISSION_ENABLED TRUE

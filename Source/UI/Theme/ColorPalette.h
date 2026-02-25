@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 
 namespace ColorPalette {
@@ -110,6 +111,18 @@ namespace ColorPalette {
         return darkTheme;
     }
 
+    // -------------------------------------------------------------------------
+    // Mutable theme state
+    //
+    // These are process-wide singletons: all plugin instances loaded in the same
+    // host process share the same theme. This is intentional — a consistent visual
+    // appearance across instances is desirable for a metering tool.
+    //
+    // THREADING: setTheme() and all reads of these variables MUST occur on the
+    // JUCE message thread. JUCE's paint system guarantees this for component
+    // callbacks. Never call setTheme() from the audio thread.
+    // -------------------------------------------------------------------------
+
     inline Theme currentTheme = Theme::Balanced;
 
     inline std::uint32_t background = balancedTheme.background;
@@ -181,6 +194,7 @@ namespace ColorPalette {
             case Theme::Light: return "Light";
             case Theme::Balanced: return "Balanced";
         }
+        assert(false && "unhandled Theme enum value — update getThemeName when adding themes");
         return "Dark";
     }
 } // namespace ColorPalette

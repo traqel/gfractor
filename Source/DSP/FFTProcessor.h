@@ -43,6 +43,14 @@ public:
     /** Set the minimum dB floor (used for gainToDecibels conversion). */
     void setMinDb(const float db) { minDb = db; }
 
+    /** Reset instant dB arrays to floor without reallocating any buffers.
+     *  Use this instead of setFftOrder() when you only need to clear displayed values. */
+    void resetInstantDb(const float newMinDb) {
+        minDb = newMinDb;
+        std::fill(instantMidDb.begin(), instantMidDb.end(), minDb);
+        std::fill(instantSideDb.begin(), instantSideDb.end(), minDb);
+    }
+
     /** Set the temporal decay factor (0..1, higher = slower decay). */
     void setTemporalDecay(const float decay) { temporalDecay = juce::jlimit(0.0f, 1.0f, decay); }
 

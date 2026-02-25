@@ -33,8 +33,9 @@ bool GhostSpectrum::processDrained(const int fftSize, const int hopSize,
     const auto &rollingR = ringBuffer.getR();
     const int writePos = ringBuffer.getWritePos();
 
-    // Walk backwards from current writePos to find virtual position
-    int virtualWritePos = (writePos - numNew + fftSize) % fftSize;
+    // Walk backwards from current writePos to find virtual position.
+    // Double-modulo keeps the result positive when numNew > fftSize.
+    int virtualWritePos = ((writePos - numNew) % fftSize + fftSize) % fftSize;
 
     for (int i = 0; i < numNew; ++i) {
         virtualWritePos = (virtualWritePos + 1) % fftSize;

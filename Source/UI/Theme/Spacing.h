@@ -1,4 +1,4 @@
- #pragma once
+#pragma once
 
 namespace Spacing {
     // Element padding (internal space within a component)

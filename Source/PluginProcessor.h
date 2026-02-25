@@ -87,6 +87,9 @@ public:
     void unregisterAudioDataSink(IAudioDataSink *sink);
 
     void setGhostDataSink(IGhostDataSink *sink) {
+        // Lock ensures the ghost pointer is set coherently with any concurrent
+        // audioDataSinks iteration in processBlock (ordering, not mutual exclusion —
+        // ghostDataSink.store() is itself atomic).
         const juce::SpinLock::ScopedLockType lock(sinkLock);
         ghostDataSink.store(sink);
     }

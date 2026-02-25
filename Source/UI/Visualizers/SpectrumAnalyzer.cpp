@@ -309,7 +309,10 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
     // The rolling buffer already contains all data; we advance a virtual write
     // position to trigger FFTs at the correct circular-buffer offsets.
     bool fftDataReady = false;
-    int virtualWritePos = (currentWritePos - numNewSamples + fftSize) % fftSize;
+    // Double-modulo ensures the result is positive even when numNewSamples > fftSize
+    // (e.g. a 4096-sample DAW buffer with a 2048-point FFT). A single "+ fftSize"
+    // guard is insufficient in that case.
+    int virtualWritePos = ((currentWritePos - numNewSamples) % fftSize + fftSize) % fftSize;
 
     for (int i = 0; i < numNewSamples; ++i) {
         virtualWritePos = (virtualWritePos + 1) % fftSize;
@@ -323,12 +326,20 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         }
     }
 
-    // Process ghost FIFO (opposite signal for comparison)
+    // Process ghost FIFO (opposite signal for comparison).
+    // THREAD-SAFETY: ghostSpectrum reuses fftProcessor's work buffers (fftDataMid/Side)
+    // and FFT engine. This is safe because:
+    //   1. Both paths run exclusively on the UI timer thread.
+    //   2. Main hops (above) always finish before this call.
+    //   3. captureInstant defaults to false, so instantMidDb/SideDb are not overwritten.
+    // If ghost processing is ever moved off the UI thread, this invariant must be revisited.
     const bool ghostFftReady = ghostSpectrum.processDrained(fftSize, hopSize,
                                                             [this](const std::vector<float> &srcL,
                                                                    const std::vector<float> &srcR, const int wp,
                                                                    std::vector<float> &outMid,
                                                                    std::vector<float> &outSide) {
+                                                                // captureInstant = false (default): does not
+                                                                // stomp instantMidDb/SideDb used by the tooltip.
                                                                 fftProcessor.processBlock(
                                                                     srcL, srcR, wp, outMid, outSide);
                                                             });
@@ -466,7 +477,7 @@ void SpectrumAnalyzer::clearAllCurves() {
     const auto nb = static_cast<size_t>(numBins);
     smoothedMidDb.assign(nb, range.minDb);
     smoothedSideDb.assign(nb, range.minDb);
-    fftProcessor.setFftOrder(fftOrder, range.minDb); // resets instant dB arrays
+    fftProcessor.resetInstantDb(range.minDb); // clear instant arrays without reallocating
     ghostSpectrum.resetBuffers(fftSize, range.minDb);
     midPath.clear();
     sidePath.clear();

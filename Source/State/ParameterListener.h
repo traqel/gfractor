@@ -46,6 +46,7 @@ public:
         : apvtsRef(apvts), dspRef(dsp) {
         // Register as listener for all parameters
         apvtsRef.addParameterListener(ParameterIDs::gain, this);
+        apvtsRef.addParameterListener(ParameterIDs::dryWet, this);
         apvtsRef.addParameterListener(ParameterIDs::bypass, this);
         apvtsRef.addParameterListener(ParameterIDs::outputMidEnable, this);
         apvtsRef.addParameterListener(ParameterIDs::outputSideEnable, this);
@@ -59,6 +60,7 @@ public:
      */
     ~ParameterListener() override {
         apvtsRef.removeParameterListener(ParameterIDs::gain, this);
+        apvtsRef.removeParameterListener(ParameterIDs::dryWet, this);
         apvtsRef.removeParameterListener(ParameterIDs::bypass, this);
         apvtsRef.removeParameterListener(ParameterIDs::outputMidEnable, this);
         apvtsRef.removeParameterListener(ParameterIDs::outputSideEnable, this);
@@ -75,6 +77,8 @@ public:
     void parameterChanged(const juce::String &parameterID, const float newValue) override {
         if (parameterID == ParameterIDs::gain) {
             dspRef.setGain(newValue);
+        } else if (parameterID == ParameterIDs::dryWet) {
+            dspRef.setDryWet(newValue / 100.0f); // parameter is 0–100%, DSP expects 0–1
         } else if (parameterID == ParameterIDs::bypass) {
             dspRef.setBypassed(newValue > 0.5f);
         } else if (parameterID == ParameterIDs::outputMidEnable) {
@@ -94,6 +98,9 @@ public:
 
         if (gainParam != nullptr)
             dspRef.setGain(gainParam->load());
+
+        if (const auto *dryWetParam = apvtsRef.getRawParameterValue(ParameterIDs::dryWet))
+            dspRef.setDryWet(dryWetParam->load() / 100.0f);
 
         if (bypassParam != nullptr)
             dspRef.setBypassed(bypassParam->load() > 0.5f);

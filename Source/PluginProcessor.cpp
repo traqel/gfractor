@@ -19,6 +19,10 @@ gFractorAudioProcessor::gFractorAudioProcessor()
     :
 #endif
       apvts(*this, nullptr, "Parameters", ParameterLayout::createParameterLayout()) {
+    // Pre-reserve sink storage so push_back never reallocates while sinkLock is held
+    // on the audio thread. 8 slots is ample for all foreseeable editor-owned sinks.
+    audioDataSinks.reserve(8);
+
     // Create parameter listener to automatically sync APVTS changes to DSP
     parameterListener = std::make_unique<ParameterListener>(apvts, dspProcessor);
 }
