@@ -24,4 +24,6 @@ struct ISpectrumControls {
     virtual void setPlayRef(bool reference) = 0;
 
     virtual void setPeakLevels(float midDb, float sideDb) = 0;
+
+    virtual void setBandFilter(bool active, float frequencyHz, float q) = 0;
 };

@@ -78,6 +78,9 @@ public:
     /** Callback for transient audition filter (set by PluginEditor) */
     std::function<void(bool active, float freqHz, float q)> onAuditFilter;
 
+    /** Callback for band selection filter (set by PluginEditor) */
+    std::function<void(bool active, float freqHz, float q)> onBandFilter;
+
     //==============================================================================
     // ISpectrumControls implementation
 
@@ -123,6 +126,12 @@ public:
 
     void setChannelMode(const int mode) override {
         setChannelMode(mode == 0 ? ChannelMode::MidSide : ChannelMode::LR);
+    }
+
+    /** Band selection filter - forwards to onBandFilter callback */
+    void setBandFilter(const bool active, const float frequencyHz, const float q) override {
+        if (onBandFilter)
+            onBandFilter(active, frequencyHz, q);
     }
 
     //==============================================================================
@@ -303,6 +312,7 @@ private:
     SpectrumTooltip tooltip;
 
     bool showBandHints = true;
+    int selectedBand = -1; // -1 means none selected, 0-6 are the 7 frequency bands
     bool frozen = false;
 
     // Infinite peak hold
@@ -317,7 +327,6 @@ private:
 
     // Display slope tilt (-9 to +9 dB)
     float slopeDb = 0.0f;
-
 
     bool auditingActive = false;
     float currentAuditFreq = Layout::SpectrumAnalyzer::defaultAuditFreq;

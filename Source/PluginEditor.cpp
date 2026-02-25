@@ -85,6 +85,11 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         audioProcessor.setAuditFilter(active, freq, q);
     };
 
+    // Wire band selection filter callback (click on band hints -> bandpass filter)
+    spectrumAnalyzer.onBandFilter = [this](const bool active, const float freq, const float q) {
+        audioProcessor.setBandFilter(active, freq, q);
+    };
+
     // Add header and footer bars
     addAndMakeVisible(headerBar);
     addAndMakeVisible(footerBar);

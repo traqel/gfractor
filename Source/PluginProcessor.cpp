@@ -255,6 +255,10 @@ void gFractorAudioProcessor::setAuditFilter(const bool active, const float frequ
     dspProcessor.setAuditFilter(active, frequencyHz, q);
 }
 
+void gFractorAudioProcessor::setBandFilter(const bool active, const float frequencyHz, const float q) {
+    dspProcessor.setBandFilter(active, frequencyHz, q);
+}
+
 //==============================================================================
 // This creates new instances of the plugin
 juce::AudioProcessor * JUCE_CALLTYPE createPluginFilter() {

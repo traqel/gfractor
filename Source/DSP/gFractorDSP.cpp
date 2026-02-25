@@ -20,6 +20,12 @@ void gFractorDSP::prepare(const juce::dsp::ProcessSpec &spec) {
     auditBellFilter1.reset();
     auditBellFilter2.reset();
 
+    // Prepare band selection filter (4th order = two cascaded 2nd-order stages)
+    bandFilter1.prepare(spec);
+    bandFilter2.prepare(spec);
+    bandFilter1.reset();
+    bandFilter2.reset();
+
     isPrepared = true;
 }
 
@@ -92,6 +98,27 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
         lastAuditQ = -1.0f;
     }
 
+    // Band selection filter — 4th order (two cascaded 2nd-order BPFs)
+    if (bandFilterActive.load(std::memory_order_relaxed)) {
+        const float freq = bandFilterFreq.load(std::memory_order_relaxed);
+        if (const float q = bandFilterQ.load(std::memory_order_relaxed);
+            std::abs(freq - lastBandFreq) > 0.01f || std::abs(q - lastBandQ) > 0.01f) {
+            const auto coeffs = juce::dsp::IIR::Coefficients<float>::makeBandPass(
+                currentSpec.sampleRate, freq, q);
+            *bandFilter1.state = *coeffs;
+            *bandFilter2.state = *coeffs;
+            lastBandFreq = freq;
+            lastBandQ = q;
+        }
+        bandFilter1.process(context);
+        bandFilter2.process(context);
+    } else if (lastBandFreq > 0.0f) {
+        bandFilter1.reset();
+        bandFilter2.reset();
+        lastBandFreq = -1.0f;
+        lastBandQ = -1.0f;
+    }
+
     // Mid/Side output filtering (only in M/S mode when at least one channel is disabled)
     if (!lrMode && (!midEnabled || !sideEnabled)) {
         if (block.getNumChannels() >= 2) {
@@ -121,6 +148,8 @@ void gFractorDSP::reset() {
     dryWetMixer.reset();
     auditBellFilter1.reset();
     auditBellFilter2.reset();
+    bandFilter1.reset();
+    bandFilter2.reset();
 }
 
 void gFractorDSP::setGain(const float gainDB) {
@@ -163,4 +192,10 @@ void gFractorDSP::setAuditFilter(const bool active, const float frequencyHz, con
     auditFilterFreq.store(frequencyHz, std::memory_order_relaxed);
     auditFilterQ.store(q, std::memory_order_relaxed);
     auditFilterActive.store(active, std::memory_order_relaxed);
+}
+
+void gFractorDSP::setBandFilter(const bool active, const float frequencyHz, const float q) {
+    bandFilterFreq.store(frequencyHz, std::memory_order_relaxed);
+    bandFilterQ.store(q, std::memory_order_relaxed);
+    bandFilterActive.store(active, std::memory_order_relaxed);
 }

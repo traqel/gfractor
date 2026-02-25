@@ -50,6 +50,9 @@ public:
     /** Transient audition bell filter (UI thread sets, audio thread reads) */
     void setAuditFilter(bool active, float frequencyHz, float q);
 
+    /** Band selection filter for isolating frequency bands (UI thread sets, audio thread reads) */
+    void setBandFilter(bool active, float frequencyHz, float q);
+
     /** Peak level metering (realtime-safe, atomic reads) */
     float getPeakMidDb() const { return peakMidDb.load(std::memory_order_relaxed); }
     float getPeakSideDb() const { return peakSideDb.load(std::memory_order_relaxed); }
@@ -89,6 +92,16 @@ private:
     IIRDuplicator auditBellFilter2;
     float lastAuditFreq = -1.0f;
     float lastAuditQ = -1.0f;
+
+    //==============================================================================
+    // Band selection filter — 4th order (two cascaded 2nd-order BPFs)
+    std::atomic<bool> bandFilterActive{false};
+    std::atomic<float> bandFilterFreq{1000.0f};
+    std::atomic<float> bandFilterQ{1.0f};
+    IIRDuplicator bandFilter1;
+    IIRDuplicator bandFilter2;
+    float lastBandFreq = -1.0f;
+    float lastBandQ = -1.0f;
 
     //==============================================================================
     // Peak level metering (written on audio thread, read on UI thread)
