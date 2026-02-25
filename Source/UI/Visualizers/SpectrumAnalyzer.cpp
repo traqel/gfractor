@@ -215,7 +215,7 @@ void SpectrumAnalyzer::paintSelectedBand(juce::Graphics &g) const {
 
     // Draw vertical gradient fill for the selected band frequency range
     const auto gradient = juce::ColourGradient::vertical(
-        juce::Colour(ColorPalette::blueAccent).withAlpha(0.0f),  // top (transparent)
+        juce::Colour(ColorPalette::blueAccent).withAlpha(0.0f), // top (transparent)
         sy,
         juce::Colour(ColorPalette::blueAccent).withAlpha(0.15f), // bottom
         sy + sh);
@@ -680,7 +680,8 @@ void SpectrumAnalyzer::rebuildGridImage() {
                        juce::Justification::centred, false);
 
             // Divider at the right boundary (only when it falls inside the view and not selected)
-            if (i != static_cast<size_t>(selectedBand) && kBands[i].hi > range.minFreq && kBands[i].hi < range.maxFreq) {
+            if (i != static_cast<size_t>(selectedBand) && kBands[i].hi > range.minFreq && kBands[i].hi < range.
+                maxFreq) {
                 g.setColour(gridColour);
                 const float divX = sx + range.frequencyToX(kBands[i].hi, sw);
                 g.drawVerticalLine(static_cast<int>(divX), barY, barY + barH);

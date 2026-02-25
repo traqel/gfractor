@@ -340,7 +340,8 @@ private:
         {"Air", 12000.0f, 20000.0f},
     }};
 
-    // Helper functions for band selection
+public:
+    // Helper functions for band selection (public for testing)
     static BandInfo getBandInfo(size_t bandIndex) {
         const auto& band = kBands[bandIndex];
         const float centerFreq = (band.lo + band.hi) * 0.5f;
