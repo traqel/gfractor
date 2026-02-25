@@ -141,7 +141,7 @@ void SpectrumTooltip::paintTooltip(juce::Graphics &g, const juce::Rectangle<floa
     g.setColour(juce::Colour(ColorPalette::textLight));
     g.drawText(freqStr, ttTextX, ttTextY, rowW, ttRowH, juce::Justification::centredLeft);
     g.drawText(dbStr, ttTextX, ttTextY + ttRowH, rowW, ttRowH, juce::Justification::centredLeft);
-    g.setColour(juce::Colour(ColorPalette::textMuted));
+    g.setColour(juce::Colour(ColorPalette::midGreen));
     g.drawText(noteStr, ttTextX, ttTextY + ttRowH * 2, rowW, ttRowH, juce::Justification::centredLeft);
 }
 

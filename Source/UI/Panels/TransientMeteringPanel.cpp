@@ -1,10 +1,11 @@
 #include "TransientMeteringPanel.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
 
 //==============================================================================
-static constexpr int kFifoCapacity = 8192;
-static constexpr int kRollingSize  = 1 << 10; // 1024
+static constexpr int kFifoCapacity = Layout::TransientMetering::fifoCapacity;
+static constexpr int kRollingSize  = Layout::TransientMetering::trailSize;
 
 TransientMeteringPanel::TransientMeteringPanel()
     : AudioVisualizerBase(kFifoCapacity, kRollingSize) {
@@ -105,7 +106,7 @@ void TransientMeteringPanel::processDrainedData(const int numNewSamples) {
 //==============================================================================
 void TransientMeteringPanel::resized() {
     constexpr int titleH   = 24;
-    constexpr int readoutH = 90; // 3 horizontal meter rows (30 px each)
+    constexpr int readoutH = Layout::TransientMetering::readoutHeight;
 
     auto bounds = getLocalBounds();
     titleArea   = bounds.removeFromTop(titleH);
@@ -175,7 +176,7 @@ void TransientMeteringPanel::paintPlot(juce::Graphics &g) const {
 }
 
 void TransientMeteringPanel::paintReadouts(juce::Graphics &g) const {
-    constexpr int labelW = 66;
+    constexpr int labelW = Layout::TransientMetering::labelWidth;
     constexpr int padX   =  4;
     constexpr int padY   =  2;
 

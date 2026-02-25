@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../Theme/LayoutConstants.h"
 
 /**
  * HelpPanel
@@ -15,8 +16,8 @@ public:
 
     void paint(juce::Graphics &g) override;
 
-    static constexpr int panelWidth = 340;
-    static constexpr int panelHeight = 436;
+    static constexpr int panelWidth = Layout::HelpPanel::panelWidth;
+    static constexpr int panelHeight = Layout::HelpPanel::panelHeight;
 
     /** Set by PluginEditor — called when the panel should close. */
     std::function<void()> onClose;

@@ -8,33 +8,7 @@
 gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcessor &p)
     : AudioProcessorEditor(&p),
       audioProcessor(p),
-      footerBar(audioProcessor, spectrumAnalyzer, audioProcessor, [this]() {
-          // Settings callback — toggle preference panel overlay
-          if (preferencePanel == nullptr) {
-              helpPanel.reset(); // close help panel if open
-              preferencePanel = std::make_unique<PreferencePanel>(spectrumAnalyzer, [this]() {
-                  applyTheme();
-              });
-              preferencePanel->onClose = [this]() {
-                  preferencePanel.reset();
-                  panelBackdrop.reset();
-              };
-              panelBackdrop = std::make_unique<PanelBackdrop>();
-              panelBackdrop->onMouseDown = [this]() {
-                  if (preferencePanel != nullptr) preferencePanel->cancel();
-                  else if (helpPanel != nullptr) {
-                      helpPanel.reset();
-                      panelBackdrop.reset();
-                  }
-              };
-              addAndMakeVisible(panelBackdrop.get());
-              addAndMakeVisible(preferencePanel.get());
-              resized();
-          } else {
-              preferencePanel.reset();
-              panelBackdrop.reset();
-          }
-      }) {
+      footerBar(audioProcessor, spectrumAnalyzer, audioProcessor) {
     ColorPalette::setTheme(AnalyzerSettings::loadTheme());
 
     // Set custom LookAndFeel
@@ -75,6 +49,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
 
     // Load globally saved analyzer preferences (dB/freq range, colors, slope)
     AnalyzerSettings::load(spectrumAnalyzer);
+    spectrumAnalyzer.setBandHintsVisible(AnalyzerSettings::loadBandHints());
     footerBar.syncAnalyzerState();
 
     // Wire audition filter callback (right-click in analyzer -> bell filter)
@@ -82,8 +57,71 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         audioProcessor.setAuditFilter(active, freq, q);
     };
 
+    // Wire band selection filter callback (click on band hints -> bandpass filter)
+    spectrumAnalyzer.onBandFilter = [this](const bool active, const float freq, const float q) {
+        audioProcessor.setBandFilter(active, freq, q);
+    };
+
+    // Create header bar with settings and help callbacks
+    headerBar = std::make_unique<HeaderBar>(
+        [this]() {
+            // Settings callback — toggle preference panel overlay
+            if (preferencePanel == nullptr) {
+                helpPanel.reset(); // close help panel if open
+                preferencePanel = std::make_unique<PreferencePanel>(
+                    spectrumAnalyzer,
+                    [this]() { applyTheme(); },
+                    spectrumAnalyzer.getBandHintsVisible(),
+                    [this](const bool v) { spectrumAnalyzer.setBandHintsVisible(v); });
+                preferencePanel->onClose = [this]() {
+                    preferencePanel.reset();
+                    panelBackdrop.reset();
+                };
+                panelBackdrop = std::make_unique<PanelBackdrop>();
+                panelBackdrop->onMouseDown = [this]() {
+                    if (preferencePanel != nullptr) preferencePanel->cancel();
+                    else if (helpPanel != nullptr) {
+                        helpPanel.reset();
+                        panelBackdrop.reset();
+                    }
+                };
+                addAndMakeVisible(panelBackdrop.get());
+                addAndMakeVisible(preferencePanel.get());
+                resized();
+            } else {
+                preferencePanel->cancel();
+            }
+        },
+        [this]() {
+            // Help callback
+            if (helpPanel != nullptr) {
+                helpPanel.reset();
+                panelBackdrop.reset();
+                return;
+            }
+            // Close settings if open
+            if (preferencePanel != nullptr) {
+                preferencePanel->cancel();
+            }
+            helpPanel = std::make_unique<HelpPanel>();
+            helpPanel->onClose = [this]() {
+                helpPanel.reset();
+                panelBackdrop.reset();
+            };
+            panelBackdrop = std::make_unique<PanelBackdrop>();
+            panelBackdrop->onMouseDown = [this]() {
+                if (helpPanel != nullptr) {
+                    helpPanel.reset();
+                    panelBackdrop.reset();
+                } else if (preferencePanel != nullptr) preferencePanel->cancel();
+            };
+            addAndMakeVisible(panelBackdrop.get());
+            addAndMakeVisible(helpPanel.get());
+            resized();
+        });
+
     // Add header and footer bars
-    addAndMakeVisible(headerBar);
+    addAndMakeVisible(*headerBar);
     addAndMakeVisible(footerBar);
 
     // Wire reference pill callback
@@ -102,34 +140,6 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     footerBar.getTransientPill().onClick = [this]() {
         transientVisible = footerBar.getTransientPill().getToggleState();
         transientMeteringPanel.setVisible(transientVisible);
-        resized();
-    };
-
-    // Wire help pill callback
-    footerBar.getHelpPill().onClick = [this]() {
-        if (helpPanel != nullptr) {
-            helpPanel.reset();
-            panelBackdrop.reset();
-            return;
-        }
-        // Close settings if open
-        if (preferencePanel != nullptr) {
-            preferencePanel->cancel(); // reverts + fires onClose which resets both
-        }
-        helpPanel = std::make_unique<HelpPanel>();
-        helpPanel->onClose = [this]() {
-            helpPanel.reset();
-            panelBackdrop.reset();
-        };
-        panelBackdrop = std::make_unique<PanelBackdrop>();
-        panelBackdrop->onMouseDown = [this]() {
-            if (helpPanel != nullptr) {
-                helpPanel.reset();
-                panelBackdrop.reset();
-            } else if (preferencePanel != nullptr) preferencePanel->cancel();
-        };
-        addAndMakeVisible(panelBackdrop.get());
-        addAndMakeVisible(helpPanel.get());
         resized();
     };
 
@@ -229,7 +239,7 @@ void gFractorAudioProcessorEditor::resized() {
     }
 
     // Three-zone layout: header, spectrum, footer
-    headerBar.setBounds(bounds.removeFromTop(Spacing::headerHeight));
+    headerBar->setBounds(bounds.removeFromTop(Spacing::headerHeight));
     footerBar.setBounds(bounds.removeFromBottom(Spacing::footerHeight));
     auto analyzerBounds = bounds;
     constexpr int dividerW = 5;

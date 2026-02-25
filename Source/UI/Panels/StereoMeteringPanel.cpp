@@ -1,10 +1,12 @@
 #include "StereoMeteringPanel.h"
+#include "../../DSP/DSPConstants.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
 
 //==============================================================================
-static constexpr int kFifoCapacity = 8192;
-static constexpr int kRollingSize = 1 << 10; // 1024, matches kFftSize
+static constexpr int kFifoCapacity = Layout::StereoMetering::fifoCapacity;
+static constexpr int kRollingSize = Layout::StereoMetering::rollingSize;
 
 StereoMeteringPanel::StereoMeteringPanel()
     : AudioVisualizerBase(kFifoCapacity, kRollingSize),
@@ -145,9 +147,7 @@ void StereoMeteringPanel::computeWidthPerOctave() {
     };
 
     const float binHz = static_cast<float>(sampleRate) / static_cast<float>(kFftSize);
-    static constexpr float kSqrtHalf = 0.70710678118f;
-    static constexpr float kSqrtTwo = 1.41421356237f;
-    static constexpr float kEps = 1.0e-10f;
+    using namespace DSP::Correlation;
     const int numBins = kFftSize / 2 + 1;
 
     for (size_t b = 0; b < static_cast<size_t>(kNumBands); ++b) {
@@ -170,8 +170,8 @@ void StereoMeteringPanel::computeWidthPerOctave() {
 
 //==============================================================================
 void StereoMeteringPanel::resized() {
-    constexpr int corrH = 62;
-    constexpr int widthH = 94;
+    constexpr int corrH = Layout::StereoMetering::correlationHeight;
+    constexpr int widthH = Layout::StereoMetering::widthHeight;
 
     const int w = getWidth();
     const int h = getHeight();
@@ -184,7 +184,7 @@ void StereoMeteringPanel::resized() {
     widthArea = getLocalBounds().withTrimmedTop(gonioSide + corrH);
 
     // Goniometer image: square, centred below the title label
-    constexpr int gonioTitleH = 20;
+    constexpr int gonioTitleH = Layout::StereoMetering::gonioTitleHeight;
     const int drawSide = juce::jmax(1, juce::jmin(w, gonioSide - gonioTitleH));
     gonioDrawArea = gonioArea.withTrimmedTop(gonioTitleH).withSizeKeepingCentre(drawSide, drawSide);
 
@@ -245,8 +245,8 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
 }
 
 void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
-    constexpr int labelH = 20;
-    constexpr int pad = 4;
+    constexpr int labelH = Layout::StereoMetering::labelHeight;
+    constexpr int pad = Layout::StereoMetering::labelPadding;
 
     auto area = corrArea;
 
@@ -262,9 +262,9 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     g.setColour(juce::Colour(ColorPalette::spectrumBg));
     g.fillRect(barBounds);
 
-    const float barW = static_cast<float>(barBounds.getWidth());
-    const float barTop = static_cast<float>(barBounds.getY());
-    const float barBot = static_cast<float>(barBounds.getBottom());
+    const auto barW = static_cast<float>(barBounds.getWidth());
+    const auto barTop = static_cast<float>(barBounds.getY());
+    const auto barBot = static_cast<float>(barBounds.getBottom());
     const float barH = barBot - barTop;
     const float cx = barBounds.getX() + barW * 0.5f;
     const float fillT = (correlationDisplay + 1.0f) * 0.5f;
@@ -315,10 +315,10 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
 }
 
 void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
-    constexpr int labelH = 20;
-    constexpr int freqH = 20;
-    constexpr int pad = 4;
-    constexpr int labelTopPad = 2;
+    constexpr int labelH = Layout::StereoMetering::labelHeight;
+    constexpr int freqH = Layout::StereoMetering::frequencyLabelHeight;
+    constexpr int pad = Layout::StereoMetering::labelPadding;
+    constexpr int labelTopPad = Layout::StereoMetering::labelTopPadding;
 
     // Work on a local copy — removeFromTop/Bottom mutate the rectangle
     auto area = widthArea;

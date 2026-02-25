@@ -13,6 +13,7 @@
 #include "../ISpectrumControls.h"
 #include "../ISpectrumDisplaySettings.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../../Utility/ChannelMode.h"
 #include "../../Utility/DisplayRange.h"
 #include "../../DSP/IAudioDataSink.h"
@@ -77,6 +78,9 @@ public:
     /** Callback for transient audition filter (set by PluginEditor) */
     std::function<void(bool active, float freqHz, float q)> onAuditFilter;
 
+    /** Callback for band selection filter (set by PluginEditor) */
+    std::function<void(bool active, float freqHz, float q)> onBandFilter;
+
     //==============================================================================
     // ISpectrumControls implementation
 
@@ -122,6 +126,12 @@ public:
 
     void setChannelMode(const int mode) override {
         setChannelMode(mode == 0 ? ChannelMode::MidSide : ChannelMode::LR);
+    }
+
+    /** Band selection filter - forwards to onBandFilter callback */
+    void setBandFilter(const bool active, const float frequencyHz, const float q) override {
+        if (onBandFilter)
+            onBandFilter(active, frequencyHz, q);
     }
 
     //==============================================================================
@@ -191,6 +201,14 @@ public:
 
     void applyTheme();
 
+    void setBandHintsVisible(const bool visible) {
+        showBandHints = visible;
+        rebuildGridImage();
+        repaint();
+    }
+
+    bool getBandHintsVisible() const { return showBandHints; }
+
     float getSlope() const override { return slopeDb; }
 
     // ISpectrumDisplaySettings getters
@@ -204,7 +222,7 @@ public:
     juce::Colour getRefSideColour() const override { return refSideColour; }
 
     /** Left margin reserved for dB axis labels — used by FooterBar to align its buttons. */
-    static constexpr int leftMargin = 40;
+    static constexpr int leftMargin = Layout::SpectrumAnalyzer::leftMargin;
 
 protected:
     //==============================================================================
@@ -217,10 +235,10 @@ private:
     //==============================================================================
     // FFT configuration
     static constexpr int defaultFftOrder = Defaults::fftOrder;
-    static constexpr int maxFftOrder = 14;
+    static constexpr int maxFftOrder = Layout::SpectrumAnalyzer::fftMaxOrder;
     static constexpr int maxFifoCapacity = (1 << maxFftOrder) * 2; // 32768
-    static constexpr int minOverlapFactor = 2;
-    static constexpr int maxOverlapFactor = 8;
+    static constexpr int minOverlapFactor = Layout::SpectrumAnalyzer::minOverlapFactor;
+    static constexpr int maxOverlapFactor = Layout::SpectrumAnalyzer::maxOverlapFactor;
 
     // Runtime-configurable dimensions (updated by setFftOrder)
     int fftOrder = defaultFftOrder;
@@ -246,15 +264,15 @@ private:
     juce::Image gridImage;
 
     // Layout margins for labels outside spectrum area
-    static constexpr int topMargin = 24;
-    static constexpr int rightMargin = 22; // widened to fit M/S level meters
-    static constexpr int bottomMargin = 26;
+    static constexpr int topMargin = Layout::SpectrumAnalyzer::topMargin;
+    static constexpr int rightMargin = Layout::SpectrumAnalyzer::rightMargin;
+    static constexpr int bottomMargin = Layout::SpectrumAnalyzer::bottomMargin;
     juce::Rectangle<float> spectrumArea;
 
     DisplayRange range;
 
     // Log-spaced path decimation (numPathPoints is fixed — doesn't depend on fftSize)
-    static constexpr int numPathPoints = 256;
+    static constexpr int numPathPoints = Layout::SpectrumAnalyzer::numPathPoints;
 
     struct PathPoint {
         float x;
@@ -280,8 +298,9 @@ private:
     bool sidechainAvailable = false;
     juce::Colour backgroundColour{ColorPalette::spectrumBg};
     juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
-    juce::Colour textColour{ColorPalette::textMuted};
+    juce::Colour textColour{ColorPalette::textBright};
     juce::Colour hintColour{ColorPalette::hintPink};
+    juce::Colour bandHeaderColor{ColorPalette::spectrumBorder};
 
     // Right-side M/S peak level meters
     float meterMidDb = -100.0f;
@@ -292,6 +311,59 @@ private:
     // Tooltip + range bars overlay
     SpectrumTooltip tooltip;
 
+    bool showBandHints = true;
+    int selectedBand = -1; // -1 means none selected, 0-6 are the 7 frequency bands
+    float selectedBandLo = 0.0f; // Low frequency of selected band
+    float selectedBandHi = 0.0f; // High frequency of selected band
+
+    // Band definitions for band selection feature
+    struct Band {
+        const char* name;
+        float lo;
+        float hi;
+    };
+
+    struct BandInfo {
+        float lo;
+        float hi;
+        float centerFreq;
+        float q;
+    };
+
+    static constexpr std::array<Band, 7> kBands = {{
+        {"Sub", 20.0f, 80.0f},
+        {"Low", 80.0f, 300.0f},
+        {"Low-Mid", 300.0f, 600.0f},
+        {"Mid", 600.0f, 2000.0f},
+        {"Hi-Mid", 2000.0f, 6000.0f},
+        {"High", 6000.0f, 12000.0f},
+        {"Air", 12000.0f, 20000.0f},
+    }};
+
+public:
+    // Helper functions for band selection (public for testing)
+    static BandInfo getBandInfo(size_t bandIndex) {
+        const auto& band = kBands[bandIndex];
+        const float centerFreq = (band.lo + band.hi) * 0.5f;
+        const float bandWidth = band.hi - band.lo;
+        return {band.lo, band.hi, centerFreq, centerFreq / bandWidth};
+    }
+
+    static int findBandAtFrequency(float frequency) {
+        for (size_t i = 0; i < kBands.size(); ++i) {
+            if (frequency >= kBands[i].lo && frequency < kBands[i].hi) {
+                return static_cast<int>(i);
+            }
+        }
+        return -1;
+    }
+
+    bool isInBandHintsArea(const juce::Point<float>& position) const {
+        constexpr float barY = Layout::SpectrumAnalyzer::barY;
+        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
+        return position.y >= barY && position.y <= barY + barH
+            && position.x >= spectrumArea.getX() && position.x <= spectrumArea.getRight();
+    }
     bool frozen = false;
 
     // Infinite peak hold
@@ -299,7 +371,7 @@ private:
     int peakHoldThrottleCounter = 0;
     bool pendingPeakHoldMainRebuild = false;
     bool pendingPeakHoldGhostRebuild = false;
-    static constexpr int peakHoldRebuildIntervalFrames = 3; // ~20 Hz at 60 Hz UI timer
+    static constexpr int peakHoldRebuildIntervalFrames = Layout::SpectrumAnalyzer::peakHoldRebuildInterval;
 
     void clearAllCurves();
 
@@ -307,21 +379,21 @@ private:
     // Display slope tilt (-9 to +9 dB)
     float slopeDb = 0.0f;
 
-
     bool auditingActive = false;
-    float currentAuditFreq = 1000.0f;
-    float currentAuditQ = 4.0f;
+    float currentAuditFreq = Layout::SpectrumAnalyzer::defaultAuditFreq;
+    float currentAuditQ = Layout::SpectrumAnalyzer::defaultAuditQ;
     juce::Path auditFilterPath;
     juce::Colour auditFilterColour{ColorPalette::textBright};
 
     juce::String cachedAuditLabel;
     int cachedAuditLabelW = 0;
+
     void updateAuditLabel();
 
     void buildAuditFilterPath(float width, float height);
 
-    static constexpr float minAuditQ = 0.5f;
-    static constexpr float maxAuditQ = 10.0f;
+    static constexpr float minAuditQ = Layout::SpectrumAnalyzer::minAuditQ;
+    static constexpr float maxAuditQ = Layout::SpectrumAnalyzer::maxAuditQ;
 
     static float yToAuditQ(float localY, float height);
 
@@ -337,9 +409,11 @@ private:
     mutable juce::Colour lastGradMidCol;
     mutable juce::Colour lastGradSideCol;
     mutable float lastGradTy = -1.0f;
-    mutable float lastGradH  = -1.0f;
+    mutable float lastGradH = -1.0f;
 
     void paintAuditFilter(juce::Graphics &g) const;
+
+    void paintSelectedBand(juce::Graphics &g) const;
 
     SmoothingMode smoothingMode = Defaults::smoothing;
     float curveDecay = Defaults::curveDecay;

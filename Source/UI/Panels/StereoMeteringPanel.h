@@ -4,10 +4,10 @@
 #include <juce_dsp/juce_dsp.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
-#include <cstdint>
 #include <vector>
 
 #include "../Visualizers/AudioVisualizerBase.h"
+#include "../Theme/LayoutConstants.h"
 #include "../../DSP/IAudioDataSink.h"
 
 /**
@@ -65,8 +65,8 @@ private:
 
     //==============================================================================
     // FFT for width-per-octave (UI thread only)
-    static constexpr int kFftOrder = 10;
-    static constexpr int kFftSize = 1 << kFftOrder; // 1024
+    static constexpr int kFftOrder = Layout::StereoMetering::fftOrder;
+    static constexpr int kFftSize = Layout::StereoMetering::fftSize;
     std::unique_ptr<juce::dsp::FFT> fft;
     std::vector<float> hannWindow;
     std::vector<float> fftWorkMid, fftWorkSide; // size = kFftSize * 2
@@ -83,7 +83,7 @@ private:
 
     //==============================================================================
     // Width per octave
-    static constexpr int kNumBands = 10;
+    static constexpr int kNumBands = Layout::StereoMetering::numBands;
     std::array<float, kNumBands> bandWidths{};
 
     //==============================================================================

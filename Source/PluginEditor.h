@@ -74,8 +74,8 @@ private:
     static constexpr int kMinPanelW = 120;
     static constexpr int kMaxPanelW = 320;
 
-    // Header bar (logo, subtitle, version)
-    HeaderBar headerBar;
+    // Header bar (logo, subtitle, settings, help)
+    std::unique_ptr<HeaderBar> headerBar;
 
     // Footer bar (pill buttons, peak readouts, settings)
     FooterBar footerBar;
@@ -138,7 +138,7 @@ private:
 
     // Performance display (debug builds only, toggled with Ctrl+Shift+P)
     PerformanceDisplay performanceDisplay;
-    bool performanceDisplayVisible = true;
+    bool performanceDisplayVisible = false;
 
     void togglePerformanceDisplay();
 

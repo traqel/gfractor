@@ -3,7 +3,10 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PillButton.h"
+#include "DropdownPill.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
+#include "../Theme/Symbols.h"
 #include "../ISpectrumControls.h"
 #include "../../DSP/IPeakLevelSource.h"
 
@@ -23,8 +26,7 @@ class FooterBar : public juce::Component,
 public:
     FooterBar(gFractorAudioProcessor &processor,
               ISpectrumControls &controls,
-              IPeakLevelSource &peakSource,
-              std::function<void()> settingsCallback);
+              IPeakLevelSource &peakSource);
 
     ~FooterBar() override;
 
@@ -47,10 +49,9 @@ public:
     PillButton &getMetersPill() { return metersPill; }
     PillButton &getTransientPill() { return transientPill; }
     PillButton &getFreezePill() { return freezePill; }
-    PillButton &getHelpPill() { return helpPill; }
 
     /** Left margin from SpectrumAnalyzer — used for button alignment. */
-    static constexpr int analyzerLeftMargin = 40;
+    static constexpr int analyzerLeftMargin = Layout::SpectrumAnalyzer::leftMargin;
 
 private:
     void timerCallback() override;
@@ -62,16 +63,16 @@ private:
     // Left group — pill buttons
     PillButton referencePill{"Reference", juce::Colour(ColorPalette::blueAccent), true};
     PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refMidBlue), true};
+    DropdownPill modePill{{"M/S", "L/R"}, juce::Colour(ColorPalette::blueAccent)};
     PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
     PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
-    PillButton lrPill{"L+R", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton freezePill{"Freeze", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton infinitePill{"Infinite", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton freezePill{
+        juce::String::fromUTF8(Symbols::pauseUTF8), juce::Colour(ColorPalette::blueAccent), true
+    };
+    PillButton infinitePill{"Hold", juce::Colour(ColorPalette::blueAccent), true};
 
     PillButton metersPill{"Stereo", juce::Colour(ColorPalette::blueAccent), true};
     PillButton transientPill{"Transient", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton helpPill{"Help", juce::Colour(ColorPalette::textDimmed), false};
-    PillButton settingsPill{"Settings", juce::Colour(ColorPalette::textDimmed), false};
 
     // Smoothed peak levels (fed to SpectrumAnalyzer meter bars)
     float peakMidDisplay = -100.0f;

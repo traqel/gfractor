@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 
+#include "../Theme/LayoutConstants.h"
 #include "../../Utility/DisplayRange.h"
 
 /**
@@ -57,7 +58,7 @@ private:
     float freq = 0.0f;
     float db = 0.0f;
 
-    static constexpr int kDotHistorySize = 20;
+    static constexpr int kDotHistorySize = Layout::SpectrumTooltip::dotHistorySize;
     std::array<float, kDotHistorySize> midDotHistory{};
     std::array<float, kDotHistorySize> sideDotHistory{};
     std::array<float, kDotHistorySize> ghostMidDotHistory{};

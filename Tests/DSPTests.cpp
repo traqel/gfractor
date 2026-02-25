@@ -43,6 +43,7 @@ public:
         testHighSampleRate();
         testSampleRateChange();
         testClippingBehavior();
+        testBandFilter();
     }
 
 private:
@@ -1019,6 +1020,249 @@ private:
             // Should handle extreme values without crashing
             expect(true);
         }
+    }
+
+    //==============================================================================
+    void testBandFilter() {
+        beginTest("Band Filter");
+
+        gFractorDSP dsp;
+        constexpr juce::dsp::ProcessSpec spec{44100.0, 512, 2};
+        dsp.prepare(spec);
+
+        dsp.setGain(0.0f);
+        dsp.setBypassed(false);
+        dsp.setLRMode(true);
+
+        // Create broadband test signal (alternating samples have energy across spectrum)
+        auto fillBroadbandSignal = [](juce::AudioBuffer<float>& buffer) {
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
+                for (int s = 0; s < buffer.getNumSamples(); ++s) {
+                    // Mix of frequencies to simulate broadband signal
+                    const float t = static_cast<float>(s) / 44100.0f;
+                    const float v = 0.5f * std::sin(2.0f * juce::MathConstants<float>::pi * 100.0f * t)
+                                 + 0.3f * std::sin(2.0f * juce::MathConstants<float>::pi * 1000.0f * t)
+                                 + 0.2f * std::sin(2.0f * juce::MathConstants<float>::pi * 5000.0f * t);
+                    buffer.setSample(ch, s, v);
+                }
+            }
+        };
+
+        // Test 1: Band filter inactive - signal passes through
+        {
+            dsp.setBandFilter(false, 1000.0f, 1.0f);
+
+            juce::AudioBuffer<float> buffer(2, 512);
+            fillBroadbandSignal(buffer);
+
+            // Store original signal levels
+            float origLevel = 0.0f;
+            for (int s = 0; s < 512; ++s) {
+                origLevel += std::abs(buffer.getSample(0, s));
+            }
+            origLevel /= 512.0f;
+
+            // Process multiple blocks
+            for (int i = 0; i < 10; ++i) {
+                fillBroadbandSignal(buffer);
+                dsp.process(buffer);
+            }
+
+            // With filter off, signal level should be similar
+            float newLevel = 0.0f;
+            for (int s = 256; s < 512; ++s) {
+                newLevel += std::abs(buffer.getSample(0, s));
+            }
+            newLevel /= 256.0f;
+
+            // Should be roughly the same (within 20%)
+            expectGreaterThan(newLevel, origLevel * 0.8f);
+        }
+
+        // Test 2: Band filter active at 1kHz - should attenuate frequencies far from 1kHz
+        {
+            dsp.setBandFilter(true, 1000.0f, 1.0f);
+
+            juce::AudioBuffer<float> buffer(2, 512);
+            fillBroadbandSignal(buffer);
+
+            // Process to let filter settle
+            for (int i = 0; i < 20; ++i) {
+                fillBroadbandSignal(buffer);
+                dsp.process(buffer);
+            }
+
+            // With bandpass filter, output should be attenuated (not all frequencies pass)
+            float avgLevel = 0.0f;
+            for (int s = 256; s < 512; ++s) {
+                avgLevel += std::abs(buffer.getSample(0, s));
+            }
+            avgLevel /= 256.0f;
+
+            // Signal should be significantly reduced (bandpass removes low and high freq)
+            expectLessThan(avgLevel, 0.3f);
+        }
+
+        // Test 3: Band filter at different frequencies (100Hz - sub bass)
+        {
+            dsp.setBandFilter(true, 100.0f, 0.5f);
+
+            juce::AudioBuffer<float> buffer(2, 512);
+            fillBroadbandSignal(buffer);
+
+            for (int i = 0; i < 20; ++i) {
+                fillBroadbandSignal(buffer);
+                dsp.process(buffer);
+            }
+
+            // Should process without crash
+            expect(true);
+
+            float avgLevel = 0.0f;
+            for (int s = 256; s < 512; ++s) {
+                avgLevel += std::abs(buffer.getSample(0, s));
+            }
+            avgLevel /= 256.0f;
+
+            // Should be attenuated
+            expectLessThan(avgLevel, 0.4f);
+        }
+
+        // Test 4: Band filter at high frequency (10kHz - air band)
+        {
+            dsp.setBandFilter(true, 10000.0f, 1.0f);
+
+            juce::AudioBuffer<float> buffer(2, 512);
+            fillBroadbandSignal(buffer);
+
+            for (int i = 0; i < 20; ++i) {
+                fillBroadbandSignal(buffer);
+                dsp.process(buffer);
+            }
+
+            // Should process without crash
+            expect(true);
+
+            float avgLevel = 0.0f;
+            for (int s = 256; s < 512; ++s) {
+                avgLevel += std::abs(buffer.getSample(0, s));
+            }
+            avgLevel /= 256.0f;
+
+            // Should be attenuated
+            expectLessThan(avgLevel, 0.4f);
+        }
+
+        // Test 5: High Q factor (narrower passband)
+        {
+            dsp.setBandFilter(true, 1000.0f, 8.0f);
+
+            juce::AudioBuffer<float> buffer(2, 512);
+            fillBroadbandSignal(buffer);
+
+            for (int i = 0; i < 30; ++i) { // More blocks for narrow filter to settle
+                fillBroadbandSignal(buffer);
+                dsp.process(buffer);
+            }
+
+            float avgLevel = 0.0f;
+            for (int s = 256; s < 512; ++s) {
+                avgLevel += std::abs(buffer.getSample(0, s));
+            }
+            avgLevel /= 256.0f;
+
+            // Higher Q should be even more attenuated (narrower passband)
+            expectLessThan(avgLevel, 0.25f);
+        }
+
+        // Test 6: Toggle band filter on/off
+        {
+            // First process with filter off
+            dsp.setBandFilter(false, 1000.0f, 1.0f);
+            juce::AudioBuffer<float> buffer1(2, 512);
+            fillBroadbandSignal(buffer1);
+            for (int i = 0; i < 10; ++i) {
+                fillBroadbandSignal(buffer1);
+                dsp.process(buffer1);
+            }
+
+            // Then turn filter on
+            dsp.setBandFilter(true, 1000.0f, 1.0f);
+            juce::AudioBuffer<float> buffer2(2, 512);
+            fillBroadbandSignal(buffer2);
+            for (int i = 0; i < 10; ++i) {
+                fillBroadbandSignal(buffer2);
+                dsp.process(buffer2);
+            }
+
+            // Turn filter off again
+            dsp.setBandFilter(false, 1000.0f, 1.0f);
+            juce::AudioBuffer<float> buffer3(2, 512);
+            fillBroadbandSignal(buffer3);
+            for (int i = 0; i < 10; ++i) {
+                fillBroadbandSignal(buffer3);
+                dsp.process(buffer3);
+            }
+
+            // All should complete without crash
+            expect(true);
+        }
+
+        // Test 7: Rapid parameter changes
+        {
+            for (int i = 0; i < 50; ++i) {
+                const float freq = 100.0f + static_cast<float>(i * 200);
+                const float q = 0.5f + static_cast<float>(i % 10) * 0.5f;
+                dsp.setBandFilter(i % 2 == 0, freq, q);
+
+                juce::AudioBuffer<float> buffer(2, 512);
+                fillBroadbandSignal(buffer);
+                dsp.process(buffer);
+            }
+
+            // Should complete without crash
+            expect(true);
+        }
+
+        // Test 8: Different sample rates
+        {
+            // Test at 48kHz
+            {
+                gFractorDSP dsp48;
+                constexpr juce::dsp::ProcessSpec spec48{48000.0, 512, 2};
+                dsp48.prepare(spec48);
+                dsp48.setBandFilter(true, 1000.0f, 2.0f);
+
+                juce::AudioBuffer<float> buffer(2, 512);
+                fillBroadbandSignal(buffer);
+
+                for (int i = 0; i < 10; ++i) {
+                    fillBroadbandSignal(buffer);
+                    dsp48.process(buffer);
+                }
+                expect(true);
+            }
+
+            // Test at 96kHz
+            {
+                gFractorDSP dsp96;
+                constexpr juce::dsp::ProcessSpec spec96{96000.0, 512, 2};
+                dsp96.prepare(spec96);
+                dsp96.setBandFilter(true, 1000.0f, 2.0f);
+
+                juce::AudioBuffer<float> buffer(2, 512);
+                fillBroadbandSignal(buffer);
+
+                for (int i = 0; i < 10; ++i) {
+                    fillBroadbandSignal(buffer);
+                    dsp96.process(buffer);
+                }
+                expect(true);
+            }
+        }
+
+        // Reset
+        dsp.setBandFilter(false, 1000.0f, 1.0f);
     }
 
     //==============================================================================

@@ -99,6 +99,10 @@ public:
     void setAuditFilter(bool active, float frequencyHz, float q);
 
     //==============================================================================
+    // Band selection filter (driven by spectrum analyzer band hints click)
+    void setBandFilter(bool active, float frequencyHz, float q);
+
+    //==============================================================================
     // Reference mode: when enabled, analyzer shows sidechain input instead of main input
     void setReferenceMode(const bool enabled) { referenceMode.store(enabled); }
     bool getReferenceMode() const { return referenceMode.load(); }

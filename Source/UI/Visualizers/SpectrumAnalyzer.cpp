@@ -1,8 +1,9 @@
 #include "SpectrumAnalyzer.h"
-#include "../Theme/ColorPalette.h"
-#include "../Theme/Typography.h"
 #include <cmath>
 #include <juce_dsp/juce_dsp.h>
+#include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
+#include "../Theme/Typography.h"
 
 //==============================================================================
 SpectrumAnalyzer::SpectrumAnalyzer()
@@ -85,7 +86,8 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
     g.fillAll(backgroundColour);
 
     if (!gridImage.isNull())
-        g.drawImageAt(gridImage, 0, 0);
+        g.drawImage(gridImage, 0, 0, getWidth(), getHeight(),
+                    0, 0, gridImage.getWidth(), gridImage.getHeight());
     tooltip.paintRangeBars(g, spectrumArea, range,
                            showMid, showSide, showGhost, playRef,
                            midColour, sideColour, refMidColour, refSideColour);
@@ -102,6 +104,7 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
                    playRef ? midColour : refMidColour,
                    playRef ? sideColour : refSideColour);
     paintAuditFilter(g);
+    paintSelectedBand(g);
     tooltip.paintTooltip(g, spectrumArea, range, fftSize, numBins,
                          getSampleRate(), smoothedMidDb, smoothedSideDb,
                          showMid, showSide, playRef,
@@ -179,8 +182,8 @@ void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
     const float peakY = ty + range.dbToY(0.0f, spectrumArea.getHeight());
 
     static const auto labelFont = Typography::makeBoldFont(12.0f);
-    constexpr int labelH = 16;
-    constexpr int labelOffset = 6;
+    constexpr int labelH = Layout::SpectrumAnalyzer::labelHeight;
+    constexpr int labelOffset = Layout::SpectrumAnalyzer::labelOffset;
     g.setFont(labelFont);
     g.setColour(backgroundColour.withAlpha(0.75f));
     g.fillRoundedRectangle(peakX - cachedAuditLabelW * 0.5f, peakY - labelH - labelOffset,
@@ -191,10 +194,48 @@ void SpectrumAnalyzer::paintAuditFilter(juce::Graphics &g) const {
                cachedAuditLabelW, labelH, juce::Justification::centred);
 }
 
+void SpectrumAnalyzer::paintSelectedBand(juce::Graphics &g) const {
+    if (selectedBand < 0 || selectedBandHi <= selectedBandLo)
+        return;
+
+    const float sx = spectrumArea.getX();
+    const float sy = spectrumArea.getY();
+    const float sw = spectrumArea.getWidth();
+    const float sh = spectrumArea.getHeight();
+
+    // Clamp to visible frequency range
+    const float lo = juce::jmax(selectedBandLo, range.minFreq);
+    const float hi = juce::jmin(selectedBandHi, range.maxFreq);
+    if (lo >= hi)
+        return;
+
+    const float xLo = sx + range.frequencyToX(lo, sw);
+    const float xHi = sx + range.frequencyToX(hi, sw);
+    const float bandW = xHi - xLo;
+
+    // Draw vertical gradient fill for the selected band frequency range
+    const auto gradient = juce::ColourGradient::vertical(
+        juce::Colour(ColorPalette::blueAccent).withAlpha(0.0f), // top (transparent)
+        sy,
+        juce::Colour(ColorPalette::blueAccent).withAlpha(0.15f), // bottom
+        sy + sh);
+    g.setGradientFill(gradient);
+    g.fillRect(xLo, sy, bandW, sh);
+
+    // Draw vertical lines at band boundaries
+    g.setColour(juce::Colour(ColorPalette::blueAccent).withAlpha(0.6f));
+    if (lo > range.minFreq) {
+        g.drawVerticalLine(static_cast<int>(xLo), sy, sy + sh);
+    }
+    if (hi < range.maxFreq) {
+        g.drawVerticalLine(static_cast<int>(xHi), sy, sy + sh);
+    }
+}
+
 void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
-    constexpr float barW = 7.0f;
-    constexpr float gap = 2.0f;
-    constexpr float padLeft = 3.0f; // gap from spectrumArea right edge
+    constexpr float barW = Layout::SpectrumAnalyzer::barWidth;
+    constexpr float gap = Layout::SpectrumAnalyzer::barGap;
+    constexpr float padLeft = Layout::SpectrumAnalyzer::barPaddingLeft;
 
     const float x0 = spectrumArea.getRight() + padLeft; // mid-bar left
     const float x1 = x0 + barW + gap; // sidebar left
@@ -228,6 +269,28 @@ float SpectrumAnalyzer::yToAuditQ(const float localY, const float height) {
 }
 
 void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
+    // Check if click is in band hints area (at barY from top of component)
+    // Only process if band hints are enabled in preferences
+    if (showBandHints && isInBandHintsArea(event.position)) {
+        // Click in band hints area - map x position to band index
+        const float clickFreq = range.xToFrequency(
+            event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
+
+        const int bandIdx = findBandAtFrequency(clickFreq);
+        if (bandIdx >= 0) {
+            const auto info = getBandInfo(bandIdx);
+            selectedBand = bandIdx;
+            selectedBandLo = info.lo;
+            selectedBandHi = info.hi;
+            rebuildGridImage();
+            repaint();
+
+            if (onBandFilter)
+                onBandFilter(true, info.centerFreq, info.q);
+            return;
+        }
+    }
+
     if (!event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
         clearAllCurves();
         return;
@@ -249,6 +312,27 @@ void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
 }
 
 void SpectrumAnalyzer::mouseDrag(const juce::MouseEvent &event) {
+    // Handle band switching while dragging in band hints area
+    if (showBandHints && selectedBand >= 0) {
+        if (isInBandHintsArea(event.position)) {
+            const float dragFreq = range.xToFrequency(
+                event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
+
+            const int bandIdx = findBandAtFrequency(dragFreq);
+            if (bandIdx >= 0 && bandIdx != selectedBand) {
+                const auto info = getBandInfo(bandIdx);
+                selectedBand = bandIdx;
+                selectedBandLo = info.lo;
+                selectedBandHi = info.hi;
+                rebuildGridImage();
+                repaint();
+
+                if (onBandFilter)
+                    onBandFilter(true, info.centerFreq, info.q);
+            }
+        }
+    }
+
     if (auditingActive) {
         const float localX = juce::jlimit(0.0f, spectrumArea.getWidth(),
                                           event.position.x - spectrumArea.getX());
@@ -265,6 +349,17 @@ void SpectrumAnalyzer::mouseDrag(const juce::MouseEvent &event) {
 }
 
 void SpectrumAnalyzer::mouseUp(const juce::MouseEvent &event) {
+    // Clear band selection on mouse up
+    if (selectedBand >= 0) {
+        selectedBand = -1;
+        selectedBandLo = 0.0f;
+        selectedBandHi = 0.0f;
+        rebuildGridImage();
+        repaint();
+        if (onBandFilter)
+            onBandFilter(false, 1000.0f, 1.0f);
+    }
+
     if (auditingActive && event.mods.isPopupMenu()) {
         auditingActive = false;
         auditFilterPath.clear();
@@ -376,7 +471,7 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
         if (peakHold.isEnabled()) {
             const bool ghostPeaksChanged = peakHold.accumulateGhost(ghostSpectrum.getSmoothedMidDb(),
-                                                                     ghostSpectrum.getSmoothedSideDb(), numBins);
+                                                                    ghostSpectrum.getSmoothedSideDb(), numBins);
             pendingPeakHoldGhostRebuild = pendingPeakHoldGhostRebuild || ghostPeaksChanged;
             if (pendingPeakHoldGhostRebuild && canRebuildPeakHold) {
                 peakHold.buildGhostPaths(w, h, pathBuilder);
@@ -451,7 +546,7 @@ void SpectrumAnalyzer::buildPath(juce::Path &path,
 
     // Catmull-Rom to cubic Bezier
     for (int i = 0; i < numPathPoints - 1; ++i) {
-        constexpr auto curveTension = 6.0f;
+        constexpr auto curveTension = Layout::SpectrumAnalyzer::curveTension;
         const auto &p0 = pts[static_cast<size_t>(juce::jmax(0, i - 1))];
         const auto &p1 = pts[static_cast<size_t>(i)];
         const auto &p2 = pts[static_cast<size_t>(i + 1)];
@@ -537,11 +632,66 @@ void SpectrumAnalyzer::rebuildGridImage() {
     const float sx = spectrumArea.getX();
     const float sy = spectrumArea.getY();
 
-    gridImage = juce::Image(juce::Image::ARGB, compW, compH, true);
+    // Render at physical pixel resolution so text stays sharp on HiDPI displays.
+    const float pixelScale = [this] {
+        if (const auto *d = juce::Desktop::getInstance().getDisplays().getDisplayForRect(getScreenBounds()))
+            return static_cast<float>(d->scale);
+        return 1.0f;
+    }();
+    gridImage = juce::Image(juce::Image::ARGB,
+                            juce::roundToInt(compW * pixelScale),
+                            juce::roundToInt(compH * pixelScale), true);
     juce::Graphics g(gridImage);
+    g.addTransform(juce::AffineTransform::scale(pixelScale));
 
     const auto labelFont = Typography::makeBoldFont(Typography::mainFontSize);
     g.setFont(labelFont);
+
+    // ── Band hint bar (within topMargin) ─────────────────────────────────────
+    if (showBandHints) {
+        constexpr float barY = Layout::SpectrumAnalyzer::barY;
+        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
+
+        for (size_t i = 0; i < kBands.size(); ++i) {
+            const float lo = juce::jmax(kBands[i].lo, range.minFreq);
+            const float hi = juce::jmin(kBands[i].hi, range.maxFreq);
+            if (lo >= hi) continue;
+
+            const float xLo = sx + range.frequencyToX(lo, sw);
+            const float xHi = sx + range.frequencyToX(hi, sw);
+
+            // Highlight selected band with accent color (drawn on top)
+            if (i == static_cast<size_t>(selectedBand)) {
+                // Draw accent-colored vertical lines at band boundaries
+                g.setColour(juce::Colour(ColorPalette::blueAccent));
+                if (lo > range.minFreq) {
+                    g.drawVerticalLine(static_cast<int>(xLo), barY, barY + barH);
+                }
+                if (hi < range.maxFreq) {
+                    g.drawVerticalLine(static_cast<int>(xHi), barY, barY + barH);
+                }
+            }
+
+            // Band label
+            g.setColour(textColour);
+            g.drawText(kBands[i].name,
+                       static_cast<int>(xLo), static_cast<int>(barY),
+                       static_cast<int>(xHi - xLo), static_cast<int>(barH),
+                       juce::Justification::centred, false);
+
+            // Divider at the right boundary (only when it falls inside the view and not selected)
+            if (i != static_cast<size_t>(selectedBand) && kBands[i].hi > range.minFreq && kBands[i].hi < range.
+                maxFreq) {
+                g.setColour(gridColour);
+                const float divX = sx + range.frequencyToX(kBands[i].hi, sw);
+                g.drawVerticalLine(static_cast<int>(divX), barY, barY + barH);
+            }
+        }
+
+        // Bottom separator line
+        g.setColour(gridColour);
+        g.drawHorizontalLine(static_cast<int>(barY + barH), sx, sx + sw);
+    }
 
     // --- Vertical frequency grid lines + labels below ---
     static constexpr float freqLines[] = {20, 40, 80, 120, 200, 500, 1000, 2000, 5000, 10000, 20000};

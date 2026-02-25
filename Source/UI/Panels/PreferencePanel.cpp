@@ -4,12 +4,15 @@
 
 #include "../../Utility/AnalyzerSettings.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/Typography.h"
 
 //==============================================================================
 PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
-                                 std::function<void()> themeChangedCallback)
+                                 std::function<void()> themeChangedCallback,
+                                 const bool bandHintsOn,
+                                 std::function<void(bool)> bandHintsChangedCallback)
     : settingsRef(settings),
       snapshot{
           settings.getMinDb(), settings.getMaxDb(),
@@ -18,10 +21,12 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
           settings.getRefMidColour(), settings.getRefSideColour(),
           settings.getSmoothing(), settings.getFftOrder(), settings.getOverlapFactor(),
           settings.getCurveDecay(), settings.getSlope(),
-          ColorPalette::getTheme()
+          ColorPalette::getTheme(),
+          bandHintsOn
       },
-      onThemeChanged(std::move(themeChangedCallback)) {
-    constexpr auto textBoxWidth = 90;
+      onThemeChanged(std::move(themeChangedCallback)),
+      onBandHintsChanged(std::move(bandHintsChangedCallback)) {
+    constexpr auto textBoxWidth = Layout::PreferencePanel::textBoxWidth;
     setOpaque(true);
 
     // --- dB range sliders ---
@@ -203,11 +208,24 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     themeLabel.setText("Theme", juce::dontSendNotification);
     themeLabel.setJustificationType(juce::Justification::centredRight);
 
+    // --- Band hints toggle ---
+    bandHintsToggle.setToggleState(bandHintsOn, juce::dontSendNotification);
+    bandHintsToggle.onClick = [this]() {
+        if (onBandHintsChanged)
+            onBandHintsChanged(bandHintsToggle.getToggleState());
+    };
+    addAndMakeVisible(bandHintsToggle);
+
+    addAndMakeVisible(bandHintsLabel);
+    bandHintsLabel.setText("Bands", juce::dontSendNotification);
+    bandHintsLabel.setJustificationType(juce::Justification::centredRight);
+
     // --- Save button ---
     addAndMakeVisible(saveButton);
     saveButton.onClick = [this]() {
         AnalyzerSettings::save(settingsRef);
         AnalyzerSettings::saveTheme(ColorPalette::getTheme());
+        AnalyzerSettings::saveBandHints(bandHintsToggle.getToggleState());
         if (onClose) onClose();
     };
 
@@ -236,6 +254,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     applyLabelFont(decayLabel);
     applyLabelFont(slopeLabel);
     applyLabelFont(themeLabel);
+    applyLabelFont(bandHintsLabel);
 
     minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
@@ -259,15 +278,15 @@ void PreferencePanel::paint(juce::Graphics &g) {
 }
 
 void PreferencePanel::resized() {
-    auto bounds = getLocalBounds().reduced(Spacing::paddingS);
-    constexpr int headerH = 30;
-    constexpr int rowH = 30;
+    auto bounds = getLocalBounds().reduced(Spacing::paddingM);
+    constexpr int headerH = Layout::PreferencePanel::headerHeight;
 
     bounds.removeFromTop(headerH); // header
+    bounds.removeFromRight(Spacing::gapM); // right spacing
 
-    constexpr int labelW = 82;
+    constexpr int labelW = Layout::PreferencePanel::labelColumnWidth;
     auto layoutRow = [&](juce::Label &label, Component &control) {
-        auto row = bounds.removeFromTop(rowH);
+        auto row = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
         label.setBounds(row.removeFromLeft(labelW));
         control.setBounds(row);
     };
@@ -306,28 +325,34 @@ void PreferencePanel::resized() {
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    // Color swatches row
-    auto colourRow = bounds.removeFromTop(rowH);
-    coloursLabel.setBounds(colourRow.removeFromLeft(labelW));
-    colourRow.removeFromLeft(Spacing::gapS);
+    layoutRow(bandHintsLabel, bandHintsToggle);
 
-    const int swatchW = (colourRow.getWidth() - 3 * Spacing::gapS) / 4;
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    // Color swatches row - all 4 swatches with equal spacing
+    auto colourRow = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
+    coloursLabel.setBounds(colourRow.removeFromLeft(labelW));
+
+    constexpr int swatchGap = Spacing::gapS;
+    const int totalSwatchAreaW = colourRow.getWidth();
+    const int swatchW = (totalSwatchAreaW - 3 * swatchGap) / 4;
+
     midSwatch.setBounds(colourRow.removeFromLeft(swatchW));
-    colourRow.removeFromLeft(Spacing::gapS);
+    colourRow.removeFromLeft(swatchGap);
     sideSwatch.setBounds(colourRow.removeFromLeft(swatchW));
-    colourRow.removeFromLeft(Spacing::gapS);
+    colourRow.removeFromLeft(swatchGap);
     refMidSwatch.setBounds(colourRow.removeFromLeft(swatchW));
-    colourRow.removeFromLeft(Spacing::gapS);
+    colourRow.removeFromLeft(swatchGap);
     refSideSwatch.setBounds(colourRow);
 
-    bounds.removeFromTop(Spacing::gapM); // spacing
+    bounds.removeFromTop(Spacing::gapL); // spacing
 
     // Save / Cancel / Reset row
-    auto actionRow = bounds.removeFromTop(rowH);
+    auto actionRow = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
     actionRow.removeFromLeft(labelW);
-    saveButton.setBounds(actionRow.removeFromLeft(74));
+    saveButton.setBounds(actionRow.removeFromLeft(Layout::PreferencePanel::buttonWidth));
     actionRow.removeFromLeft(Spacing::gapS);
-    cancelButton.setBounds(actionRow.removeFromLeft(74));
+    cancelButton.setBounds(actionRow.removeFromLeft(Layout::PreferencePanel::buttonWidth));
     actionRow.removeFromLeft(Spacing::gapS);
     resetButton.setBounds(actionRow);
 }
@@ -483,6 +508,10 @@ void PreferencePanel::revertToSnapshot() {
     themeCombo.setSelectedId(themeToId(snapshot.theme), juce::dontSendNotification);
     if (onThemeChanged)
         onThemeChanged();
+
+    bandHintsToggle.setToggleState(snapshot.bandHints, juce::dontSendNotification);
+    if (onBandHintsChanged)
+        onBandHintsChanged(snapshot.bandHints);
 }
 
 void PreferencePanel::resetToDefaults() {
@@ -520,6 +549,10 @@ void PreferencePanel::resetToDefaults() {
     themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Balanced), juce::dontSendNotification);
     if (onThemeChanged)
         onThemeChanged();
+
+    bandHintsToggle.setToggleState(true, juce::dontSendNotification);
+    if (onBandHintsChanged)
+        onBandHintsChanged(true);
 
     // Update color swatches
     midSwatch.colour = D::midColour();

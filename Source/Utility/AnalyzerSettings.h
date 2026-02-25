@@ -131,6 +131,19 @@ struct AnalyzerSettings {
         return fallback;
     }
 
+    static void saveBandHints(const bool visible) {
+        if (const auto props = getPropertiesFile()) {
+            props->setValue("bandHints", visible);
+            props->saveIfNeeded();
+        }
+    }
+
+    static bool loadBandHints(const bool defaultVal = true) {
+        if (const auto props = getPropertiesFile())
+            return props->getBoolValue("bandHints", defaultVal);
+        return defaultVal;
+    }
+
 private:
     static std::unique_ptr<juce::PropertiesFile> getPropertiesFile() {
         juce::PropertiesFile::Options options;

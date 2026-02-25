@@ -17,6 +17,9 @@
 #include "Utility/AnalyzerSettings.h"
 #include "Utility/SpectrumAnalyzerDefaults.h"
 #include "DSP/FFTProcessor.h"
+#include "UI/Visualizers/SpectrumAnalyzer.h"
+#include "UI/Theme/ColorPalette.h"
+#include "UI/Theme/Typography.h"
 
 class UIUtilityTests : public juce::UnitTest {
 public:
@@ -38,6 +41,10 @@ public:
         testFFTProcessorTemporalDecay();
         testAnalyzerSettingsCorruption();
         testCorrelationCalculation();
+        testSpectrumAnalyzerBandLookup();
+        testSpectrumAnalyzerBandInfo();
+        testColorPaletteThemeSwitching();
+        testTypographyFontCreation();
     }
 
 private:
@@ -412,6 +419,207 @@ private:
         const auto loadedSavedSize = AnalyzerSettings::loadWindowSize(1200, 640);
         expectEquals(loadedSavedSize.x, 777);
         expectEquals(loadedSavedSize.y, 333);
+    }
+
+    //==============================================================================
+    void testSpectrumAnalyzerBandLookup() {
+        beginTest("SpectrumAnalyzer Band Lookup");
+
+        // Test finding band at various frequencies
+        // Band definitions:
+        // Sub: 20-80Hz, Low: 80-300Hz, Low-Mid: 300-600Hz, Mid: 600-2000Hz
+        // Hi-Mid: 2000-6000Hz, High: 6000-12000Hz, Air: 12000-20000Hz
+
+        // Test Sub band boundaries
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20.0f), 0);  // Start of Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(50.0f), 0);  // Middle of Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(79.99f), 0); // End of Sub
+
+        // Test Low band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(80.0f), 1);   // Start of Low
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(200.0f), 1); // Middle of Low
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(299.99f), 1); // End of Low
+
+        // Test Low-Mid band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(300.0f), 2);  // Start of Low-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(450.0f), 2);   // Middle of Low-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(599.99f), 2);  // End of Low-Mid
+
+        // Test Mid band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(600.0f), 3);   // Start of Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(1000.0f), 3);  // Middle of Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(1999.99f), 3); // End of Mid
+
+        // Test Hi-Mid band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(2000.0f), 4);  // Start of Hi-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(4000.0f), 4);  // Middle of Hi-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(5999.99f), 4); // End of Hi-Mid
+
+        // Test High band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(6000.0f), 5);   // Start of High
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(9000.0f), 5);   // Middle of High
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(11999.99f), 5); // End of High
+
+        // Test Air band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(12000.0f), 6);  // Start of Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(16000.0f), 6);   // Middle of Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(19999.99f), 6);  // End of Air
+        // Exactly at max returns -1 (upper bound is exclusive to avoid overlap)
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20000.0f), -1);
+
+        // Test out of range frequencies (should return -1)
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(19.99f), -1);   // Below Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20001.0f), -1);  // Above Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(0.0f), -1);      // Zero
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(-100.0f), -1);   // Negative
+    }
+
+    //==============================================================================
+    void testSpectrumAnalyzerBandInfo() {
+        beginTest("SpectrumAnalyzer Band Info Calculation");
+
+        // Test that band info is calculated correctly for each band
+
+        // Sub band (20-80Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(0);
+            expectEquals(info.lo, 20.0f);
+            expectEquals(info.hi, 80.0f);
+            expectWithinAbsoluteError(info.centerFreq, 50.0f, 0.1f);  // (20+80)/2 = 50
+            expectWithinAbsoluteError(info.q, 50.0f / 60.0f, 0.01f); // center/width = 50/60
+        }
+
+        // Low band (80-300Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(1);
+            expectEquals(info.lo, 80.0f);
+            expectEquals(info.hi, 300.0f);
+            expectWithinAbsoluteError(info.centerFreq, 190.0f, 0.1f);  // (80+300)/2 = 190
+            expectWithinAbsoluteError(info.q, 190.0f / 220.0f, 0.01f); // center/width = 190/220
+        }
+
+        // Low-Mid band (300-600Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(2);
+            expectEquals(info.lo, 300.0f);
+            expectEquals(info.hi, 600.0f);
+            expectWithinAbsoluteError(info.centerFreq, 450.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 450.0f / 300.0f, 0.01f);
+        }
+
+        // Mid band (600-2000Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(3);
+            expectEquals(info.lo, 600.0f);
+            expectEquals(info.hi, 2000.0f);
+            expectWithinAbsoluteError(info.centerFreq, 1300.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 1300.0f / 1400.0f, 0.01f);
+        }
+
+        // Hi-Mid band (2000-6000Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(4);
+            expectEquals(info.lo, 2000.0f);
+            expectEquals(info.hi, 6000.0f);
+            expectWithinAbsoluteError(info.centerFreq, 4000.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 4000.0f / 4000.0f, 0.01f); // Q = 1.0
+        }
+
+        // High band (6000-12000Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(5);
+            expectEquals(info.lo, 6000.0f);
+            expectEquals(info.hi, 12000.0f);
+            expectWithinAbsoluteError(info.centerFreq, 9000.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 9000.0f / 6000.0f, 0.01f);
+        }
+
+        // Air band (12000-20000Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(6);
+            expectEquals(info.lo, 12000.0f);
+            expectEquals(info.hi, 20000.0f);
+            expectWithinAbsoluteError(info.centerFreq, 16000.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 16000.0f / 8000.0f, 0.01f); // Q = 2.0
+        }
+    }
+
+    //==============================================================================
+    void testColorPaletteThemeSwitching() {
+        beginTest("ColorPalette Theme Switching");
+
+        // Save original theme
+        const auto originalTheme = ColorPalette::getTheme();
+
+        // Test Dark theme
+        ColorPalette::setTheme(ColorPalette::Theme::Dark);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Dark));
+        // Verify colors are non-zero (valid ARGB)
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+        expect(ColorPalette::midGreen > 0);
+        expect(ColorPalette::sideAmber > 0);
+        expect(ColorPalette::blueAccent > 0);
+
+        // Test Light theme
+        ColorPalette::setTheme(ColorPalette::Theme::Light);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Light));
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+
+        // Test Balanced theme
+        ColorPalette::setTheme(ColorPalette::Theme::Balanced);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Balanced));
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+
+        // Verify theme names
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Dark)), juce::String("Dark"));
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Light)), juce::String("Light"));
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Balanced)), juce::String("Balanced"));
+
+        // Restore original theme
+        ColorPalette::setTheme(originalTheme);
+    }
+
+    //==============================================================================
+    void testTypographyFontCreation() {
+        beginTest("Typography Font Creation");
+
+        // Test font creation with various sizes
+        {
+            const auto font = Typography::makeFont(14.0f);
+            expectGreaterThan(font.getHeight(), 0.0f);
+            expectGreaterThan(font.getHorizontalScale(), 0.0f);
+        }
+
+        {
+            const auto font = Typography::makeFont(24.0f);
+            expectEquals(font.getHeight(), 24.0f);
+        }
+
+        {
+            const auto font = Typography::makeFont(10.0f);
+            expectEquals(font.getHeight(), 10.0f);
+        }
+
+        // Test bold font creation
+        {
+            const auto boldFont = Typography::makeBoldFont(14.0f);
+            expectGreaterThan(boldFont.getHeight(), 0.0f);
+        }
+
+        // Verify font family is set
+        {
+            const auto font = Typography::makeFont(14.0f);
+            const juce::String typefaceName = font.getTypefaceName();
+            // Typeface name should not be empty
+            expectGreaterThan(typefaceName.length(), 0);
+        }
+
+        // Test constant values
+        expectEquals(Typography::mainFontSize, 14.0f);
+        expectEquals(Typography::smallFontSize, 12.0f);
     }
 
     //==============================================================================

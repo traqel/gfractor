@@ -1,5 +1,6 @@
 #include "HelpPanel.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/Typography.h"
 
@@ -29,9 +30,9 @@ void HelpPanel::paint(juce::Graphics &g) {
     bounds.removeFromTop(Spacing::gapS);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    constexpr int sectionH = 24;
-    constexpr int rowH = 28;
-    constexpr int keyW = 120;
+    constexpr int sectionH = Layout::HelpPanel::sectionHeight;
+    constexpr int rowH = Layout::HelpPanel::rowHeight;
+    constexpr int keyW = Layout::HelpPanel::keyWidth;
 
     auto drawSection = [&](const juce::String &title) {
         g.setFont(Typography::makeBoldFont(Typography::mainFontSize));

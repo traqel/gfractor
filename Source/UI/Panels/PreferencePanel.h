@@ -4,6 +4,7 @@
 #include <functional>
 #include "../ISpectrumDisplaySettings.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
 #include "Controls/PillButton.h"
 
 /**
@@ -17,14 +18,16 @@
 class PreferencePanel : public juce::Component {
 public:
     PreferencePanel(ISpectrumDisplaySettings &settings,
-                    std::function<void()> onThemeChanged = {});
+                    std::function<void()> onThemeChanged = {},
+                    bool bandHintsOn = true,
+                    std::function<void(bool)> onBandHintsChanged = {});
 
     void paint(juce::Graphics &g) override;
 
     void resized() override;
 
-    static constexpr int panelWidth = 300;
-    static constexpr int panelHeight = 564;
+    static constexpr int panelWidth = Layout::PreferencePanel::panelWidth;
+    static constexpr int panelHeight = Layout::PreferencePanel::panelHeight;
 
     /** Called when the panel should close (set by PluginEditor) */
     std::function<void()> onClose;
@@ -59,6 +62,7 @@ private:
         float curveDecay;
         float slope;
         ColorPalette::Theme theme;
+        bool bandHints;
     };
 
     ISpectrumDisplaySettings &settingsRef;
@@ -91,6 +95,9 @@ private:
     juce::ComboBox themeCombo;
     juce::Label themeLabel;
 
+    PillButton bandHintsToggle{"Band Hints", juce::Colour(ColorPalette::blueAccent), true};
+    juce::Label bandHintsLabel;
+
     PillButton saveButton{"Save", juce::Colour(ColorPalette::blueAccent), true};
     PillButton cancelButton{"Cancel", juce::Colour(ColorPalette::blueAccent), true};
     PillButton resetButton{"Reset", juce::Colour(ColorPalette::blueAccent), true};
@@ -116,6 +123,7 @@ private:
     void resetToDefaults();
 
     std::function<void()> onThemeChanged;
+    std::function<void(bool)> onBandHintsChanged;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PreferencePanel)
 };
