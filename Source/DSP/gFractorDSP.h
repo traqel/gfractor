@@ -42,6 +42,9 @@ public:
 
     void setSideEnabled(bool enabled);
 
+    /** Set dry/wet mix proportion (0.0 = fully dry, 1.0 = fully wet). */
+    void setDryWet(float proportion);
+
     void setLRMode(bool enabled);
 
     /** Transient audition bell filter (UI thread sets, audio thread reads) */

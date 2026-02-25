@@ -68,6 +68,7 @@
 ---
 
 ## 3. Spacing System (`Source/UI/Theme/Spacing.h`)
+<!-- Note: Utility types (ChannelMode, DisplayRange, SpectrumAnalyzerDefaults) are in Source/Utility/ -->
 
 ### Padding (internal)
 
@@ -151,7 +152,7 @@
 | Max size | 1200 x 600 |
 | Resizable | Yes (corner handle) |
 
-### Metering Panel (collapsible, right side)
+### StereoMeteringPanel (collapsible, right side)
 
 | Property | Value |
 |---|---|
@@ -186,7 +187,7 @@ Rounded-rectangle toggle button used throughout the footer.
 | Mid | `midGreen` | Outline-only |
 | Side | `sideAmber` | Outline-only |
 | L+R | `blueAccent` | Outline-only |
-| Meters | `blueAccent` | Outline-only |
+| Stereo Meters | `blueAccent` | Outline-only |
 | Freeze | `blueAccent` | Outline-only |
 | Infinite | `blueAccent` | Outline-only |
 | Help | `textDimmed` | Filled |
@@ -205,7 +206,7 @@ Rounded-rectangle toggle button used throughout the footer.
 - **Interaction**: Crosshair tooltip (freq/dB/note), right-click audition bell filter (Q: 0.5–10)
 - **Features**: Ghost overlay, reference mode, infinite peak hold, freeze
 
-### MeteringPanel (right side, collapsible)
+### StereoMeteringPanel (right side, collapsible)
 
 Three instruments stacked vertically:
 
@@ -255,13 +256,13 @@ Extends `LookAndFeel_V4` with:
 
 ## 8. Interfaces (Decoupled Architecture)
 
-| Interface | Purpose |
-|---|---|
-| `IAudioDataSink` | Push stereo audio from processor to UI components |
-| `IGhostDataSink` | Push ghost/reference audio data |
-| `IPeakLevelSource` | Read peak mid/side dB levels |
-| `ISpectrumControls` | Control spectrum visibility, modes, freeze, peak |
-| `ISpectrumDisplaySettings` | Configure dB/freq range, colors, FFT, smoothing, slope |
+| Interface | Location | Purpose |
+|---|---|---|
+| `IAudioDataSink` | `Source/DSP/` | Push stereo audio from processor to UI components |
+| `IGhostDataSink` | `Source/DSP/` | Push ghost/reference audio data |
+| `IPeakLevelSource` | `Source/DSP/` | Read peak mid/side dB levels |
+| `ISpectrumControls` | `Source/UI/` | Control spectrum visibility, modes, freeze, peak |
+| `ISpectrumDisplaySettings` | `Source/UI/` | Configure dB/freq range, colors, FFT, smoothing, slope |
 
 ---
 

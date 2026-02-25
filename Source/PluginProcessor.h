@@ -3,10 +3,10 @@
 #include <atomic>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "DSP/gFractorDSP.h"
-#include "Parameters/ParameterListener.h"
-#include "Interfaces/IAudioDataSink.h"
-#include "Interfaces/IGhostDataSink.h"
-#include "Interfaces/IPeakLevelSource.h"
+#include "State/ParameterListener.h"
+#include "DSP/IAudioDataSink.h"
+#include "DSP/IGhostDataSink.h"
+#include "DSP/IPeakLevelSource.h"
 
 /**
  * Main AudioProcessor class for the gFractor plugin
@@ -87,6 +87,9 @@ public:
     void unregisterAudioDataSink(IAudioDataSink *sink);
 
     void setGhostDataSink(IGhostDataSink *sink) {
+        // Lock ensures the ghost pointer is set coherently with any concurrent
+        // audioDataSinks iteration in processBlock (ordering, not mutual exclusion —
+        // ghostDataSink.store() is itself atomic).
         const juce::SpinLock::ScopedLockType lock(sinkLock);
         ghostDataSink.store(sink);
     }
@@ -109,10 +112,9 @@ public:
     float getPeakSideDb() const override { return dspProcessor.getPeakSideDb(); }
 
     /** In L+R mode, audio output is always stereo (Mid/Side buttons only affect display). */
-    void setLRMode(bool enabled) { dspProcessor.setLRMode(enabled); }
+    void setLRMode(const bool enabled) { dspProcessor.setLRMode(enabled); }
 
 
-#if JUCE_DEBUG
     //==============================================================================
     // Performance profiling (debug builds only)
     struct PerformanceMetrics {
@@ -131,7 +133,6 @@ public:
 
     const PerformanceMetrics &getPerformanceMetrics() const { return perfMetrics; }
     void resetPerformanceMetrics() { perfMetrics.reset(); }
-#endif
 
 private:
     //==============================================================================
@@ -159,11 +160,9 @@ private:
     // Sidechain availability (set from audio thread each processBlock)
     std::atomic<bool> sidechainAvailable{false};
 
-#if JUCE_DEBUG
     //==============================================================================
     // Performance metrics (debug builds only)
     PerformanceMetrics perfMetrics;
-#endif
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(gFractorAudioProcessor)

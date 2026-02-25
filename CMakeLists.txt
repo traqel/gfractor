@@ -54,7 +54,7 @@ juce_add_plugin(${PLUGIN_NAME}
     NEEDS_MIDI_INPUT FALSE                  # Set TRUE if you need MIDI input
     NEEDS_MIDI_OUTPUT FALSE                 # Set TRUE if you need MIDI output
     IS_MIDI_EFFECT FALSE                    # Set TRUE for MIDI-only effects
-    EDITOR_WANTS_KEYBOARD_FOCUS FALSE       # Set TRUE if editor needs keyboard
+    EDITOR_WANTS_KEYBOARD_FOCUS TRUE        # Editor registers key listeners for shortcuts (f/m/s/r/p)
 
     # macOS audio permissions
     MICROPHONE_PERMISSION_ENABLED TRUE
@@ -85,7 +85,7 @@ target_include_directories(${PLUGIN_NAME}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/DSP
-        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Parameters
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Utility
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/State
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/UI
 )
@@ -117,9 +117,13 @@ target_compile_definitions(${PLUGIN_NAME}
 
 # Platform-specific settings
 if(APPLE)
-    # macOS deployment target
+    # macOS deployment target (applies across generators, including Ninja)
+    if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment target" FORCE)
+    endif()
+
     set_target_properties(${PLUGIN_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "10.13"
+        MACOSX_DEPLOYMENT_TARGET "${CMAKE_OSX_DEPLOYMENT_TARGET}"
     )
 endif()
 

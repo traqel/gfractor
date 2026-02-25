@@ -2,18 +2,17 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
-#include "UI/Components/SpectrumAnalyzer.h"
-#include "UI/Components/HeaderBar.h"
-#include "UI/Components/FooterBar.h"
-#include "UI/Components/MeteringPanel.h"
-#include "UI/Components/PreferencePanel.h"
-#include "UI/Components/HelpPanel.h"
+#include "UI/Visualizers/SpectrumAnalyzer.h"
+#include "UI/Controls/HeaderBar.h"
+#include "UI/Controls/FooterBar.h"
+#include "UI/Panels/StereoMeteringPanel.h"
+#include "UI/Panels/TransientMeteringPanel.h"
+#include "UI/Panels/PreferencePanel.h"
+#include "UI/Panels/HelpPanel.h"
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
 #include "UI/Theme/ColorPalette.h"
 
-#if JUCE_DEBUG
-#include "UI/Components/PerformanceDisplay.h"
-#endif
+#include "UI/Controls/PerformanceDisplay.h"
 
 /**
  * Main AudioProcessorEditor class for the gFractor plugin
@@ -63,9 +62,15 @@ private:
     SpectrumAnalyzer spectrumAnalyzer;
 
     // M/S metering panel (goniometer, correlation, width-per-octave)
-    MeteringPanel meteringPanel;
+    StereoMeteringPanel meteringPanel;
     bool metersVisible = false;
     int meteringPanelW = 180;
+
+    // Transient metering panel
+    TransientMeteringPanel transientMeteringPanel;
+    bool transientVisible = false;
+    int transientPanelW = 180;
+
     static constexpr int kMinPanelW = 120;
     static constexpr int kMaxPanelW = 320;
 
@@ -129,14 +134,13 @@ private:
     std::unique_ptr<HelpPanel> helpPanel;
     std::unique_ptr<PanelBackdrop> panelBackdrop;
     PanelDivider panelDivider;
+    PanelDivider transientDivider;
 
-#if JUCE_DEBUG
     // Performance display (debug builds only, toggled with Ctrl+Shift+P)
     PerformanceDisplay performanceDisplay;
-    bool performanceDisplayVisible = false;
+    bool performanceDisplayVisible = true;
 
     void togglePerformanceDisplay();
-#endif
 
     //==============================================================================
     // Resize support
@@ -144,18 +148,18 @@ private:
     std::unique_ptr<juce::ResizableCornerComponent> resizeCorner;
 
     // Default and constrained sizes
-    static constexpr int defaultWidth = 600;
-    static constexpr int defaultHeight = 300;
-    static constexpr int minWidth = 400;
-    static constexpr int minHeight = 200;
-    static constexpr int maxWidth = 1200;
-    static constexpr int maxHeight = 600;
+    static constexpr int minWidth = 1100;
+    static constexpr int minHeight = 600;
+    static constexpr int maxWidth = 2200;
+    static constexpr int maxHeight = 1200;
 
     //==============================================================================
     // Control-key reference toggle
     bool controlHeld = false;
 
     void setReferenceMode(bool on);
+
+    void applyTheme();
 
     void timerCallback() override;
 

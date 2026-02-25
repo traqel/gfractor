@@ -154,6 +154,11 @@ void gFractorDSP::setLRMode(const bool enabled) {
     lrMode = enabled;
 }
 
+void gFractorDSP::setDryWet(const float proportion) {
+    dryWetMix = juce::jlimit(0.0f, 1.0f, proportion);
+    dryWetMixer.setWetMixProportion(dryWetMix);
+}
+
 void gFractorDSP::setAuditFilter(const bool active, const float frequencyHz, const float q) {
     auditFilterFreq.store(frequencyHz, std::memory_order_relaxed);
     auditFilterQ.store(q, std::memory_order_relaxed);

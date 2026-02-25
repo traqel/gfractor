@@ -1,6 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "UI/Utility/AnalyzerSettings.h"
+#include "Utility/AnalyzerSettings.h"
 #include "UI/Theme/ColorPalette.h"
 #include "UI/Theme/Spacing.h"
 
@@ -12,7 +12,9 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
           // Settings callback — toggle preference panel overlay
           if (preferencePanel == nullptr) {
               helpPanel.reset(); // close help panel if open
-              preferencePanel = std::make_unique<PreferencePanel>(spectrumAnalyzer);
+              preferencePanel = std::make_unique<PreferencePanel>(spectrumAnalyzer, [this]() {
+                  applyTheme();
+              });
               preferencePanel->onClose = [this]() {
                   preferencePanel.reset();
                   panelBackdrop.reset();
@@ -33,8 +35,11 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
               panelBackdrop.reset();
           }
       }) {
+    ColorPalette::setTheme(AnalyzerSettings::loadTheme());
+
     // Set custom LookAndFeel
     setLookAndFeel(&gFractorLnf);
+    applyTheme();
 
     // Add spectrum analyzer (owned by editor)
     addAndMakeVisible(spectrumAnalyzer);
@@ -53,6 +58,18 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     addChildComponent(panelDivider);
     panelDivider.onDrag = [this](const int dx) {
         meteringPanelW = juce::jlimit(kMinPanelW, kMaxPanelW, meteringPanelW + dx);
+        resized();
+    };
+
+    // Add transient metering panel (starts hidden)
+    addChildComponent(transientMeteringPanel);
+    audioProcessor.registerAudioDataSink(&transientMeteringPanel);
+    transientMeteringPanel.setSampleRate(audioProcessor.getSampleRate());
+
+    // Draggable divider for transient panel (starts hidden)
+    addChildComponent(transientDivider);
+    transientDivider.onDrag = [this](const int dx) {
+        transientPanelW = juce::jlimit(kMinPanelW, kMaxPanelW, transientPanelW + dx);
         resized();
     };
 
@@ -78,6 +95,13 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     footerBar.getMetersPill().onClick = [this]() {
         metersVisible = footerBar.getMetersPill().getToggleState();
         meteringPanel.setVisible(metersVisible);
+        resized();
+    };
+
+    // Wire transient pill callback
+    footerBar.getTransientPill().onClick = [this]() {
+        transientVisible = footerBar.getTransientPill().getToggleState();
+        transientMeteringPanel.setVisible(transientVisible);
         resized();
     };
 
@@ -109,16 +133,17 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         resized();
     };
 
-#if JUCE_DEBUG
-    // Performance display (debug builds only, starts hidden, toggle with Ctrl+Shift+P)
+    // Performance display (debug builds only, starts visible, toggle with Ctrl+Shift+P)
     performanceDisplay.setProcessor(&audioProcessor);
-    performanceDisplay.setVisible(false);
+    performanceDisplay.setVisible(performanceDisplayVisible);
     addChildComponent(performanceDisplay);
-#endif
 
     // Set up resize constraints
     resizeConstraints.setMinimumSize(minWidth, minHeight);
     resizeConstraints.setMaximumSize(maxWidth, maxHeight);
+
+    // Apply limits to host/window-level resizing as well (not only corner drag).
+    setResizeLimits(minWidth, minHeight, maxWidth, maxHeight);
 
     // Add resize corner
     resizeCorner = std::make_unique<juce::ResizableCornerComponent>(this, &resizeConstraints);
@@ -138,8 +163,10 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     }
 
     // Restore saved window size from global prefs
-    const auto savedSize = AnalyzerSettings::loadWindowSize(defaultWidth, defaultHeight);
-    setSize(savedSize.x, savedSize.y);
+    const auto savedSize = AnalyzerSettings::loadWindowSize(minWidth, minHeight);
+    const int clampedW = juce::jlimit(minWidth, maxWidth, savedSize.x);
+    const int clampedH = juce::jlimit(minHeight, maxHeight, savedSize.y);
+    setSize(clampedW, clampedH);
 
     // Make editor resizable
     setResizable(true, true);
@@ -166,15 +193,14 @@ gFractorAudioProcessorEditor::~gFractorAudioProcessorEditor() {
     // be cleared before unregistering sinks so the audio thread can't call
     // pushGhostData on a partially-unregistered SpectrumAnalyzer.
     audioProcessor.setGhostDataSink(nullptr);
+    audioProcessor.unregisterAudioDataSink(&transientMeteringPanel);
     audioProcessor.unregisterAudioDataSink(&meteringPanel);
     audioProcessor.unregisterAudioDataSink(&spectrumAnalyzer);
 
     // Clear the audit filter callback (captures `this`)
     spectrumAnalyzer.onAuditFilter = nullptr;
 
-#if JUCE_DEBUG
     performanceDisplay.setProcessor(nullptr);
-#endif
 
     // Save current window size and metering panel state to global prefs
     AnalyzerSettings::saveWindowSize(getWidth(), getHeight());
@@ -206,14 +232,24 @@ void gFractorAudioProcessorEditor::resized() {
     headerBar.setBounds(bounds.removeFromTop(Spacing::headerHeight));
     footerBar.setBounds(bounds.removeFromBottom(Spacing::footerHeight));
     auto analyzerBounds = bounds;
+    constexpr int dividerW = 5;
+
+    if (transientVisible) {
+        transientMeteringPanel.setBounds(analyzerBounds.removeFromRight(transientPanelW));
+        transientDivider.setBounds(analyzerBounds.removeFromRight(dividerW));
+        transientDivider.setVisible(true);
+    } else {
+        transientDivider.setVisible(false);
+    }
+
     if (metersVisible) {
-        constexpr int dividerW = 5;
         meteringPanel.setBounds(analyzerBounds.removeFromRight(meteringPanelW));
         panelDivider.setBounds(analyzerBounds.removeFromRight(dividerW));
         panelDivider.setVisible(true);
     } else {
         panelDivider.setVisible(false);
     }
+
     spectrumAnalyzer.setBounds(analyzerBounds);
 
     // Backdrop fills the whole editor (click-outside detection)
@@ -236,15 +272,13 @@ void gFractorAudioProcessorEditor::resized() {
                              HelpPanel::panelHeight);
     }
 
-#if JUCE_DEBUG
-    // Performance display (bottom right corner, fixed size)
+    // Performance display (top right corner, fixed size)
     constexpr int perfWidth = 120;
-    constexpr int perfHeight = 50;
-    constexpr int perfMargin = 5;
+    constexpr int perfHeight = 34;
+    constexpr int perfMargin = 2;
     performanceDisplay.setBounds(getWidth() - perfWidth - perfMargin,
-                                 getHeight() - perfHeight - perfMargin,
+                                 perfMargin,
                                  perfWidth, perfHeight);
-#endif
 }
 
 //==============================================================================
@@ -284,12 +318,10 @@ bool gFractorAudioProcessorEditor::keyPressed(const juce::KeyPress &key,
         return true;
     }
 
-#if JUCE_DEBUG
-    if (key == juce::KeyPress('p', juce::ModifierKeys::ctrlModifier | juce::ModifierKeys::shiftModifier, 0)) {
+    if (key == juce::KeyPress('p')) {
         togglePerformanceDisplay();
         return true;
     }
-#endif
 
     return false;
 }
@@ -328,9 +360,16 @@ void gFractorAudioProcessorEditor::timerCallback() {
     spectrumAnalyzer.setSidechainAvailable(available);
 }
 
-#if JUCE_DEBUG
 void gFractorAudioProcessorEditor::togglePerformanceDisplay() {
     performanceDisplayVisible = !performanceDisplayVisible;
     performanceDisplay.setVisible(performanceDisplayVisible);
+    if (performanceDisplayVisible)
+        performanceDisplay.toFront(false);
 }
-#endif
+
+void gFractorAudioProcessorEditor::applyTheme() {
+    gFractorLnf.applyTheme();
+    footerBar.applyTheme();
+    spectrumAnalyzer.applyTheme();
+    repaint();
+}

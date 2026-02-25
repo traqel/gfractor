@@ -2,12 +2,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
-    tags:
-      - 'v*'
+    branches: [ develop ]
   pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch:
+    branches: [ develop ]
 
 env:
   BUILD_TYPE: Release

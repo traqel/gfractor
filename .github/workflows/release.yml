@@ -2,8 +2,9 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 env:
   BUILD_TYPE: Release
@@ -36,6 +37,9 @@ jobs:
     name: Build ${{ matrix.name }}
     needs: create-release
     runs-on: ${{ matrix.os }}
+    env:
+      CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+      WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
     strategy:
       matrix:
         include:
@@ -66,9 +70,8 @@ jobs:
 
       # macOS Code Signing
       - name: Sign and Notarize (macOS)
-        if: matrix.os == 'macos-latest' && secrets.CODESIGN_IDENTITY != ''
+        if: matrix.os == 'macos-latest' && env.CODESIGN_IDENTITY != ''
         env:
-          CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           TEAM_ID: ${{ secrets.TEAM_ID }}
@@ -85,15 +88,13 @@ jobs:
 
       # Windows Code Signing
       - name: Sign (Windows)
-        if: matrix.os == 'windows-latest' && secrets.WINDOWS_CERT_PASSWORD != ''
-        env:
-          CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        if: matrix.os == 'windows-latest' && env.WINDOWS_CERT_PASSWORD != ''
         run: |
           # Decode certificate from base64
           echo "${{ secrets.WINDOWS_CERT_BASE64 }}" | base64 -d > cert.pfx
 
           # Sign VST3
-          signtool sign /f cert.pfx /p "$env:CERT_PASSWORD" \
+          signtool sign /f cert.pfx /p "$env:WINDOWS_CERT_PASSWORD" \
             /t http://timestamp.digicert.com \
             build/*_artefacts/Release/VST3/*.vst3
 

@@ -79,7 +79,7 @@ CMakeLists.txt (Root)
     │
     ├─── Source/ (Plugin code)
     │    ├─── DSP/
-    │    ├─── Parameters/
+    │    ├─── Utility/
     │    ├─── State/
     │    └─── UI/
     │
@@ -88,8 +88,10 @@ CMakeLists.txt (Root)
     │    └─── Images/ → BinaryData
     │
     └─── Tests/CMakeLists.txt
-         └─── Tests/BasicTests.cpp
-              └─── Links to JUCE modules
+         ├─── Tests/BasicTests.cpp
+         ├─── Tests/CoreTests.cpp
+         ├─── Tests/DSPTests.cpp
+         └─── Tests/UIUtilityTests.cpp
 ```
 
 ## Plugin Formats & Targets
@@ -104,10 +106,7 @@ JUCE Plugin Target: "gFractor"
     ├─── AU (Apple Audio Unit - macOS only)
     │    └─── gFractor.component (bundle)
     │
-    ├─── AAX (Avid - requires AAX SDK)
-    │    └─── gFractor.aaxplugin (optional)
-    │
-    └─── Standalone (optional)
+    └─── Standalone
          ├─── macOS: gFractor.app
          └─── Windows: gFractor.exe
 ```
@@ -278,11 +277,11 @@ Key files to customize for your plugin:
 ```
 CMakeLists.txt
     ├─── PLUGIN_NAME = "gFractor"
-    ├─── PLUGIN_MANUFACTURER = "YourCompany"
-    ├─── PLUGIN_CODE = "Blpt"           ← Change this!
-    ├─── PLUGIN_MANUFACTURER_CODE = "YrCo"  ← Change this!
+    ├─── PLUGIN_MANUFACTURER = "GrowlAudio"
+    ├─── PLUGIN_CODE = "gFrt"
+    ├─── PLUGIN_MANUFACTURER_CODE = "GrAd"
     ├─── VERSION = "1.0.0"
-    └─── FORMATS = VST3 AU AAX Standalone
+    └─── FORMATS = VST3 AU Standalone
 
 Source/
     ├─── Implement your DSP
@@ -302,13 +301,13 @@ Resources/
 
 ```
 CMakeLists.txt
-    ├─── PLUGIN_CODE = "Blpt"
+    ├─── PLUGIN_CODE = "gFrt"
     │    └─── Used by: VST3, AU
     │
-    ├─── PLUGIN_MANUFACTURER_CODE = "YrCo"
+    ├─── PLUGIN_MANUFACTURER_CODE = "GrAd"
     │    └─── Used by: VST3, AU
     │
-    ├─── PLUGIN_AU_ID = "com.yourcompany.gfractor"
+    ├─── PLUGIN_AU_ID = "com.growlaudio.gfractor"
     │    └─── Used by: AU (bundle identifier)
     │
     └─── VERSION = "1.0.0"
@@ -316,15 +315,15 @@ CMakeLists.txt
 
 Compile Time
     ├─── JucePlugin_Name = "gFractor"
-    ├─── JucePlugin_Desc = "Audio Effect Plugin"
-    ├─── JucePlugin_Manufacturer = "YourCompany"
-    └─── JucePlugin_PluginCode = 'Blpt'
+    ├─── JucePlugin_Desc = "gFractor Audio Effect Plugin"
+    ├─── JucePlugin_Manufacturer = "GrowlAudio"
+    └─── JucePlugin_PluginCode = 'gFrt'
 
 Runtime (DAW sees)
     ├─── Plugin Name: "gFractor"
-    ├─── Manufacturer: "YourCompany"
+    ├─── Manufacturer: "GrowlAudio"
     ├─── Version: "1.0.0"
-    └─── Format: VST3 / AU / AAX
+    └─── Format: VST3 / AU
 ```
 
 ## Summary

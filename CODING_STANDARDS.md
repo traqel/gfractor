@@ -1225,27 +1225,50 @@ auto counter = [count = 0] () mutable
 **Directory structure:**
 ```
 Source/
-├── DSP/                    # DSP processing classes
-│   ├── gFractorDSP.h
-│   └── gFractorDSP.cpp
-├── Parameters/             # Parameter definitions and management
+├── DSP/                    # DSP processing & audio interfaces
+│   ├── gFractorDSP.h/.cpp
+│   ├── FFTProcessor.h/.cpp
+│   ├── AudioRingBuffer.h/.cpp
+│   ├── IAudioDataSink.h
+│   ├── IGhostDataSink.h
+│   └── IPeakLevelSource.h
+├── Utility/                # Shared types & settings (used by DSP + UI)
+│   ├── ChannelMode.h
+│   ├── DisplayRange.h
+│   ├── SpectrumAnalyzerDefaults.h
+│   └── AnalyzerSettings.h
+├── State/                  # Parameters & state management
 │   ├── ParameterIDs.h
 │   ├── ParameterDefaults.h
 │   ├── ParameterLayout.h
-│   └── ParameterListener.h
-├── State/                  # State management and serialization
-│   └── PluginState.h
-├── UI/                     # User interface components
-│   ├── Components/
-│   │   ├── WaveformVisualizer.h
-│   │   ├── ParameterSlider.h
-│   │   └── ParameterButton.h
-│   └── LookAndFeel/
-│       └── gFractorLookAndFeel.h
-├── PluginProcessor.h       # Main audio processor
-├── PluginProcessor.cpp
-├── PluginEditor.h          # Main editor
-└── PluginEditor.cpp
+│   ├── ParameterListener.h
+│   └── PluginState.h/.cpp
+├── UI/                     # User interface
+│   ├── ISpectrumControls.h
+│   ├── ISpectrumDisplaySettings.h
+│   ├── Visualizers/
+│   │   ├── SpectrumAnalyzer.h/.cpp
+│   │   ├── AudioVisualizerBase.h/.cpp
+│   │   ├── SonogramView.h/.cpp
+│   │   ├── GhostSpectrum.h/.cpp
+│   │   ├── PeakHold.h/.cpp
+│   │   └── SpectrumTooltip.h/.cpp
+│   ├── Panels/
+│   │   ├── StereoMeteringPanel.h/.cpp
+│   │   ├── PreferencePanel.h/.cpp
+│   │   └── HelpPanel.h/.cpp
+│   ├── Controls/
+│   │   ├── HeaderBar.h/.cpp
+│   │   ├── FooterBar.h/.cpp
+│   │   ├── PillButton.h
+│   │   └── PerformanceDisplay.h
+│   ├── LookAndFeel/
+│   │   └── gFractorLookAndFeel.h
+│   └── Theme/
+│       ├── ColorPalette.h
+│       └── Spacing.h
+├── PluginProcessor.h/.cpp  # Main audio processor
+└── PluginEditor.h/.cpp     # Main editor
 ```
 
 **File naming:**
@@ -1398,10 +1421,10 @@ class MyClass
 #include <juce_dsp/juce_dsp.h>
 
 #include "DSP/Filter.h"            // 4. Project headers
-#include "Parameters/ParameterIDs.h"
+#include "State/ParameterIDs.h"
 
 // Bad - random order
-#include "Parameters/ParameterIDs.h"
+#include "State/ParameterIDs.h"
 #include "MyClass.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <vector>
@@ -1839,14 +1862,16 @@ float processSample (float input, int channel);
 ```
 Source/
 ├── DSP/
-│   ├── gFractorDSP.h
-│   └── gFractorDSP.cpp
+│   ├── gFractorDSP.h/.cpp
+│   ├── FFTProcessor.h/.cpp
+│   └── AudioRingBuffer.h/.cpp
 └── PluginProcessor.cpp
 
 Tests/
-├── DSPTests.cpp          # Tests for DSP/ directory
 ├── BasicTests.cpp        # Basic sanity tests
-└── ParameterTests.cpp    # Tests for Parameters/ directory
+├── CoreTests.cpp         # AudioRingBuffer, ChannelDecoder, PeakHold, PluginState
+├── DSPTests.cpp          # DSP processing tests
+└── UIUtilityTests.cpp    # DisplayRange, FFTProcessor, defaults
 ```
 
 **Test file naming convention:**
