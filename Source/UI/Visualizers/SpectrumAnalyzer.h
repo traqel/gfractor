@@ -315,6 +315,22 @@ private:
     int selectedBand = -1; // -1 means none selected, 0-6 are the 7 frequency bands
     float selectedBandLo = 0.0f; // Low frequency of selected band
     float selectedBandHi = 0.0f; // High frequency of selected band
+
+    // Band definitions for band selection feature
+    struct Band {
+        const char* name;
+        float lo;
+        float hi;
+    };
+    static constexpr std::array<Band, 7> kBands = {{
+        {"Sub", 20.0f, 80.0f},
+        {"Low", 80.0f, 300.0f},
+        {"Low-Mid", 300.0f, 600.0f},
+        {"Mid", 600.0f, 2000.0f},
+        {"Hi-Mid", 2000.0f, 6000.0f},
+        {"High", 6000.0f, 12000.0f},
+        {"Air", 12000.0f, 20000.0f},
+    }};
     bool frozen = false;
 
     // Infinite peak hold

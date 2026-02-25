@@ -280,21 +280,6 @@ void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
         if (event.position.y >= bandHintsTop && event.position.y <= bandHintsBottom
             && event.position.x >= spectrumArea.getX() && event.position.x <= spectrumArea.getRight()) {
             // Click in band hints area - map x position to band index
-            struct Band {
-                const char *name;
-                float lo;
-                float hi;
-            };
-            static constexpr Band kBands[] = {
-                {"Sub", 20.0f, 80.0f},
-                {"Low", 80.0f, 300.0f},
-                {"Low-Mid", 300.0f, 600.0f},
-                {"Mid", 600.0f, 2000.0f},
-                {"Hi-Mid", 2000.0f, 6000.0f},
-                {"High", 6000.0f, 12000.0f},
-                {"Air", 12000.0f, 20000.0f},
-            };
-
             const float clickFreq = range.xToFrequency(
                 event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
 
@@ -350,26 +335,13 @@ void SpectrumAnalyzer::mouseDrag(const juce::MouseEvent &event) {
 
         if (event.position.y >= bandHintsTop && event.position.y <= bandHintsBottom
             && event.position.x >= spectrumArea.getX() && event.position.x <= spectrumArea.getRight()) {
-            // Band definitions: name, lo freq, hi freq
-            static constexpr std::array<std::tuple<const char *, float, float>, 7> kBands = {
-                {
-                    {"Sub", 20.0f, 80.0f},
-                    {"Low", 80.0f, 300.0f},
-                    {"Low-Mid", 300.0f, 600.0f},
-                    {"Mid", 600.0f, 2000.0f},
-                    {"Hi-Mid", 2000.0f, 6000.0f},
-                    {"High", 6000.0f, 12000.0f},
-                    {"Air", 12000.0f, 20000.0f},
-                }
-            };
-
             const float dragFreq = range.xToFrequency(
                 event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
 
             // Find which band we're dragging over
             for (int i = 0; i < 7; ++i) {
-                const float lo = std::get<1>(kBands[i]);
-                const float hi = std::get<2>(kBands[i]);
+                const float lo = kBands[i].lo;
+                const float hi = kBands[i].hi;
                 if (dragFreq >= lo && dragFreq < hi) {
                     if (selectedBand != i) {
                         selectedBand = i;
@@ -707,20 +679,6 @@ void SpectrumAnalyzer::rebuildGridImage() {
 
     // ── Band hint bar (within topMargin) ─────────────────────────────────────
     if (showBandHints) {
-        struct Band {
-            const char *name;
-            float lo;
-            float hi;
-        };
-        static constexpr Band kBands[] = {
-            {"Sub", 20.0f, 80.0f},
-            {"Low", 80.0f, 300.0f},
-            {"Low-Mid", 300.0f, 600.0f},
-            {"Mid", 600.0f, 2000.0f},
-            {"Hi-Mid", 2000.0f, 6000.0f},
-            {"High", 6000.0f, 12000.0f},
-            {"Air", 12000.0f, 20000.0f},
-        };
         constexpr float barY = Layout::SpectrumAnalyzer::barY;
         constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
 
