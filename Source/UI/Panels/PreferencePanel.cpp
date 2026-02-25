@@ -278,10 +278,11 @@ void PreferencePanel::paint(juce::Graphics &g) {
 }
 
 void PreferencePanel::resized() {
-    auto bounds = getLocalBounds().reduced(Spacing::paddingS);
+    auto bounds = getLocalBounds().reduced(Spacing::paddingM);
     constexpr int headerH = Layout::PreferencePanel::headerHeight;
 
     bounds.removeFromTop(headerH); // header
+    bounds.removeFromRight(Spacing::gapM); // right spacing
 
     constexpr int labelW = Layout::PreferencePanel::labelColumnWidth;
     auto layoutRow = [&](juce::Label &label, Component &control) {
@@ -344,7 +345,7 @@ void PreferencePanel::resized() {
     colourRow.removeFromLeft(swatchGap);
     refSideSwatch.setBounds(colourRow);
 
-    bounds.removeFromTop(Spacing::gapM); // spacing
+    bounds.removeFromTop(Spacing::gapL); // spacing
 
     // Save / Cancel / Reset row
     auto actionRow = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);

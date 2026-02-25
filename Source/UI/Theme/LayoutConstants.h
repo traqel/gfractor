@@ -13,12 +13,12 @@ namespace Layout {
     //==========================================================================
     namespace PreferencePanel {
         inline constexpr int textBoxWidth = 90;
-        inline constexpr int labelColumnWidth = 82;
+        inline constexpr int labelColumnWidth = 80;
         inline constexpr int rowHeight = 30;
         inline constexpr int headerHeight = 30;
         inline constexpr int buttonWidth = 74;
-        inline constexpr int panelWidth = 300;
-        inline constexpr int panelHeight = 564;
+        inline constexpr int panelWidth = 350;
+        inline constexpr int panelHeight = 500;
     }
 
     //==========================================================================
