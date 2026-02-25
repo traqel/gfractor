@@ -322,6 +322,14 @@ private:
         float lo;
         float hi;
     };
+
+    struct BandInfo {
+        float lo;
+        float hi;
+        float centerFreq;
+        float q;
+    };
+
     static constexpr std::array<Band, 7> kBands = {{
         {"Sub", 20.0f, 80.0f},
         {"Low", 80.0f, 300.0f},
@@ -331,6 +339,30 @@ private:
         {"High", 6000.0f, 12000.0f},
         {"Air", 12000.0f, 20000.0f},
     }};
+
+    // Helper functions for band selection
+    static BandInfo getBandInfo(size_t bandIndex) {
+        const auto& band = kBands[bandIndex];
+        const float centerFreq = (band.lo + band.hi) * 0.5f;
+        const float bandWidth = band.hi - band.lo;
+        return {band.lo, band.hi, centerFreq, centerFreq / bandWidth};
+    }
+
+    static int findBandAtFrequency(float frequency) {
+        for (size_t i = 0; i < kBands.size(); ++i) {
+            if (frequency >= kBands[i].lo && frequency < kBands[i].hi) {
+                return static_cast<int>(i);
+            }
+        }
+        return -1;
+    }
+
+    bool isInBandHintsArea(const juce::Point<float>& position) const {
+        constexpr float barY = Layout::SpectrumAnalyzer::barY;
+        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
+        return position.y >= barY && position.y <= barY + barH
+            && position.x >= spectrumArea.getX() && position.x <= spectrumArea.getRight();
+    }
     bool frozen = false;
 
     // Infinite peak hold

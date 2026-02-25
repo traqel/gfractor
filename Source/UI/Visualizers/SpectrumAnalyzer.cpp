@@ -271,94 +271,64 @@ float SpectrumAnalyzer::yToAuditQ(const float localY, const float height) {
 void SpectrumAnalyzer::mouseDown(const juce::MouseEvent &event) {
     // Check if click is in band hints area (at barY from top of component)
     // Only process if band hints are enabled in preferences
-    if (showBandHints) {
-        constexpr float barY = Layout::SpectrumAnalyzer::barY;
-        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
-        const float bandHintsTop = barY;
-        const float bandHintsBottom = barY + barH;
+    if (showBandHints && isInBandHintsArea(event.position)) {
+        // Click in band hints area - map x position to band index
+        const float clickFreq = range.xToFrequency(
+            event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
 
-        if (event.position.y >= bandHintsTop && event.position.y <= bandHintsBottom
-            && event.position.x >= spectrumArea.getX() && event.position.x <= spectrumArea.getRight()) {
-            // Click in band hints area - map x position to band index
-            const float clickFreq = range.xToFrequency(
-                event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
+        const int bandIdx = findBandAtFrequency(clickFreq);
+        if (bandIdx >= 0) {
+            const auto info = getBandInfo(bandIdx);
+            selectedBand = bandIdx;
+            selectedBandLo = info.lo;
+            selectedBandHi = info.hi;
+            rebuildGridImage();
+            repaint();
 
-            // Find which band was clicked
-            for (size_t i = 0; i < kBands.size(); ++i) {
-                if (clickFreq >= kBands[i].lo && clickFreq < kBands[i].hi) {
-                    selectedBand = i;
-                    selectedBandLo = kBands[i].lo;
-                    selectedBandHi = kBands[i].hi;
-                    rebuildGridImage();
-                    repaint();
-
-                    // Calculate center frequency and Q for the band
-                    const float centerFreq = (kBands[i].lo + kBands[i].hi) * 0.5f;
-                    const float bandWidth = kBands[i].hi - kBands[i].lo;
-                    const float q = centerFreq / bandWidth;
-
-                    if (onBandFilter)
-                        onBandFilter(true, centerFreq, q);
-                    return;
-                }
-            }
-        }
-
-        if (!event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
-            clearAllCurves();
+            if (onBandFilter)
+                onBandFilter(true, info.centerFreq, info.q);
             return;
         }
+    }
 
-        if (event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
-            auditingActive = true;
-            tooltip.hide();
-            const float localX = event.position.x - spectrumArea.getX();
-            const float localY = event.position.y - spectrumArea.getY();
-            currentAuditFreq = range.xToFrequency(localX, spectrumArea.getWidth());
-            currentAuditQ = yToAuditQ(localY, spectrumArea.getHeight());
-            updateAuditLabel();
-            buildAuditFilterPath(spectrumArea.getWidth(), spectrumArea.getHeight());
-            if (onAuditFilter)
-                onAuditFilter(true, currentAuditFreq, currentAuditQ);
-            repaint();
-        }
-    } // showBandHints
+    if (!event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
+        clearAllCurves();
+        return;
+    }
+
+    if (event.mods.isPopupMenu() && spectrumArea.contains(event.position)) {
+        auditingActive = true;
+        tooltip.hide();
+        const float localX = event.position.x - spectrumArea.getX();
+        const float localY = event.position.y - spectrumArea.getY();
+        currentAuditFreq = range.xToFrequency(localX, spectrumArea.getWidth());
+        currentAuditQ = yToAuditQ(localY, spectrumArea.getHeight());
+        updateAuditLabel();
+        buildAuditFilterPath(spectrumArea.getWidth(), spectrumArea.getHeight());
+        if (onAuditFilter)
+            onAuditFilter(true, currentAuditFreq, currentAuditQ);
+        repaint();
+    }
 }
 
 void SpectrumAnalyzer::mouseDrag(const juce::MouseEvent &event) {
     // Handle band switching while dragging in band hints area
     if (showBandHints && selectedBand >= 0) {
-        constexpr float barY = Layout::SpectrumAnalyzer::barY;
-        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
-        const float bandHintsTop = barY;
-        const float bandHintsBottom = barY + barH;
-
-        if (event.position.y >= bandHintsTop && event.position.y <= bandHintsBottom
-            && event.position.x >= spectrumArea.getX() && event.position.x <= spectrumArea.getRight()) {
+        if (isInBandHintsArea(event.position)) {
             const float dragFreq = range.xToFrequency(
                 event.position.x - spectrumArea.getX(), spectrumArea.getWidth());
 
-            // Find which band we're dragging over
-            for (size_t i = 0; i < kBands.size(); ++i) {
-                const float lo = kBands[i].lo;
-                const float hi = kBands[i].hi;
-                if (dragFreq >= lo && dragFreq < hi) {
-                    if (selectedBand != static_cast<int>(i)) {
-                        selectedBand = static_cast<int>(i);
-                        selectedBandLo = lo;
-                        selectedBandHi = hi;
-                        rebuildGridImage();
-                        repaint();
+            const int bandIdx = findBandAtFrequency(dragFreq);
+            if (bandIdx >= 0 && bandIdx != selectedBand) {
+                const auto info = getBandInfo(bandIdx);
+                selectedBand = bandIdx;
+                selectedBandLo = info.lo;
+                selectedBandHi = info.hi;
+                rebuildGridImage();
+                repaint();
 
-                        const float centerFreq = (lo + hi) * 0.5f;
-                        const float bandWidth = hi - lo;
-                        const float q = centerFreq / bandWidth;
-
-                        if (onBandFilter)
-                            onBandFilter(true, centerFreq, q);
-                    }
-                    return;
-                }
+                if (onBandFilter)
+                    onBandFilter(true, info.centerFreq, info.q);
             }
         }
     }
