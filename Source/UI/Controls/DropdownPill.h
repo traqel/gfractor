@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../Theme/ColorPalette.h"
 #include "../Theme/Typography.h"
+#include "Theme/Spacing.h"
 
 /**
  * DropdownPill
@@ -32,7 +33,6 @@ public:
 
     void paint(juce::Graphics &g) override {
         const auto bounds = getLocalBounds().toFloat().reduced(0.5f);
-        constexpr float cornerRadius = 4.0f;
         const int w = getWidth();
         const int h = getHeight();
         constexpr int arrowZoneW = 18;
@@ -44,12 +44,12 @@ public:
             if (isMouseOver())
                 fillCol = fillCol.brighter(0.1f);
             g.setColour(fillCol);
-            g.fillRoundedRectangle(bounds, cornerRadius);
+            g.fillRoundedRectangle(bounds, Radius::cornerRadius);
         } else {
             g.setColour(juce::Colour(ColorPalette::pillInactiveBg));
-            g.fillRoundedRectangle(bounds, cornerRadius);
+            g.fillRoundedRectangle(bounds, Radius::cornerRadius);
             g.setColour(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
-            g.drawRoundedRectangle(bounds, cornerRadius, 1.0f);
+            g.drawRoundedRectangle(bounds, Radius::cornerRadius, 1.0f);
         }
 
         // Divider

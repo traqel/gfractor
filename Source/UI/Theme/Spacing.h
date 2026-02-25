@@ -27,3 +27,7 @@ namespace Spacing {
     inline constexpr int gapM = 8;
     inline constexpr int gapL = 12;
 }
+
+namespace Radius {
+    inline constexpr float cornerRadius = 4.0f;
+}

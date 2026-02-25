@@ -1,8 +1,9 @@
 #include "SpectrumAnalyzer.h"
-#include "../Theme/ColorPalette.h"
-#include "../Theme/Typography.h"
+#include "Theme/Spacing.h"
 #include <cmath>
 #include <juce_dsp/juce_dsp.h>
+#include "../Theme/ColorPalette.h"
+#include "../Theme/Typography.h"
 
 //==============================================================================
 SpectrumAnalyzer::SpectrumAnalyzer()
@@ -85,7 +86,8 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
     g.fillAll(backgroundColour);
 
     if (!gridImage.isNull())
-        g.drawImageAt(gridImage, 0, 0);
+        g.drawImage(gridImage, 0, 0, getWidth(), getHeight(),
+                    0, 0, gridImage.getWidth(), gridImage.getHeight());
     tooltip.paintRangeBars(g, spectrumArea, range,
                            showMid, showSide, showGhost, playRef,
                            midColour, sideColour, refMidColour, refSideColour);
@@ -376,7 +378,7 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
         if (peakHold.isEnabled()) {
             const bool ghostPeaksChanged = peakHold.accumulateGhost(ghostSpectrum.getSmoothedMidDb(),
-                                                                     ghostSpectrum.getSmoothedSideDb(), numBins);
+                                                                    ghostSpectrum.getSmoothedSideDb(), numBins);
             pendingPeakHoldGhostRebuild = pendingPeakHoldGhostRebuild || ghostPeaksChanged;
             if (pendingPeakHoldGhostRebuild && canRebuildPeakHold) {
                 peakHold.buildGhostPaths(w, h, pathBuilder);
@@ -537,11 +539,73 @@ void SpectrumAnalyzer::rebuildGridImage() {
     const float sx = spectrumArea.getX();
     const float sy = spectrumArea.getY();
 
-    gridImage = juce::Image(juce::Image::ARGB, compW, compH, true);
+    // Render at physical pixel resolution so text stays sharp on HiDPI displays.
+    const float pixelScale = [this] {
+        if (const auto* d = juce::Desktop::getInstance().getDisplays().getDisplayForRect(getScreenBounds()))
+            return static_cast<float>(d->scale);
+        return 1.0f;
+    }();
+    gridImage = juce::Image(juce::Image::ARGB,
+                            juce::roundToInt(compW * pixelScale),
+                            juce::roundToInt(compH * pixelScale), true);
     juce::Graphics g(gridImage);
+    g.addTransform(juce::AffineTransform::scale(pixelScale));
 
     const auto labelFont = Typography::makeBoldFont(Typography::mainFontSize);
     g.setFont(labelFont);
+
+    // ── Band hint bar (within topMargin) ─────────────────────────────────────
+    if (showBandHints) {
+        struct Band {
+            const char *name;
+            float lo;
+            float hi;
+        };
+        static constexpr Band kBands[] = {
+            {"Sub", 20.0f, 80.0f},
+            {"Low", 80.0f, 300.0f},
+            {"Low-Mid", 300.0f, 600.0f},
+            {"Mid", 600.0f, 2000.0f},
+            {"Hi-Mid", 2000.0f, 6000.0f},
+            {"High", 6000.0f, 12000.0f},
+            {"Air", 12000.0f, 20000.0f},
+        };
+        constexpr float barY = 3.0f;
+        constexpr float barH = 16.0f;
+
+        for (int i = 0; i < 7; ++i) {
+            const float lo = juce::jmax(kBands[i].lo, range.minFreq);
+            const float hi = juce::jmin(kBands[i].hi, range.maxFreq);
+            if (lo >= hi) continue;
+
+            const float xLo = sx + range.frequencyToX(lo, sw);
+            const float xHi = sx + range.frequencyToX(hi, sw);
+
+            // Alternating fill on even bands
+            if (i % 2 == 0) {
+                g.setColour(bandHeaderColor.withAlpha(0.5f));
+                g.fillRoundedRectangle(xLo, barY, xHi - xLo, barH, Radius::cornerRadius);
+            }
+
+            // Band label
+            g.setColour(textColour);
+            g.drawText(kBands[i].name,
+                       static_cast<int>(xLo), static_cast<int>(barY),
+                       static_cast<int>(xHi - xLo), static_cast<int>(barH),
+                       juce::Justification::centred, false);
+
+            // Divider at the right boundary (only when it falls inside the view)
+            if (kBands[i].hi > range.minFreq && kBands[i].hi < range.maxFreq) {
+                g.setColour(gridColour);
+                const float divX = sx + range.frequencyToX(kBands[i].hi, sw);
+                g.drawVerticalLine(static_cast<int>(divX), barY, barY + barH);
+            }
+        }
+
+        // Bottom separator line
+        g.setColour(gridColour);
+        g.drawHorizontalLine(static_cast<int>(barY + barH), sx, sx + sw);
+    }
 
     // --- Vertical frequency grid lines + labels below ---
     static constexpr float freqLines[] = {20, 40, 80, 120, 200, 500, 1000, 2000, 5000, 10000, 20000};

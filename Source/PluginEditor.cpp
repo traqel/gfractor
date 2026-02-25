@@ -12,9 +12,11 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
           // Settings callback — toggle preference panel overlay
           if (preferencePanel == nullptr) {
               helpPanel.reset(); // close help panel if open
-              preferencePanel = std::make_unique<PreferencePanel>(spectrumAnalyzer, [this]() {
-                  applyTheme();
-              });
+              preferencePanel = std::make_unique<PreferencePanel>(
+                  spectrumAnalyzer,
+                  [this]() { applyTheme(); },
+                  spectrumAnalyzer.getBandHintsVisible(),
+                  [this](const bool v) { spectrumAnalyzer.setBandHintsVisible(v); });
               preferencePanel->onClose = [this]() {
                   preferencePanel.reset();
                   panelBackdrop.reset();
@@ -75,6 +77,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
 
     // Load globally saved analyzer preferences (dB/freq range, colors, slope)
     AnalyzerSettings::load(spectrumAnalyzer);
+    spectrumAnalyzer.setBandHintsVisible(AnalyzerSettings::loadBandHints());
     footerBar.syncAnalyzerState();
 
     // Wire audition filter callback (right-click in analyzer -> bell filter)

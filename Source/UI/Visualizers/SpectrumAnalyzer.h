@@ -191,6 +191,14 @@ public:
 
     void applyTheme();
 
+    void setBandHintsVisible(const bool visible) {
+        showBandHints = visible;
+        rebuildGridImage();
+        repaint();
+    }
+
+    bool getBandHintsVisible() const { return showBandHints; }
+
     float getSlope() const override { return slopeDb; }
 
     // ISpectrumDisplaySettings getters
@@ -280,8 +288,9 @@ private:
     bool sidechainAvailable = false;
     juce::Colour backgroundColour{ColorPalette::spectrumBg};
     juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
-    juce::Colour textColour{ColorPalette::textMuted};
+    juce::Colour textColour{ColorPalette::textBright};
     juce::Colour hintColour{ColorPalette::hintPink};
+    juce::Colour bandHeaderColor{ColorPalette::spectrumBorder};
 
     // Right-side M/S peak level meters
     float meterMidDb = -100.0f;
@@ -292,6 +301,7 @@ private:
     // Tooltip + range bars overlay
     SpectrumTooltip tooltip;
 
+    bool showBandHints = true;
     bool frozen = false;
 
     // Infinite peak hold
@@ -316,6 +326,7 @@ private:
 
     juce::String cachedAuditLabel;
     int cachedAuditLabelW = 0;
+
     void updateAuditLabel();
 
     void buildAuditFilterPath(float width, float height);
@@ -337,7 +348,7 @@ private:
     mutable juce::Colour lastGradMidCol;
     mutable juce::Colour lastGradSideCol;
     mutable float lastGradTy = -1.0f;
-    mutable float lastGradH  = -1.0f;
+    mutable float lastGradH = -1.0f;
 
     void paintAuditFilter(juce::Graphics &g) const;
 
