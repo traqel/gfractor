@@ -6,6 +6,7 @@
 #include "DropdownPill.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
+#include "../Theme/Symbols.h"
 #include "../ISpectrumControls.h"
 #include "../../DSP/IPeakLevelSource.h"
 
@@ -49,7 +50,6 @@ public:
     PillButton &getMetersPill() { return metersPill; }
     PillButton &getTransientPill() { return transientPill; }
     PillButton &getFreezePill() { return freezePill; }
-    PillButton &getHelpPill() { return helpPill; }
 
     /** Left margin from SpectrumAnalyzer — used for button alignment. */
     static constexpr int analyzerLeftMargin = Layout::SpectrumAnalyzer::leftMargin;
@@ -67,13 +67,13 @@ private:
     DropdownPill modePill{{"M/S", "L/R"}, juce::Colour(ColorPalette::blueAccent)};
     PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
     PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
-    PillButton freezePill{juce::String::fromUTF8("\xe2\x8f\xb8"), juce::Colour(ColorPalette::blueAccent), true}; // ⏸
+    PillButton freezePill{
+        juce::String::fromUTF8(Symbols::pauseUTF8), juce::Colour(ColorPalette::blueAccent), true, 18.0f
+    };
     PillButton infinitePill{"Hold", juce::Colour(ColorPalette::blueAccent), true};
 
     PillButton metersPill{"Stereo", juce::Colour(ColorPalette::blueAccent), true};
     PillButton transientPill{"Transient", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton helpPill{"Help", juce::Colour(ColorPalette::textDimmed), false};
-    PillButton settingsPill{"Settings", juce::Colour(ColorPalette::textDimmed), false};
 
     // Smoothed peak levels (fed to SpectrumAnalyzer meter bars)
     float peakMidDisplay = -100.0f;

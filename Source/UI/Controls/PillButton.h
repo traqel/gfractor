@@ -18,10 +18,12 @@ class PillButton : public juce::Button {
 public:
     PillButton(const juce::String &name,
                const juce::Colour activeColour,
-               const bool outlineOnly = false)
+               const bool outlineOnly = false,
+               const float fontSize = Typography::mainFontSize)
         : Button(name),
           activeCol(activeColour),
-          outlineOnlyWhenActive(outlineOnly) {
+          outlineOnlyWhenActive(outlineOnly),
+          buttonFontSize(fontSize) {
         setClickingTogglesState(true);
     }
 
@@ -44,10 +46,10 @@ protected:
         const bool on = getToggleState();
 
         const auto drawButtonLabel = [&]() {
-            auto font = Typography::makeBoldFont(Typography::mainFontSize);
+            const auto font = Typography::makeBoldFont(buttonFontSize);
             g.setFont(font);
 
-            const auto textBounds = getLocalBounds().translated(0, 0);
+            const auto textBounds = getLocalBounds();
             g.drawText(getButtonText().toUpperCase(), textBounds, juce::Justification::centred);
         };
 
@@ -89,6 +91,7 @@ protected:
 private:
     juce::Colour activeCol;
     bool outlineOnlyWhenActive;
+    float buttonFontSize;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PillButton)

@@ -2,6 +2,7 @@
 #include "../../PluginProcessor.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
+#include "../Theme/Symbols.h"
 
 FooterBar::FooterBar(gFractorAudioProcessor &processor,
                      ISpectrumControls &controls,
@@ -61,8 +62,8 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
         controlsRef.setFrozen(frozen);
         // Show ▶ when frozen (click to resume), ⏸ when running (click to freeze)
         freezePill.setButtonText(frozen
-            ? juce::String::fromUTF8("\xe2\x96\xb6")   // ▶
-            : juce::String::fromUTF8("\xe2\x8f\xb8")); // ⏸
+            ? juce::String::fromUTF8(Symbols::playUTF8)
+            : juce::String::fromUTF8(Symbols::pauseUTF8));
     };
     addAndMakeVisible(freezePill);
 
@@ -72,17 +73,6 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
         controlsRef.setInfinitePeak(infinitePill.getToggleState());
     };
     addAndMakeVisible(infinitePill);
-
-    // Help pill — no analyzer interaction; wired by PluginEditor
-    helpPill.setClickingTogglesState(false);
-    helpPill.setToggleState(false, juce::dontSendNotification);
-    addAndMakeVisible(helpPill);
-
-    // Settings pill
-    settingsPill.setClickingTogglesState(false);
-    settingsPill.setToggleState(true, juce::dontSendNotification);
-    settingsPill.onClick = std::move(settingsCallback);
-    addAndMakeVisible(settingsPill);
 
     applyTheme();
 
@@ -107,8 +97,6 @@ void FooterBar::applyTheme() {
     infinitePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     metersPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     transientPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
-    helpPill.setActiveColour(juce::Colour(ColorPalette::textDimmed));
-    settingsPill.setActiveColour(juce::Colour(ColorPalette::textDimmed));
     repaint();
 }
 
@@ -151,9 +139,6 @@ void FooterBar::resized() {
     fb.items.add(Item(90, ph, transientPill).withMargin(Margin(0, gs, 0, 0)));
 
     // ── Help  Settings ───────────────────────────────────────────────────────
-    fb.items.add(Item(56, ph, helpPill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(84, ph, settingsPill).withMargin(Margin(0, ms, 0, 0)));
-
     fb.performLayout(area.toFloat());
 }
 
