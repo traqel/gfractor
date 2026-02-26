@@ -101,6 +101,7 @@ target_link_libraries(${PLUGIN_NAME}
         juce::juce_dsp
         juce::juce_gui_basics
         juce::juce_gui_extra
+        onnxruntime::onnxruntime
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
@@ -147,6 +148,19 @@ file(GLOB_RECURSE RESOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Fonts/*"
     "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Images/*"
 )
+# Add ML resources explicitly
+set(ML_RESOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Resources/ML/kick_detector.onnx"
+)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Resources/ML/kick_detector.onnx")
+    list(APPEND RESOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/ML/kick_detector.onnx")
+    message(STATUS "ML resource found: kick_detector.onnx")
+endif()
+
+# Find ONNX Runtime
+set(onnxruntime_ROOT "/opt/homebrew/Cellar/onnxruntime/1.24.2" CACHE PATH "ONNX Runtime installation path")
+find_package(onnxruntime 1.24 REQUIRED)
+message(STATUS "ONNX Runtime found: ${onnxruntime_VERSION}")
 
 if(RESOURCE_FILES)
     juce_add_binary_data(BinaryData

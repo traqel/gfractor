@@ -5,11 +5,13 @@
 
 #include "../Visualizers/AudioVisualizerBase.h"
 #include "../../DSP/IAudioDataSink.h"
+#include "../../ML/KickDetector.h"
 
 /**
  * TransientMeteringPanel
  *
- * Empty panel ready for new transient visualization implementation.
+ * Panel for visualizing transient/kick detection using ML model.
+ * Shows a red circle when a kick is detected in the incoming audio.
  */
 class TransientMeteringPanel : public AudioVisualizerBase,
                                public IAudioDataSink {
@@ -25,19 +27,30 @@ public:
 
     void setSampleRate(const double sr) override {
         AudioVisualizerBase::setSampleRate(sr);
+        kickDetector = std::make_unique<KickDetector>();
+        loadKickModel();
     }
 
     //==============================================================================
     // AudioVisualizerBase overrides
-    void processDrainedData(int numNewSamples) override {
-        (void)numNewSamples; // Empty for new implementation
-    }
+    void processDrainedData(int numNewSamples) override;
 
     void onSampleRateChanged() override {
-        // Empty for new implementation
+        // Reinitialize detector with new sample rate
+        kickDetector = std::make_unique<KickDetector>();
+        loadKickModel();
     }
 
     //==============================================================================
     void paint(juce::Graphics &g) override;
     void resized() override;
+
+private:
+    void loadKickModel();
+    void checkForKick();
+
+    std::unique_ptr<KickDetector> kickDetector;
+    bool kickDetected = false;
+    int kickDisplayCounter = 0; // Frames to show the kick indicator
+    static constexpr int kKickDisplayFrames = 30; // Show for ~0.5 seconds at 60fps
 };
