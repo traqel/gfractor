@@ -24,7 +24,7 @@ public:
 
     void reset(int numBins, float minDb);
 
-    bool accumulate(const std::vector<float> &midDb, const std::vector<float> &sideDb, int numBins);
+    bool accumulate(const std::vector<float> &primaryDb, const std::vector<float> &secondaryDb, int numBins);
 
     bool accumulateGhost(const std::vector<float> &midDb, const std::vector<float> &sideDb, int numBins);
 
@@ -33,29 +33,29 @@ public:
     void buildGhostPaths(float width, float height, const BuildPathFn &buildPath);
 
     void paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
-               bool showMid, bool showSide, bool showGhost, ChannelMode channelMode,
-               const juce::Colour &activeMidCol, const juce::Colour &activeSideCol,
-               const juce::Colour &ghostMidCol, const juce::Colour &ghostSideCol) const;
+               bool showPrimary, bool showSecondary, bool showGhost, ChannelMode channelMode,
+               const juce::Colour &activePrimaryCol, const juce::Colour &activeSecondaryCol,
+               const juce::Colour &ghostPrimaryCol, const juce::Colour &ghostSecondaryCol) const;
 
 private:
     bool enabled = false;
 
-    std::vector<float> peakMidDb;
-    std::vector<float> peakSideDb;
-    std::vector<float> peakGhostMidDb;
-    std::vector<float> peakGhostSideDb;
+    std::vector<float> peakPrimaryDb;
+    std::vector<float> peakSecondaryDb;
+    std::vector<float> peakGhostPrimaryDb;
+    std::vector<float> peakGhostSecondaryDb;
 
-    juce::Path peakMidPath;
-    juce::Path peakSidePath;
-    juce::Path peakGhostMidPath;
-    juce::Path peakGhostSidePath;
+    juce::Path peakPrimaryPath;
+    juce::Path peakSecondaryPath;
+    juce::Path peakGhostPrimaryPath;
+    juce::Path peakGhostSecondaryPath;
 
     // Offscreen glow images — pre-rendered at hop rate, blitted at 60 Hz.
     // Mutable because they are a rendering cache; paint() remains logically const.
-    mutable juce::Image peakMidImage;
-    mutable juce::Image peakSideImage;
-    mutable juce::Image peakGhostMidImage;
-    mutable juce::Image peakGhostSideImage;
+    mutable juce::Image peakPrimaryImage;
+    mutable juce::Image peakSecondaryImage;
+    mutable juce::Image peakGhostPrimaryImage;
+    mutable juce::Image peakGhostSecondaryImage;
 
     // Set by buildPaths/buildGhostPaths; cleared after image rebuild in paint().
     mutable bool pathsDirty      = true;
@@ -63,10 +63,10 @@ private:
 
     // Last-seen parameters used to detect when images must be rebuilt.
     mutable juce::Rectangle<float> lastSpectrumArea;
-    mutable juce::Colour lastEffMidCol;
-    mutable juce::Colour lastEffSideCol;
-    mutable juce::Colour lastEffGhostMidCol;
-    mutable juce::Colour lastEffGhostSideCol;
+    mutable juce::Colour lastEffPrimaryCol;
+    mutable juce::Colour lastEffSecondaryCol;
+    mutable juce::Colour lastEffGhostPrimaryCol;
+    mutable juce::Colour lastEffGhostSecondaryCol;
 
     void renderGlowImage(juce::Image& img, const juce::Path& path,
                          juce::Colour col, int w, int h) const;

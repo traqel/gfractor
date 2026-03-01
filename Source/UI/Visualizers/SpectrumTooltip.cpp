@@ -16,13 +16,13 @@ void SpectrumTooltip::hide() {
 }
 
 void SpectrumTooltip::updateDotHistory(const int bin,
-                                       const std::vector<float> &midDb, const std::vector<float> &sideDb,
-                                       const std::vector<float> &ghostMidDb, const std::vector<float> &ghostSideDb) {
+                                       const std::vector<float> &primaryDb, const std::vector<float> &secondaryDb,
+                                       const std::vector<float> &ghostPrimaryDb, const std::vector<float> &ghostSecondaryDb) {
     const auto b = static_cast<size_t>(bin);
-    midDotHistory[static_cast<size_t>(dotHistoryPos)] = midDb[b];
-    sideDotHistory[static_cast<size_t>(dotHistoryPos)] = sideDb[b];
-    ghostMidDotHistory[static_cast<size_t>(dotHistoryPos)] = ghostMidDb[b];
-    ghostSideDotHistory[static_cast<size_t>(dotHistoryPos)] = ghostSideDb[b];
+    primaryDotHistory[static_cast<size_t>(dotHistoryPos)] = primaryDb[b];
+    secondaryDotHistory[static_cast<size_t>(dotHistoryPos)] = secondaryDb[b];
+    ghostPrimaryDotHistory[static_cast<size_t>(dotHistoryPos)] = ghostPrimaryDb[b];
+    ghostSecondaryDotHistory[static_cast<size_t>(dotHistoryPos)] = ghostSecondaryDb[b];
     dotHistoryPos = (dotHistoryPos + 1) % kDotHistorySize;
     if (dotHistoryPos == 0) dotHistoryReady = true;
 }
@@ -59,9 +59,9 @@ void SpectrumTooltip::paintTooltip(juce::Graphics &g, const juce::Rectangle<floa
                                    const double sampleRate,
                                    const std::vector<float> &smoothedMidDb,
                                    const std::vector<float> &smoothedSideDb,
-                                   const bool showMid, const bool showSide, const bool playRef,
-                                   const juce::Colour &midColour, const juce::Colour &sideColour,
-                                   const juce::Colour &refMidColour, const juce::Colour &refSideColour) const {
+                                   const bool showPrimary, const bool showSecondary, const bool playRef,
+                                   const juce::Colour &primaryColour, const juce::Colour &secondaryColour,
+                                   const juce::Colour &refPrimaryColour, const juce::Colour &refSecondaryColour) const {
     if (!visible)
         return;
 
@@ -88,15 +88,15 @@ void SpectrumTooltip::paintTooltip(juce::Graphics &g, const juce::Rectangle<floa
             g.fillEllipse(cx - r, dotY - r, r * 2.0f, r * 2.0f);
         };
 
-        if (showMid)
+        if (showPrimary)
             drawGlowDot(spectrumArea.getY() + range.dbToY(smoothedMidDb[static_cast<size_t>(bin)],
                                                           spectrumArea.getHeight()),
-                        playRef ? refMidColour : midColour);
+                        playRef ? refPrimaryColour : primaryColour);
 
-        if (showSide)
+        if (showSecondary)
             drawGlowDot(spectrumArea.getY() + range.dbToY(smoothedSideDb[static_cast<size_t>(bin)],
                                                           spectrumArea.getHeight()),
-                        playRef ? refSideColour : sideColour);
+                        playRef ? refSecondaryColour : secondaryColour);
     }
 
     // Format readout strings
@@ -148,22 +148,22 @@ void SpectrumTooltip::paintTooltip(juce::Graphics &g, const juce::Rectangle<floa
 //==============================================================================
 void SpectrumTooltip::paintRangeBars(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
                                      const DisplayRange &range,
-                                     const bool showMid, const bool showSide,
+                                     const bool showPrimary, const bool showSecondary,
                                      const bool showGhost, const bool playRef,
-                                     const juce::Colour &midColour, const juce::Colour &sideColour,
-                                     const juce::Colour &refMidColour, const juce::Colour &refSideColour) const {
+                                     const juce::Colour &primaryColour, const juce::Colour &secondaryColour,
+                                     const juce::Colour &refPrimaryColour, const juce::Colour &refSecondaryColour) const {
     if (!visible || (dotHistoryPos == 0 && !dotHistoryReady))
         return;
 
     const int count = dotHistoryReady ? kDotHistorySize : dotHistoryPos;
 
-    float midMin = midDotHistory[0], midMax = midDotHistory[0];
-    float sideMin = sideDotHistory[0], sideMax = sideDotHistory[0];
+    float midMin = primaryDotHistory[0], midMax = primaryDotHistory[0];
+    float sideMin = secondaryDotHistory[0], sideMax = secondaryDotHistory[0];
     for (int i = 1; i < count; ++i) {
-        midMin = std::min(midMin, midDotHistory[static_cast<size_t>(i)]);
-        midMax = std::max(midMax, midDotHistory[static_cast<size_t>(i)]);
-        sideMin = std::min(sideMin, sideDotHistory[static_cast<size_t>(i)]);
-        sideMax = std::max(sideMax, sideDotHistory[static_cast<size_t>(i)]);
+        midMin = std::min(midMin, primaryDotHistory[static_cast<size_t>(i)]);
+        midMax = std::max(midMax, primaryDotHistory[static_cast<size_t>(i)]);
+        sideMin = std::min(sideMin, secondaryDotHistory[static_cast<size_t>(i)]);
+        sideMax = std::max(sideMax, secondaryDotHistory[static_cast<size_t>(i)]);
     }
 
     const float sh = spectrumArea.getHeight();
@@ -181,28 +181,28 @@ void SpectrumTooltip::paintRangeBars(juce::Graphics &g, const juce::Rectangle<fl
         g.fillRoundedRectangle(barX, yTop, barW, yBot - yTop, 1.5f);
     };
 
-    const auto &activeMidCol = playRef ? refMidColour : midColour;
-    const auto &activeSideCol = playRef ? refSideColour : sideColour;
-    const auto &ghostMidCol = playRef ? midColour : refMidColour;
-    const auto &ghostSideCol = playRef ? sideColour : refSideColour;
+    const auto &activeMidCol = playRef ? refPrimaryColour : primaryColour;
+    const auto &activeSideCol = playRef ? refSecondaryColour : secondaryColour;
+    const auto &ghostMidCol = playRef ? primaryColour : refPrimaryColour;
+    const auto &ghostSideCol = playRef ? secondaryColour : refSecondaryColour;
 
     const float sx = spectrumArea.getX();
 
-    if (showMid) drawRangeBar(midMin, midMax, sx, activeMidCol);
-    if (showSide) drawRangeBar(sideMin, sideMax, sx + barW + 1.0f, activeSideCol);
+    if (showPrimary) drawRangeBar(midMin, midMax, sx, activeMidCol);
+    if (showSecondary) drawRangeBar(sideMin, sideMax, sx + barW + 1.0f, activeSideCol);
 
     if (showGhost) {
         const int ghostCount = dotHistoryReady ? kDotHistorySize : dotHistoryPos;
-        float ghostMidMin = ghostMidDotHistory[0], ghostMidMax = ghostMidDotHistory[0];
-        float ghostSideMin = ghostSideDotHistory[0], ghostSideMax = ghostSideDotHistory[0];
+        float ghostMidMin = ghostPrimaryDotHistory[0], ghostMidMax = ghostPrimaryDotHistory[0];
+        float ghostSideMin = ghostSecondaryDotHistory[0], ghostSideMax = ghostSecondaryDotHistory[0];
         for (int i = 1; i < ghostCount; ++i) {
-            ghostMidMin = std::min(ghostMidMin, ghostMidDotHistory[static_cast<size_t>(i)]);
-            ghostMidMax = std::max(ghostMidMax, ghostMidDotHistory[static_cast<size_t>(i)]);
-            ghostSideMin = std::min(ghostSideMin, ghostSideDotHistory[static_cast<size_t>(i)]);
-            ghostSideMax = std::max(ghostSideMax, ghostSideDotHistory[static_cast<size_t>(i)]);
+            ghostMidMin = std::min(ghostMidMin, ghostPrimaryDotHistory[static_cast<size_t>(i)]);
+            ghostMidMax = std::max(ghostMidMax, ghostPrimaryDotHistory[static_cast<size_t>(i)]);
+            ghostSideMin = std::min(ghostSideMin, ghostSecondaryDotHistory[static_cast<size_t>(i)]);
+            ghostSideMax = std::max(ghostSideMax, ghostSecondaryDotHistory[static_cast<size_t>(i)]);
         }
         const float ghostGroupX = sx + (barW + 1.0f) * 2.0f + 2.0f;
-        if (showMid) drawRangeBar(ghostMidMin, ghostMidMax, ghostGroupX, ghostMidCol.withAlpha(0.7f));
-        if (showSide) drawRangeBar(ghostSideMin, ghostSideMax, ghostGroupX + barW + 1.0f, ghostSideCol.withAlpha(0.7f));
+        if (showPrimary) drawRangeBar(ghostMidMin, ghostMidMax, ghostGroupX, ghostMidCol.withAlpha(0.7f));
+        if (showSecondary) drawRangeBar(ghostSideMin, ghostSideMax, ghostGroupX + barW + 1.0f, ghostSideCol.withAlpha(0.7f));
     }
 }

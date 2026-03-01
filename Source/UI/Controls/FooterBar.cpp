@@ -15,25 +15,28 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     referencePill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(referencePill);
 
-    // Mode dropdown — 0 = M/S, 1 = L/R, 2 = T/N (Tonal/Noise)
+    // Mode dropdown — 0 = M/S, 1 = L/R, 2 = T/N
     modePill.setSelectedIndex(0);
     modePill.onChange = [this](const int index) {
-        const bool lr = (index == 1);
-        const bool tn = (index == 2);
+        switch (index) {
+            case 0:
+                primaryPill.setButtonText("Mid");
+                secondaryPill.setButtonText("Side");
+                break;
 
-        // L/R mode hides the per-channel visibility pills
-        primaryPill.setEnabled(!lr);
-        secondaryPill.setEnabled(!lr);
+            case 1:
+                primaryPill.setButtonText("Left");
+                secondaryPill.setButtonText("Right");
+                break;
 
-        // Relabel pills to match the active channel pair
-        if (tn) {
-            primaryPill.setButtonText("Tonal");
-            secondaryPill.setButtonText("Noise");
-        } else {
-            primaryPill.setButtonText("Mid");
-            secondaryPill.setButtonText("Side");
+            case 2:
+                primaryPill.setButtonText("Tonal");
+                secondaryPill.setButtonText("Noise");
+                break;
+            default:
+                primaryPill.setButtonText("Left");
+                secondaryPill.setButtonText("Right");
         }
-
         controlsRef.setChannelMode(index);
         processorRef.setOutputMode(channelModeFromInt(index));
     };

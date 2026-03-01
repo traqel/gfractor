@@ -35,7 +35,10 @@ public:
     void setChannelMode(const ChannelMode mode) { channelMode = mode; }
 
     /** Set spectral slope tilt in dB/octave. */
-    void setSlope(const float db) { slopeDb = db; precomputeSlopeGains(); }
+    void setSlope(const float db) {
+        slopeDb = db;
+        precomputeSlopeGains();
+    }
 
     /** Set smoothing mode and recompute ranges. */
     void setSmoothing(SmoothingMode mode);
@@ -66,12 +69,10 @@ public:
 
 private:
     void applyOctaveSmoothing(std::vector<float> &dbData) const;
-    void precomputeSmoothingRanges();
-    void precomputeSlopeGains();
 
-    /** In TonalNoise mode: fill noiseOut with a 1-octave wide box-average of
-     *  spectrum (linear magnitude domain), producing a smooth noise floor. */
-    void computeNoiseFloor(std::vector<float> &noiseOut, const std::vector<float> &spectrum) const;
+    void precomputeSmoothingRanges();
+
+    void precomputeSlopeGains();
 
     // FFT configuration
     int fftOrder = Defaults::fftOrder;

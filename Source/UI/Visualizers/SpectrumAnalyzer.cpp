@@ -45,8 +45,8 @@ void SpectrumAnalyzer::setFftOrder(const int order) {
     hopCounter = 0;
 
     // Resize and clear magnitude arrays
-    smoothedMidDb.assign(static_cast<size_t>(numBins), range.minDb);
-    smoothedSideDb.assign(static_cast<size_t>(numBins), range.minDb);
+    smoothedPrimaryDb.assign(static_cast<size_t>(numBins), range.minDb);
+    smoothedSecondaryDb.assign(static_cast<size_t>(numBins), range.minDb);
 
     ghostSpectrum.resetBuffers(fftSize, range.minDb);
     peakHold.reset(numBins, range.minDb);
@@ -106,7 +106,7 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
     paintAuditFilter(g);
     paintSelectedBand(g);
     tooltip.paintTooltip(g, spectrumArea, range, fftSize, numBins,
-                         getSampleRate(), smoothedMidDb, smoothedSideDb,
+                         getSampleRate(), smoothedPrimaryDb, smoothedSecondaryDb,
                          showPrimary, showSecondary, playRef,
                          primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour);
     paintLevelMeters(g);
@@ -119,18 +119,18 @@ void SpectrumAnalyzer::resized() {
 void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     const auto tx = spectrumArea.getX();
     const auto ty = spectrumArea.getY();
-    const auto &activeSideColour = playRef ? refSecondaryColour : secondaryColour;
-    const auto &activeMidColour = playRef ? refPrimaryColour : primaryColour;
+    const auto &activeSecondaryColour = playRef ? refSecondaryColour : secondaryColour;
+    const auto &activePrimaryColour = playRef ? refPrimaryColour : primaryColour;
     const float h = spectrumArea.getHeight();
 
-    if (activeMidColour != lastGradMidCol || activeSideColour != lastGradSideCol
+    if (activePrimaryColour != lastGradPrimaryCol || activeSecondaryColour != lastGradSecondaryCol
         || ty != lastGradTy || h != lastGradH) {
-        cachedMidGrad = juce::ColourGradient(activeMidColour.withAlpha(0.30f), 0.0f, ty,
-                                             activeMidColour.withAlpha(0.0f), 0.0f, ty + h, false);
-        cachedSideGrad = juce::ColourGradient(activeSideColour.withAlpha(0.25f), 0.0f, ty,
-                                              activeSideColour.withAlpha(0.0f), 0.0f, ty + h, false);
-        lastGradMidCol = activeMidColour;
-        lastGradSideCol = activeSideColour;
+        cachedPrimaryGrad = juce::ColourGradient(activePrimaryColour.withAlpha(0.30f), 0.0f, ty,
+                                             activePrimaryColour.withAlpha(0.0f), 0.0f, ty + h, false);
+        cachedSecondaryGrad = juce::ColourGradient(activeSecondaryColour.withAlpha(0.25f), 0.0f, ty,
+                                              activeSecondaryColour.withAlpha(0.0f), 0.0f, ty + h, false);
+        lastGradPrimaryCol = activePrimaryColour;
+        lastGradSecondaryCol = activeSecondaryColour;
         lastGradTy = ty;
         lastGradH = h;
     }
@@ -145,10 +145,10 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     };
 
     if (channelMode == ChannelMode::LR) {
-        drawMain(midPath, cachedMidGrad, activeMidColour);
+        drawMain(primaryPath, cachedPrimaryGrad, activePrimaryColour);
     } else {
-        if (showSecondary) drawMain(sidePath, cachedSideGrad, activeSideColour);
-        if (showPrimary) drawMain(midPath, cachedMidGrad, activeMidColour);
+        if (showSecondary) drawMain(secondaryPath, cachedSecondaryGrad, activeSecondaryColour);
+        if (showPrimary) drawMain(primaryPath, cachedPrimaryGrad, activePrimaryColour);
     }
 }
 
@@ -415,7 +415,7 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
         if (hopCounter >= hopSize) {
             fftProcessor.processBlock(rolling_L, rolling_R, virtualWritePos,
-                                      smoothedMidDb, smoothedSideDb);
+                                      smoothedPrimaryDb, smoothedSecondaryDb);
             fftDataReady = true;
             hopCounter = 0;
         }
@@ -446,11 +446,11 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         peakHoldThrottleCounter = 0;
 
     if (fftDataReady && w > 0 && h > 0) {
-        buildPath(midPath, smoothedMidDb, w, h);
-        buildPath(sidePath, smoothedSideDb, w, h);
+        buildPath(primaryPath, smoothedPrimaryDb, w, h);
+        buildPath(secondaryPath, smoothedSecondaryDb, w, h);
 
         if (peakHold.isEnabled()) {
-            const bool peaksChanged = peakHold.accumulate(smoothedMidDb, smoothedSideDb, numBins);
+            const bool peaksChanged = peakHold.accumulate(smoothedPrimaryDb, smoothedSecondaryDb, numBins);
             pendingPeakHoldMainRebuild = pendingPeakHoldMainRebuild || peaksChanged;
             if (pendingPeakHoldMainRebuild && canRebuildPeakHold) {
                 peakHold.buildPaths(w, h, [this](juce::Path &p, const std::vector<float> &db,
@@ -486,7 +486,7 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         const float bw = static_cast<float>(sampleRate) / static_cast<float>(fftSize);
         const int bin = juce::jlimit(0, numBins - 1,
                                      static_cast<int>(std::lround(tooltip.getFreq() / bw)));
-        tooltip.updateDotHistory(bin, smoothedMidDb, smoothedSideDb,
+        tooltip.updateDotHistory(bin, smoothedPrimaryDb, smoothedSecondaryDb,
                                  ghostSpectrum.getSmoothedMidDb(),
                                  ghostSpectrum.getSmoothedSideDb());
     }
@@ -570,12 +570,12 @@ void SpectrumAnalyzer::setInfinitePeak(const bool enabled) {
 
 void SpectrumAnalyzer::clearAllCurves() {
     const auto nb = static_cast<size_t>(numBins);
-    smoothedMidDb.assign(nb, range.minDb);
-    smoothedSideDb.assign(nb, range.minDb);
+    smoothedPrimaryDb.assign(nb, range.minDb);
+    smoothedSecondaryDb.assign(nb, range.minDb);
     fftProcessor.setMinDb(range.minDb);
     ghostSpectrum.resetBuffers(fftSize, range.minDb);
-    midPath.clear();
-    sidePath.clear();
+    primaryPath.clear();
+    secondaryPath.clear();
     ghostSpectrum.clearPaths();
     peakHold.reset(numBins, range.minDb);
     peakHoldThrottleCounter = 0;

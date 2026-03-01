@@ -80,24 +80,6 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
         }
     }
 
-    // Tonal/Noise split (proper DSP separation):
-    //  - Noise  (fftDataSide): minimum-filtered spectrum → tracks the broadband
-    //    noise floor, unaffected by periodic peaks.
-    //  - Tonal  (fftDataMid): bins that stand clearly above the noise floor
-    //    (deterministic / sinusoidal content); all other bins zeroed → minDb.
-    if (channelMode == ChannelMode::TonalNoise) {
-        computeNoiseFloor(fftDataSecondary, fftDataPrimary);
-        // Gate: a bin is considered tonal only if it exceeds the local noise
-        // floor by kSinusoidalRatio (≈ 6 dB). Everything else is zeroed so it
-        // collapses to minDb in the subsequent gainToDecibels conversion.
-        constexpr float kSinusoidalRatio = 2.0f;
-        for (int bin = 0; bin < numBins; ++bin) {
-            const auto b = static_cast<size_t>(bin);
-            if (fftDataPrimary[b] <= kSinusoidalRatio * fftDataSecondary[b])
-                fftDataPrimary[b] = 0.0f;
-        }
-    }
-
     // Convert to dB and apply temporal smoothing
     const float normFactor = DSP::FFT::normFactor / static_cast<float>(fftSize);
     for (int bin = 0; bin < numBins; ++bin) {
@@ -174,36 +156,5 @@ void FFTProcessor::precomputeSmoothingRanges() {
         const int lo = juce::jmax(1, static_cast<int>(freq / ratio / binWidth));
         const int hi = juce::jmin(numBins - 1, static_cast<int>(freq * ratio / binWidth));
         smoothingRanges[static_cast<size_t>(bin)] = {lo, hi};
-    }
-}
-
-void FFTProcessor::computeNoiseFloor(std::vector<float> &noiseOut,
-                                     const std::vector<float> &spectrum) const {
-    // Minimum filter over a ±0.5-octave (√2) frequency window.
-    //
-    // Unlike a box-average, a minimum filter is not pulled upward by tonal
-    // peaks — it tracks the quiet floor between them, giving the actual
-    // broadband noise level at each frequency. This is the standard approach
-    // for noise floor estimation in spectral tonal/noise separation.
-    //
-    // 16 uniformly-spaced samples per window keep complexity at O(16·n)
-    // rather than O(n²), with negligible loss of accuracy for floor tracking.
-    constexpr float halfOctaveRatio = 1.41421356f;  // 2^(1/2) = √2
-    constexpr int   kSamples        = 16;
-    const float binWidth = static_cast<float>(sampleRate) / static_cast<float>(fftSize);
-
-    noiseOut[0] = spectrum[0];
-    for (int bin = 1; bin < numBins; ++bin) {
-        const float freq = static_cast<float>(bin) * binWidth;
-        const int lo = juce::jmax(1, static_cast<int>(freq / halfOctaveRatio / binWidth));
-        const int hi = juce::jmin(numBins - 1, static_cast<int>(freq * halfOctaveRatio / binWidth));
-        const int span = hi - lo;
-
-        float minVal = spectrum[static_cast<size_t>(lo)];
-        for (int s = 1; s < kSamples; ++s) {
-            const int k = juce::jmin(hi, lo + s * span / (kSamples - 1));
-            minVal = std::min(minVal, spectrum[static_cast<size_t>(k)]);
-        }
-        noiseOut[static_cast<size_t>(bin)] = minVal;
     }
 }

@@ -30,8 +30,8 @@ public:
     float getDb() const { return db; }
 
     void updateDotHistory(int bin,
-                          const std::vector<float> &midDb, const std::vector<float> &sideDb,
-                          const std::vector<float> &ghostMidDb, const std::vector<float> &ghostSideDb);
+                          const std::vector<float> &primaryDb, const std::vector<float> &secondaryDb,
+                          const std::vector<float> &ghostPrimaryDb, const std::vector<float> &ghostSecondaryDb);
 
     void resetDotHistory();
 
@@ -39,15 +39,15 @@ public:
                       const DisplayRange &range, int fftSize, int numBins,
                       double sampleRate,
                       const std::vector<float> &smoothedMidDb, const std::vector<float> &smoothedSideDb,
-                      bool showMid, bool showSide, bool playRef,
-                      const juce::Colour &midColour, const juce::Colour &sideColour,
-                      const juce::Colour &refMidColour, const juce::Colour &refSideColour) const;
+                      bool showPrimary, bool showSecondary, bool playRef,
+                      const juce::Colour &primaryColour, const juce::Colour &secondaryColour,
+                      const juce::Colour &refPrimaryColour, const juce::Colour &refSecondaryColour) const;
 
     void paintRangeBars(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
                         const DisplayRange &range,
-                        bool showMid, bool showSide, bool showGhost, bool playRef,
-                        const juce::Colour &midColour, const juce::Colour &sideColour,
-                        const juce::Colour &refMidColour, const juce::Colour &refSideColour) const;
+                        bool showPrimary, bool showSecondary, bool showGhost, bool playRef,
+                        const juce::Colour &primaryColour, const juce::Colour &secondaryColour,
+                        const juce::Colour &refPrimaryColour, const juce::Colour &refSecondaryColour) const;
 
 private:
     static juce::String freqToNote(float freq);
@@ -59,10 +59,10 @@ private:
     float db = 0.0f;
 
     static constexpr int kDotHistorySize = Layout::SpectrumTooltip::dotHistorySize;
-    std::array<float, kDotHistorySize> midDotHistory{};
-    std::array<float, kDotHistorySize> sideDotHistory{};
-    std::array<float, kDotHistorySize> ghostMidDotHistory{};
-    std::array<float, kDotHistorySize> ghostSideDotHistory{};
+    std::array<float, kDotHistorySize> primaryDotHistory{};
+    std::array<float, kDotHistorySize> secondaryDotHistory{};
+    std::array<float, kDotHistorySize> ghostPrimaryDotHistory{};
+    std::array<float, kDotHistorySize> ghostSecondaryDotHistory{};
     int dotHistoryPos = 0;
     bool dotHistoryReady = false;
 };

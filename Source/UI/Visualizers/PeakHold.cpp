@@ -11,36 +11,36 @@ namespace {
 void PeakHold::setEnabled(const bool enable) {
     enabled = enable;
     if (!enabled) {
-        peakMidPath.clear();
-        peakSidePath.clear();
-        peakGhostMidPath.clear();
-        peakGhostSidePath.clear();
-        peakMidImage = peakSideImage = peakGhostMidImage = peakGhostSideImage = {};
+        peakPrimaryPath.clear();
+        peakSecondaryPath.clear();
+        peakGhostPrimaryPath.clear();
+        peakGhostSecondaryPath.clear();
+        peakPrimaryImage = peakSecondaryImage = peakGhostPrimaryImage = peakGhostSecondaryImage = {};
     }
 }
 
 void PeakHold::reset(const int numBins, const float minDb) {
-    peakMidDb.assign(static_cast<size_t>(numBins), minDb);
-    peakSideDb.assign(static_cast<size_t>(numBins), minDb);
-    peakGhostMidDb.assign(static_cast<size_t>(numBins), minDb);
-    peakGhostSideDb.assign(static_cast<size_t>(numBins), minDb);
-    peakMidPath.clear();
-    peakSidePath.clear();
-    peakGhostMidPath.clear();
-    peakGhostSidePath.clear();
-    peakMidImage = peakSideImage = peakGhostMidImage = peakGhostSideImage = {};
+    peakPrimaryDb.assign(static_cast<size_t>(numBins), minDb);
+    peakSecondaryDb.assign(static_cast<size_t>(numBins), minDb);
+    peakGhostPrimaryDb.assign(static_cast<size_t>(numBins), minDb);
+    peakGhostSecondaryDb.assign(static_cast<size_t>(numBins), minDb);
+    peakPrimaryPath.clear();
+    peakSecondaryPath.clear();
+    peakGhostPrimaryPath.clear();
+    peakGhostSecondaryPath.clear();
+    peakPrimaryImage = peakSecondaryImage = peakGhostPrimaryImage = peakGhostSecondaryImage = {};
     pathsDirty = ghostPathsDirty = true;
 }
 
-bool PeakHold::accumulate(const std::vector<float> &midDb, const std::vector<float> &sideDb, const int numBins) {
+bool PeakHold::accumulate(const std::vector<float> &primaryDb, const std::vector<float> &secondaryDb, const int numBins) {
     bool changed = false;
     for (int bin = 0; bin < numBins; ++bin) {
         const auto b = static_cast<size_t>(bin);
-        const float nextMid = std::max(peakMidDb[b], midDb[b]);
-        const float nextSide = std::max(peakSideDb[b], sideDb[b]);
-        changed = changed || (nextMid > peakMidDb[b]) || (nextSide > peakSideDb[b]);
-        peakMidDb[b] = nextMid;
-        peakSideDb[b] = nextSide;
+        const float nextMid = std::max(peakPrimaryDb[b], primaryDb[b]);
+        const float nextSide = std::max(peakSecondaryDb[b], secondaryDb[b]);
+        changed = changed || (nextMid > peakPrimaryDb[b]) || (nextSide > peakSecondaryDb[b]);
+        peakPrimaryDb[b] = nextMid;
+        peakSecondaryDb[b] = nextSide;
     }
     return changed;
 }
@@ -50,24 +50,24 @@ bool PeakHold::accumulateGhost(const std::vector<float> &midDb, const std::vecto
     bool changed = false;
     for (int bin = 0; bin < numBins; ++bin) {
         const auto b = static_cast<size_t>(bin);
-        const float nextMid = std::max(peakGhostMidDb[b], midDb[b]);
-        const float nextSide = std::max(peakGhostSideDb[b], sideDb[b]);
-        changed = changed || (nextMid > peakGhostMidDb[b]) || (nextSide > peakGhostSideDb[b]);
-        peakGhostMidDb[b] = nextMid;
-        peakGhostSideDb[b] = nextSide;
+        const float nextMid = std::max(peakGhostPrimaryDb[b], midDb[b]);
+        const float nextSide = std::max(peakGhostSecondaryDb[b], sideDb[b]);
+        changed = changed || (nextMid > peakGhostPrimaryDb[b]) || (nextSide > peakGhostSecondaryDb[b]);
+        peakGhostPrimaryDb[b] = nextMid;
+        peakGhostSecondaryDb[b] = nextSide;
     }
     return changed;
 }
 
 void PeakHold::buildPaths(const float width, const float height, const BuildPathFn &buildPath) {
-    buildPath(peakMidPath, peakMidDb, width, height, false);
-    buildPath(peakSidePath, peakSideDb, width, height, false);
+    buildPath(peakPrimaryPath, peakPrimaryDb, width, height, false);
+    buildPath(peakSecondaryPath, peakSecondaryDb, width, height, false);
     pathsDirty = true;
 }
 
 void PeakHold::buildGhostPaths(const float width, const float height, const BuildPathFn &buildPath) {
-    buildPath(peakGhostMidPath, peakGhostMidDb, width, height, false);
-    buildPath(peakGhostSidePath, peakGhostSideDb, width, height, false);
+    buildPath(peakGhostPrimaryPath, peakGhostPrimaryDb, width, height, false);
+    buildPath(peakGhostSecondaryPath, peakGhostSecondaryDb, width, height, false);
     ghostPathsDirty = true;
 }
 
@@ -86,45 +86,45 @@ void PeakHold::renderGlowImage(juce::Image& img, const juce::Path& path,
 }
 
 void PeakHold::paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
-                     const bool showMid, const bool showSide, const bool showGhost,
+                     const bool showPrimary, const bool showSecondary, const bool showGhost,
                      const ChannelMode channelMode,
-                     const juce::Colour &activeMidCol, const juce::Colour &activeSideCol,
-                     const juce::Colour &ghostMidCol, const juce::Colour &ghostSideCol) const {
+                     const juce::Colour &activePrimaryCol, const juce::Colour &activeSecondaryCol,
+                     const juce::Colour &ghostPrimaryCol, const juce::Colour &ghostSecondaryCol) const {
     if (!enabled)
         return;
 
     // Mix toward white so peaks read as a distinct "ceiling" above the live curve.
-    const auto effMidCol       = activeMidCol.interpolatedWith(juce::Colours::white, kWhiteMix);
-    const auto effSideCol      = activeSideCol.interpolatedWith(juce::Colours::white, kWhiteMix);
-    const auto effGhostMidCol  = ghostMidCol.interpolatedWith(juce::Colours::white, kWhiteMix);
-    const auto effGhostSideCol = ghostSideCol.interpolatedWith(juce::Colours::white, kWhiteMix);
+    const auto effMidCol       = activePrimaryCol.interpolatedWith(juce::Colours::white, kWhiteMix);
+    const auto effSideCol      = activeSecondaryCol.interpolatedWith(juce::Colours::white, kWhiteMix);
+    const auto effGhostMidCol  = ghostPrimaryCol.interpolatedWith(juce::Colours::white, kWhiteMix);
+    const auto effGhostSideCol = ghostSecondaryCol.interpolatedWith(juce::Colours::white, kWhiteMix);
 
     const int iw = static_cast<int>(spectrumArea.getWidth());
     const int ih = static_cast<int>(spectrumArea.getHeight());
 
     // Rebuild images when paths changed or when colours / area changed.
     const bool areaChanged    = (spectrumArea != lastSpectrumArea);
-    const bool coloursChanged = (effMidCol != lastEffMidCol || effSideCol != lastEffSideCol
-                              || effGhostMidCol != lastEffGhostMidCol
-                              || effGhostSideCol != lastEffGhostSideCol);
+    const bool coloursChanged = (effMidCol != lastEffPrimaryCol || effSideCol != lastEffSecondaryCol
+                              || effGhostMidCol != lastEffGhostPrimaryCol
+                              || effGhostSideCol != lastEffGhostSecondaryCol);
     if (areaChanged || coloursChanged) {
         pathsDirty       = true;
         ghostPathsDirty  = true;
         lastSpectrumArea    = spectrumArea;
-        lastEffMidCol       = effMidCol;
-        lastEffSideCol      = effSideCol;
-        lastEffGhostMidCol  = effGhostMidCol;
-        lastEffGhostSideCol = effGhostSideCol;
+        lastEffPrimaryCol       = effMidCol;
+        lastEffSecondaryCol      = effSideCol;
+        lastEffGhostPrimaryCol  = effGhostMidCol;
+        lastEffGhostSecondaryCol = effGhostSideCol;
     }
 
     if (pathsDirty) {
-        renderGlowImage(peakMidImage,  peakMidPath,  effMidCol,  iw, ih);
-        renderGlowImage(peakSideImage, peakSidePath, effSideCol, iw, ih);
+        renderGlowImage(peakPrimaryImage,  peakPrimaryPath,  effMidCol,  iw, ih);
+        renderGlowImage(peakSecondaryImage, peakSecondaryPath, effSideCol, iw, ih);
         pathsDirty = false;
     }
     if (ghostPathsDirty) {
-        renderGlowImage(peakGhostMidImage,  peakGhostMidPath,  effGhostMidCol,  iw, ih);
-        renderGlowImage(peakGhostSideImage, peakGhostSidePath, effGhostSideCol, iw, ih);
+        renderGlowImage(peakGhostPrimaryImage,  peakGhostPrimaryPath,  effGhostMidCol,  iw, ih);
+        renderGlowImage(peakGhostSecondaryImage, peakGhostSecondaryPath, effGhostSideCol, iw, ih);
         ghostPathsDirty = false;
     }
 
@@ -134,24 +134,24 @@ void PeakHold::paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumAr
     // Ghost peaks (drawn first, underneath main peaks)
     if (showGhost) {
         if (channelMode == ChannelMode::LR) {
-            if (peakGhostMidImage.isValid())
-                g.drawImageAt(peakGhostMidImage, tx, ty);
+            if (peakGhostPrimaryImage.isValid())
+                g.drawImageAt(peakGhostPrimaryImage, tx, ty);
         } else {
-            if (showSide && peakGhostSideImage.isValid())
-                g.drawImageAt(peakGhostSideImage, tx, ty);
-            if (showMid && peakGhostMidImage.isValid())
-                g.drawImageAt(peakGhostMidImage, tx, ty);
+            if (showSecondary && peakGhostSecondaryImage.isValid())
+                g.drawImageAt(peakGhostSecondaryImage, tx, ty);
+            if (showPrimary && peakGhostPrimaryImage.isValid())
+                g.drawImageAt(peakGhostPrimaryImage, tx, ty);
         }
     }
 
     // Main peak paths
     if (channelMode == ChannelMode::LR) {
-        if (peakMidImage.isValid())
-            g.drawImageAt(peakMidImage, tx, ty);
+        if (peakPrimaryImage.isValid())
+            g.drawImageAt(peakPrimaryImage, tx, ty);
     } else {
-        if (showSide && peakSideImage.isValid())
-            g.drawImageAt(peakSideImage, tx, ty);
-        if (showMid && peakMidImage.isValid())
-            g.drawImageAt(peakMidImage, tx, ty);
+        if (showSecondary && peakSecondaryImage.isValid())
+            g.drawImageAt(peakSecondaryImage, tx, ty);
+        if (showPrimary && peakPrimaryImage.isValid())
+            g.drawImageAt(peakPrimaryImage, tx, ty);
     }
 }

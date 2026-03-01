@@ -127,9 +127,12 @@ public:
     void setChannelMode(const int mode) override {
         ChannelMode cm;
         switch (mode) {
-            case 1:  cm = ChannelMode::LR;         break;
-            case 2:  cm = ChannelMode::TonalNoise; break;
-            default: cm = ChannelMode::MidSide;    break;
+            case 1: cm = ChannelMode::LR;
+                break;
+            case 2: cm = ChannelMode::TonalNoise;
+                break;
+            default: cm = ChannelMode::MidSide;
+                break;
         }
         setChannelMode(cm);
     }
@@ -260,13 +263,13 @@ private:
 
     int hopCounter = 0;
 
-    std::vector<float> smoothedMidDb;
-    std::vector<float> smoothedSideDb;
+    std::vector<float> smoothedPrimaryDb;
+    std::vector<float> smoothedSecondaryDb;
 
     //==============================================================================
     // Rendering — paths built in processDrainedData, drawn in paint
-    juce::Path midPath;
-    juce::Path sidePath;
+    juce::Path primaryPath;
+    juce::Path secondaryPath;
     juce::Image gridImage;
 
     // Layout margins for labels outside spectrum area
@@ -324,7 +327,7 @@ private:
 
     // Band definitions for band selection feature
     struct Band {
-        const char* name;
+        const char *name;
         float lo;
         float hi;
     };
@@ -336,20 +339,22 @@ private:
         float q;
     };
 
-    static constexpr std::array<Band, 7> kBands = {{
-        {"Sub", 20.0f, 80.0f},
-        {"Low", 80.0f, 300.0f},
-        {"Low-Mid", 300.0f, 600.0f},
-        {"Mid", 600.0f, 2000.0f},
-        {"Hi-Mid", 2000.0f, 6000.0f},
-        {"High", 6000.0f, 12000.0f},
-        {"Air", 12000.0f, 20000.0f},
-    }};
+    static constexpr std::array<Band, 7> kBands = {
+        {
+            {"Sub", 20.0f, 80.0f},
+            {"Low", 80.0f, 300.0f},
+            {"Low-Mid", 300.0f, 600.0f},
+            {"Mid", 600.0f, 2000.0f},
+            {"Hi-Mid", 2000.0f, 6000.0f},
+            {"High", 6000.0f, 12000.0f},
+            {"Air", 12000.0f, 20000.0f},
+        }
+    };
 
 public:
     // Helper functions for band selection (public for testing)
     static BandInfo getBandInfo(size_t bandIndex) {
-        const auto& band = kBands[bandIndex];
+        const auto &band = kBands[bandIndex];
         const float centerFreq = (band.lo + band.hi) * 0.5f;
         const float bandWidth = band.hi - band.lo;
         return {band.lo, band.hi, centerFreq, centerFreq / bandWidth};
@@ -364,12 +369,13 @@ public:
         return -1;
     }
 
-    bool isInBandHintsArea(const juce::Point<float>& position) const {
+    bool isInBandHintsArea(const juce::Point<float> &position) const {
         constexpr float barY = Layout::SpectrumAnalyzer::barY;
         constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
         return position.y >= barY && position.y <= barY + barH
-            && position.x >= spectrumArea.getX() && position.x <= spectrumArea.getRight();
+               && position.x >= spectrumArea.getX() && position.x <= spectrumArea.getRight();
     }
+
     bool frozen = false;
 
     // Infinite peak hold
@@ -410,10 +416,10 @@ public:
 
     void paintMainPaths(juce::Graphics &g) const;
 
-    mutable juce::ColourGradient cachedMidGrad;
-    mutable juce::ColourGradient cachedSideGrad;
-    mutable juce::Colour lastGradMidCol;
-    mutable juce::Colour lastGradSideCol;
+    mutable juce::ColourGradient cachedPrimaryGrad;
+    mutable juce::ColourGradient cachedSecondaryGrad;
+    mutable juce::Colour lastGradPrimaryCol;
+    mutable juce::Colour lastGradSecondaryCol;
     mutable float lastGradTy = -1.0f;
     mutable float lastGradH = -1.0f;
 

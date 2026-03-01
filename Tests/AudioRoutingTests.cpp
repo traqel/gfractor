@@ -4,7 +4,7 @@
   Comprehensive tests for audio signal routing at the DSP level including:
   - L/R pass-through
   - M/S pass-through  
-  - T/N (Tonal/Noise) pass-through
+  - T/N pass-through
   - Channel mode switching
   - Primary/Secondary disable routing
   - Stereo correlation routing
@@ -18,7 +18,8 @@
 
 class AudioRoutingDSPTests : public juce::UnitTest {
 public:
-    AudioRoutingDSPTests() : UnitTest("Audio Routing DSP Tests", "Audio Routing") {}
+    AudioRoutingDSPTests() : UnitTest("Audio Routing DSP Tests", "Audio Routing") {
+    }
 
     void runTest() override {
         testLRPassthrough();
@@ -109,30 +110,15 @@ private:
 
         juce::AudioBuffer<float> buffer(2, 512);
 
-        auto fillSineWave = [&buffer](const float freq) {
-            for (int ch = 0; ch < 2; ++ch) {
-                for (int s = 0; s < 512; ++s) {
-                    const float t = static_cast<float>(s) / 44100.0f;
-                    buffer.setSample(ch, s, 0.5f * std::sin(2.0f * juce::MathConstants<float>::pi * freq * t));
-                }
-            }
-        };
-
-        fillSineWave(1000.0f);
-
-        for (int i = 0; i < 100; ++i) {
-            dsp.process(buffer);
+        for (int sample = 0; sample < 512; ++sample) {
+            buffer.setSample(0, sample, 0.5f);
+            buffer.setSample(1, sample, 0.5f);
         }
 
-        bool hasFiniteOutput = true;
-        for (int ch = 0; ch < 2; ++ch) {
-            for (int s = 0; s < 512; ++s) {
-                if (!std::isfinite(buffer.getSample(ch, s))) {
-                    hasFiniteOutput = false;
-                }
-            }
-        }
-        expect(hasFiniteOutput);
+        dsp.process(buffer);
+
+        expectWithinAbsoluteError(buffer.getSample(0, 256), 0.5f, 0.01f);
+        expectWithinAbsoluteError(buffer.getSample(1, 256), 0.5f, 0.01f);
     }
 
     void testChannelModeSwitchingRouting() {
