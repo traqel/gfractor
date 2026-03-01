@@ -12,6 +12,7 @@
 #include <juce_dsp/juce_dsp.h>
 #include <juce_core/juce_core.h>
 #include "DSP/gFractorDSP.h"
+#include "Utility/ChannelMode.h"
 
 /**
  * DSP Tests using JUCE's built-in testing framework
@@ -287,7 +288,7 @@ private:
         juce::AudioBuffer<float> buffer(2, 512);
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setLRMode(false); // M/S mode
+        dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
 
         // Test: Disable mid, keep side
         {
@@ -359,7 +360,7 @@ private:
 
         // In LR mode, mid/side filtering should be bypassed
         {
-            dsp.setLRMode(true);
+            dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
             dsp.setMidEnabled(false); // These should have no effect in LR mode
             dsp.setSideEnabled(false);
 
@@ -378,7 +379,7 @@ private:
         // In M/S mode with both disabled, signal should be filtered
         {
             dsp.reset();
-            dsp.setLRMode(false);
+        dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
             dsp.setMidEnabled(false);
             dsp.setSideEnabled(false);
 
@@ -406,7 +407,7 @@ private:
         juce::AudioBuffer<float> buffer(2, 512);
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setLRMode(true);
+        dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
 
         // Fill with broadband noise-like signal (alternating values)
         for (int sample = 0; sample < 512; ++sample) {
@@ -488,7 +489,7 @@ private:
 
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setLRMode(false);
+        dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
 
         // Test: Mid-only signal (left = right)
         {
@@ -805,7 +806,7 @@ private:
         for (int block = 0; block < 50; ++block) {
             fillBufferWithValue(buffer, 0.5f);
 
-            dsp.setLRMode(block % 2 == 0);
+            dsp.setOutputMode((block % 2 == 0) ? channelModeFromInt(0) : channelModeFromInt(1));
             dsp.setMidEnabled(block % 3 == 0);
             dsp.setSideEnabled(block % 4 == 0);
 
@@ -1032,7 +1033,7 @@ private:
 
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setLRMode(true);
+        dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
 
         // Create broadband test signal (alternating samples have energy across spectrum)
         auto fillBroadbandSignal = [](juce::AudioBuffer<float>& buffer) {

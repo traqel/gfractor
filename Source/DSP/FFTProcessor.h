@@ -43,14 +43,6 @@ public:
     /** Set the minimum dB floor (used for gainToDecibels conversion). */
     void setMinDb(const float db) { minDb = db; }
 
-    /** Reset instant dB arrays to floor without reallocating any buffers.
-     *  Use this instead of setFftOrder() when you only need to clear displayed values. */
-    void resetInstantDb(const float newMinDb) {
-        minDb = newMinDb;
-        std::fill(instantMidDb.begin(), instantMidDb.end(), minDb);
-        std::fill(instantSideDb.begin(), instantSideDb.end(), minDb);
-    }
-
     /** Set the temporal decay factor (0..1, higher = slower decay). */
     void setTemporalDecay(const float decay) { temporalDecay = juce::jlimit(0.0f, 1.0f, decay); }
 
@@ -62,27 +54,24 @@ public:
      * @param srcWritePos  Current write position in the rolling buffer
      * @param outMidDb     Output: temporally smoothed mid-dB values
      * @param outSideDb    Output: temporally smoothed side dB values
-     * @param captureInstant If true, also updates instantMidDb/SideDb
      */
     void processBlock(const std::vector<float> &srcL, const std::vector<float> &srcR,
                       int srcWritePos,
-                      std::vector<float> &outMidDb, std::vector<float> &outSideDb,
-                      bool captureInstant = false);
-
-    /** Apply 1/3-octave smoothing to a dB array in-place. */
-    void applyOctaveSmoothing(std::vector<float> &dbData) const;
+                      std::vector<float> &outMidDb, std::vector<float> &outSideDb);
 
     // Accessors
     int getFftOrder() const { return fftOrder; }
     int getFftSize() const { return fftSize; }
     int getNumBins() const { return numBins; }
 
-    const std::vector<float> &getInstantMidDb() const { return instantMidDb; }
-    const std::vector<float> &getInstantSideDb() const { return instantSideDb; }
-
 private:
+    void applyOctaveSmoothing(std::vector<float> &dbData) const;
     void precomputeSmoothingRanges();
     void precomputeSlopeGains();
+
+    /** In TonalNoise mode: fill noiseOut with a 1-octave wide box-average of
+     *  spectrum (linear magnitude domain), producing a smooth noise floor. */
+    void computeNoiseFloor(std::vector<float> &noiseOut, const std::vector<float> &spectrum) const;
 
     // FFT configuration
     int fftOrder = Defaults::fftOrder;
@@ -98,10 +87,6 @@ private:
     // Work buffers (UI thread only)
     std::vector<float> fftDataMid;
     std::vector<float> fftDataSide;
-
-    // Instant (per-block) dB values — no temporal or octave smoothing
-    std::vector<float> instantMidDb;
-    std::vector<float> instantSideDb;
 
     // Smoothing ranges for 1/3-octave
     struct SmoothingRange {

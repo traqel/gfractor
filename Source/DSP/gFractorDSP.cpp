@@ -26,6 +26,9 @@ void gFractorDSP::prepare(const juce::dsp::ProcessSpec &spec) {
     bandFilter1.reset();
     bandFilter2.reset();
 
+    // Prepare spectral separator for Tonal/Noise output mode
+    separator.prepare(spec);
+
     isPrepared = true;
 }
 
@@ -119,8 +122,15 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
         lastBandQ = -1.0f;
     }
 
-    // Mid/Side output filtering (only in M/S mode when at least one channel is disabled)
-    if (!lrMode && (!midEnabled || !sideEnabled)) {
+    // Tonal/Noise mode: SpectralSeparator handles channel separation via STFT
+    if (outputMode == ChannelMode::TonalNoise) {
+        separator.process(buffer);
+        // Both channels disabled → silence
+        if (!midEnabled && !sideEnabled)
+            buffer.clear();
+    }
+    // M/S mode: zero the disabled channel inline
+    else if (outputMode == ChannelMode::MidSide && (!midEnabled || !sideEnabled)) {
         if (block.getNumChannels() >= 2) {
             auto *leftData = block.getChannelPointer(0);
             auto *rightData = block.getChannelPointer(1);
@@ -137,6 +147,7 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
             }
         }
     }
+    // L/R mode (outputMode == 1): pass through unchanged
 }
 
 void gFractorDSP::reset() {
@@ -150,6 +161,7 @@ void gFractorDSP::reset() {
     auditBellFilter2.reset();
     bandFilter1.reset();
     bandFilter2.reset();
+    separator.reset();
 }
 
 void gFractorDSP::setGain(const float gainDB) {
@@ -173,14 +185,34 @@ void gFractorDSP::setBypassed(const bool shouldBeBypassed) {
 
 void gFractorDSP::setMidEnabled(const bool enabled) {
     midEnabled = enabled;
+    updateSeparatorMode();
 }
 
 void gFractorDSP::setSideEnabled(const bool enabled) {
     sideEnabled = enabled;
+    updateSeparatorMode();
 }
 
-void gFractorDSP::setLRMode(const bool enabled) {
-    lrMode = enabled;
+void gFractorDSP::setOutputMode(const ChannelMode mode) {
+    outputMode = mode;
+    updateSeparatorMode();
+}
+
+int gFractorDSP::getLatencySamples() const {
+    return (outputMode == ChannelMode::TonalNoise) ? separator.getLatencySamples() : 0;
+}
+
+void gFractorDSP::updateSeparatorMode() {
+    if (outputMode != ChannelMode::TonalNoise) {
+        separator.setMode(SpectralSeparator::Mode::None);
+        return;
+    }
+    if (midEnabled && !sideEnabled)
+        separator.setMode(SpectralSeparator::Mode::TonalOnly);
+    else if (!midEnabled && sideEnabled)
+        separator.setMode(SpectralSeparator::Mode::NoiseOnly);
+    else
+        separator.setMode(SpectralSeparator::Mode::None);
 }
 
 void gFractorDSP::setDryWet(const float proportion) {

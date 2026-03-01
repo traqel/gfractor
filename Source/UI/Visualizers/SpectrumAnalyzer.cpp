@@ -415,7 +415,7 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
         if (hopCounter >= hopSize) {
             fftProcessor.processBlock(rolling_L, rolling_R, virtualWritePos,
-                                      smoothedMidDb, smoothedSideDb, true);
+                                      smoothedMidDb, smoothedSideDb);
             fftDataReady = true;
             hopCounter = 0;
         }
@@ -572,7 +572,7 @@ void SpectrumAnalyzer::clearAllCurves() {
     const auto nb = static_cast<size_t>(numBins);
     smoothedMidDb.assign(nb, range.minDb);
     smoothedSideDb.assign(nb, range.minDb);
-    fftProcessor.resetInstantDb(range.minDb); // clear instant arrays without reallocating
+    fftProcessor.setMinDb(range.minDb);
     ghostSpectrum.resetBuffers(fftSize, range.minDb);
     midPath.clear();
     sidePath.clear();

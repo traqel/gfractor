@@ -115,8 +115,12 @@ public:
     float getPeakMidDb() const override { return dspProcessor.getPeakMidDb(); }
     float getPeakSideDb() const override { return dspProcessor.getPeakSideDb(); }
 
-    /** In L+R mode, audio output is always stereo (Mid/Side buttons only affect display). */
-    void setLRMode(const bool enabled) { dspProcessor.setLRMode(enabled); }
+    /** Set output mode: 0 = M/S, 1 = L/R, 2 = Tonal/Noise.
+     *  T/N mode introduces kFftSize samples of latency via SpectralSeparator. */
+    void setOutputMode(const ChannelMode mode) {
+        dspProcessor.setOutputMode(mode);
+        setLatencySamples(dspProcessor.getLatencySamples());
+    }
 
 
     //==============================================================================

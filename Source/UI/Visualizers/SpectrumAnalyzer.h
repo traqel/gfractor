@@ -125,7 +125,13 @@ public:
     }
 
     void setChannelMode(const int mode) override {
-        setChannelMode(mode == 0 ? ChannelMode::MidSide : ChannelMode::LR);
+        ChannelMode cm;
+        switch (mode) {
+            case 1:  cm = ChannelMode::LR;         break;
+            case 2:  cm = ChannelMode::TonalNoise; break;
+            default: cm = ChannelMode::MidSide;    break;
+        }
+        setChannelMode(cm);
     }
 
     /** Band selection filter - forwards to onBandFilter callback */

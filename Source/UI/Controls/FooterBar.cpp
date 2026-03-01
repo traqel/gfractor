@@ -1,5 +1,6 @@
 #include "FooterBar.h"
 #include "../../PluginProcessor.h"
+#include "../../Utility/ChannelMode.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/Symbols.h"
@@ -14,14 +15,27 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     referencePill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(referencePill);
 
-    // Mode dropdown — 0 = M/S (default), 1 = L/R
+    // Mode dropdown — 0 = M/S, 1 = L/R, 2 = T/N (Tonal/Noise)
     modePill.setSelectedIndex(0);
     modePill.onChange = [this](const int index) {
         const bool lr = (index == 1);
+        const bool tn = (index == 2);
+
+        // L/R mode hides the per-channel visibility pills
         midPill.setEnabled(!lr);
         sidePill.setEnabled(!lr);
-        controlsRef.setChannelMode(lr ? 1 : 0);
-        processorRef.setLRMode(lr);
+
+        // Relabel pills to match the active channel pair
+        if (tn) {
+            midPill.setButtonText("Tonal");
+            sidePill.setButtonText("Noise");
+        } else {
+            midPill.setButtonText("Mid");
+            sidePill.setButtonText("Side");
+        }
+
+        controlsRef.setChannelMode(index);
+        processorRef.setOutputMode(channelModeFromInt(index));
     };
     addAndMakeVisible(modePill);
 

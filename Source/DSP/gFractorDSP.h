@@ -2,6 +2,8 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
+#include "SpectralSeparator.h"
+#include "../Utility/ChannelMode.h"
 
 /**
  * Main DSP processor for the gFractor plugin.
@@ -45,7 +47,13 @@ public:
     /** Set dry/wet mix proportion (0.0 = fully dry, 1.0 = fully wet). */
     void setDryWet(float proportion);
 
-    void setLRMode(bool enabled);
+    /** Set the output mode: 0 = M/S, 1 = L/R, 2 = Tonal/Noise.
+     *  In T/N mode the SpectralSeparator handles channel separation,
+     *  introducing kFftSize samples of latency. */
+    void setOutputMode(ChannelMode mode);
+
+    /** Latency introduced by the current output mode (0 unless T/N mode). */
+    int getLatencySamples() const;
 
     /** Transient audition bell filter (UI thread sets, audio thread reads) */
     void setAuditFilter(bool active, float frequencyHz, float q);
@@ -68,9 +76,15 @@ private:
     juce::dsp::ProcessSpec currentSpec{};
     bool isPrepared = false;
     bool bypassed = false;
-    bool midEnabled = true;
+    bool midEnabled  = true;
     bool sideEnabled = true;
-    bool lrMode = false;
+    ChannelMode outputMode = ChannelMode::MidSide;
+
+    SpectralSeparator separator;
+
+    /** Re-derives the separator's Mode from outputMode + mid/sideEnabled.
+     *  Call whenever any of those three values change. */
+    void updateSeparatorMode();
 
     //==============================================================================
     // DSP components (pre-allocated in prepare(), reused in process())
