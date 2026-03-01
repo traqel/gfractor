@@ -197,8 +197,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
 
     // --- Transient length slider ---
     addAndMakeVisible(transientLengthSlider);
-    transientLengthSlider.setRange(1.0, 50.0, 0.1);
-    transientLengthSlider.setSkewFactorFromMidPoint(10.0);
+    transientLengthSlider.setRange(0.1, 10.0, 0.1);
     transientLengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
     transientLengthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     transientLengthSlider.setTextValueSuffix(" ms");

@@ -43,9 +43,9 @@ namespace ParameterDefaults {
 
     // Transient length (fast envelope time constant, stored in ms)
     namespace TransientLength {
-        inline constexpr float minValue = 1.0f;
-        inline constexpr float maxValue = 50.0f;
-        inline constexpr float defaultValue = 2.0f;
+        inline constexpr float minValue = 0.1f;
+        inline constexpr float maxValue = 10.0f;
+        inline constexpr float defaultValue = 1.0f;
         inline constexpr float stepSize = 0.1f;
         inline const juce::String name = "Transient Length";
         inline const juce::String suffix = " ms";
