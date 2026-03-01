@@ -120,7 +120,7 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
     }
 
     // Tonal/Noise mode: SpectralSeparator handles channel separation via STFT
-    if (outputMode == ChannelMode::TonalNoise && (!primaryEnabled || !secondaryEnabled)) {
+    if (outputMode == ChannelMode::TonalNoise) {
         if (block.getNumChannels() >= 2) {
             auto *leftData = block.getChannelPointer(0);
             auto *rightData = block.getChannelPointer(1);
@@ -152,6 +152,23 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
 
                 leftData[i] = mid + side;
                 rightData[i] = mid - side;
+            }
+        }
+    }
+    else if (outputMode == ChannelMode::LR) {
+        if (block.getNumChannels() >= 2) {
+            auto *leftData = block.getChannelPointer(0);
+            auto *rightData = block.getChannelPointer(1);
+
+            for (size_t i = 0; i < block.getNumSamples(); ++i) {
+                float left = leftData[i];
+                float right = rightData[i];
+
+                if (!primaryEnabled) left = 0.0f;
+                if (!secondaryEnabled) right = 0.0f;
+
+                leftData[i] = left;
+                rightData[i] = right;
             }
         }
     }
