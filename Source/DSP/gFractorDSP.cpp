@@ -14,6 +14,12 @@ void gFractorDSP::prepare(const juce::dsp::ProcessSpec &spec) {
     fastEnvState = 0.0f;
     slowEnvState = 0.0f;
 
+    // Smoothed enable/disable gains — 10ms ramp prevents toggle clicks
+    primaryGain.reset(spec.sampleRate, 0.010);
+    primaryGain.setCurrentAndTargetValue(primaryEnabled.load(std::memory_order_relaxed) ? 1.0f : 0.0f);
+    secondaryGain.reset(spec.sampleRate, 0.010);
+    secondaryGain.setCurrentAndTargetValue(secondaryEnabled.load(std::memory_order_relaxed) ? 1.0f : 0.0f);
+
     // Set smoothing ramp length (50ms to prevent zipper noise)
     gainSmoothed.reset(spec.sampleRate, 0.05);
     gainSmoothed.setCurrentAndTargetValue(juce::Decibels::decibelsToGain(0.0f));
@@ -134,6 +140,10 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
             auto *leftData  = block.getChannelPointer(0);
             auto *rightData = block.getChannelPointer(1);
 
+            // Sync SmoothedValue targets from atomics (audio thread read of message-thread writes)
+            primaryGain.setTargetValue(primaryEnabled.load(std::memory_order_relaxed) ? 1.0f : 0.0f);
+            secondaryGain.setTargetValue(secondaryEnabled.load(std::memory_order_relaxed) ? 1.0f : 0.0f);
+
             for (size_t i = 0; i < block.getNumSamples(); ++i) {
                 const float absMono = std::abs(leftData[i] + rightData[i]) * 0.5f;
 
@@ -144,9 +154,10 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
                     ? juce::jlimit(0.0f, 1.0f, (fastEnvState - slowEnvState) / fastEnvState)
                     : 0.0f;
 
-                // Combine enabled components into a single gain applied to stereo L/R
-                const float gain = (primaryEnabled   ? transientGain          : 0.0f)
-                                 + (secondaryEnabled ? (1.0f - transientGain) : 0.0f);
+                // Smoothed enable gains — ramp to avoid click when button is toggled
+                const float primG = primaryGain.getNextValue();
+                const float secG  = secondaryGain.getNextValue();
+                const float gain  = primG * transientGain + secG * (1.0f - transientGain);
 
                 leftData[i]  *= gain;
                 rightData[i] *= gain;
@@ -154,17 +165,19 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
         }
     }
     // M/S mode: zero the disabled channel inline
-    else if (outputMode == ChannelMode::MidSide && (!primaryEnabled || !secondaryEnabled)) {
+    else if (outputMode == ChannelMode::MidSide && (!primaryEnabled.load(std::memory_order_relaxed) || !secondaryEnabled.load(std::memory_order_relaxed))) {
         if (block.getNumChannels() >= 2) {
             auto *leftData = block.getChannelPointer(0);
             auto *rightData = block.getChannelPointer(1);
+            const bool primOn = primaryEnabled.load(std::memory_order_relaxed);
+            const bool secOn  = secondaryEnabled.load(std::memory_order_relaxed);
 
             for (size_t i = 0; i < block.getNumSamples(); ++i) {
                 float mid = (leftData[i] + rightData[i]) * 0.5f;
                 float side = (leftData[i] - rightData[i]) * 0.5f;
 
-                if (!primaryEnabled) mid = 0.0f;
-                if (!secondaryEnabled) side = 0.0f;
+                if (!primOn) mid = 0.0f;
+                if (!secOn) side = 0.0f;
 
                 leftData[i] = mid + side;
                 rightData[i] = mid - side;
@@ -175,13 +188,15 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
         if (block.getNumChannels() >= 2) {
             auto *leftData = block.getChannelPointer(0);
             auto *rightData = block.getChannelPointer(1);
+            const bool primOn = primaryEnabled.load(std::memory_order_relaxed);
+            const bool secOn  = secondaryEnabled.load(std::memory_order_relaxed);
 
             for (size_t i = 0; i < block.getNumSamples(); ++i) {
                 float left = leftData[i];
                 float right = rightData[i];
 
-                if (!primaryEnabled) left = 0.0f;
-                if (!secondaryEnabled) right = 0.0f;
+                if (!primOn) left = 0.0f;
+                if (!secOn) right = 0.0f;
 
                 leftData[i] = left;
                 rightData[i] = right;
@@ -231,11 +246,11 @@ void gFractorDSP::setBypassed(const bool shouldBeBypassed) {
 }
 
 void gFractorDSP::setPrimaryEnabled(const bool enabled) {
-    primaryEnabled = enabled;
+    primaryEnabled.store(enabled, std::memory_order_relaxed);
 }
 
 void gFractorDSP::setSecondaryEnabled(const bool enabled) {
-    secondaryEnabled = enabled;
+    secondaryEnabled.store(enabled, std::memory_order_relaxed);
 }
 
 void gFractorDSP::setOutputMode(const ChannelMode mode) {

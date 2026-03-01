@@ -75,9 +75,13 @@ private:
     juce::dsp::ProcessSpec currentSpec{};
     bool isPrepared = false;
     bool bypassed = false;
-    bool primaryEnabled = true;
-    bool secondaryEnabled = true;
+    std::atomic<bool> primaryEnabled{true};
+    std::atomic<bool> secondaryEnabled{true};
     ChannelMode outputMode = ChannelMode::MidSide;
+
+    // Smoothed gains for click-free enable/disable transitions (audio thread only)
+    juce::SmoothedValue<float> primaryGain;
+    juce::SmoothedValue<float> secondaryGain;
 
     //==============================================================================
     // DSP components (pre-allocated in prepare(), reused in process())
