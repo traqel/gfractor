@@ -470,8 +470,8 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         ghostSpectrum.buildPaths(w, h, pathBuilder);
 
         if (peakHold.isEnabled()) {
-            const bool ghostPeaksChanged = peakHold.accumulateGhost(ghostSpectrum.getSmoothedMidDb(),
-                                                                    ghostSpectrum.getSmoothedSideDb(), numBins);
+            const bool ghostPeaksChanged = peakHold.accumulateGhost(ghostSpectrum.getSmoothedPrimaryDb(),
+                                                                    ghostSpectrum.getSmoothedSecondaryDb(), numBins);
             pendingPeakHoldGhostRebuild = pendingPeakHoldGhostRebuild || ghostPeaksChanged;
             if (pendingPeakHoldGhostRebuild && canRebuildPeakHold) {
                 peakHold.buildGhostPaths(w, h, pathBuilder);
@@ -487,8 +487,8 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         const int bin = juce::jlimit(0, numBins - 1,
                                      static_cast<int>(std::lround(tooltip.getFreq() / bw)));
         tooltip.updateDotHistory(bin, smoothedPrimaryDb, smoothedSecondaryDb,
-                                 ghostSpectrum.getSmoothedMidDb(),
-                                 ghostSpectrum.getSmoothedSideDb());
+                                 ghostSpectrum.getSmoothedPrimaryDb(),
+                                 ghostSpectrum.getSmoothedSecondaryDb());
     }
 }
 

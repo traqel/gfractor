@@ -14,8 +14,8 @@ void GhostSpectrum::resetBuffers(const int fftSize, const float minDb) {
     hopCounter = 0;
 
     const int numBins = fftSize / 2 + 1;
-    smoothedMidDb.assign(static_cast<size_t>(numBins), minDb);
-    smoothedSideDb.assign(static_cast<size_t>(numBins), minDb);
+    smoothedPrimaryDb.assign(static_cast<size_t>(numBins), minDb);
+    smoothedSecondaryDb.assign(static_cast<size_t>(numBins), minDb);
 }
 
 void GhostSpectrum::resetFifo(const int capacity) {
@@ -42,7 +42,7 @@ bool GhostSpectrum::processDrained(const int fftSize, const int hopSize,
         ++hopCounter;
 
         if (hopCounter >= hopSize) {
-            processFFT(rollingL, rollingR, virtualWritePos, smoothedMidDb, smoothedSideDb);
+            processFFT(rollingL, rollingR, virtualWritePos, smoothedPrimaryDb, smoothedSecondaryDb);
             fftReady = true;
             hopCounter = 0;
         }
@@ -52,14 +52,14 @@ bool GhostSpectrum::processDrained(const int fftSize, const int hopSize,
 }
 
 void GhostSpectrum::buildPaths(const float width, const float height, const BuildPathFn &buildPath) {
-    buildPath(midPath, smoothedMidDb, width, height, true);
-    buildPath(sidePath, smoothedSideDb, width, height, true);
+    buildPath(primaryPath, smoothedPrimaryDb, width, height, true);
+    buildPath(secondaryPath, smoothedSecondaryDb, width, height, true);
 }
 
 void GhostSpectrum::paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
-                          const bool showMid, const bool showSide, const ChannelMode channelMode,
-                          const juce::Colour &midCol, const juce::Colour &sideCol) const {
-    if (midPath.isEmpty())
+                          const bool showPrimary, const bool showSecondary, const ChannelMode channelMode,
+                          const juce::Colour &primaryCol, const juce::Colour &secondaryCol) const {
+    if (primaryPath.isEmpty())
         return;
 
     const auto tx = spectrumArea.getX();
@@ -74,16 +74,16 @@ void GhostSpectrum::paint(juce::Graphics &g, const juce::Rectangle<float> &spect
     };
 
     if (channelMode == ChannelMode::LR) {
-        drawGhost(midPath, midCol);
+        drawGhost(primaryPath, primaryCol);
     } else {
-        if (showSide) drawGhost(sidePath, sideCol);
-        if (showMid) drawGhost(midPath, midCol);
+        if (showSecondary) drawGhost(secondaryPath, secondaryCol);
+        if (showPrimary) drawGhost(primaryPath, primaryCol);
     }
 }
 
 void GhostSpectrum::clearPaths() {
-    midPath.clear();
-    sidePath.clear();
+    primaryPath.clear();
+    secondaryPath.clear();
 }
 
 void GhostSpectrum::drainSilently() {

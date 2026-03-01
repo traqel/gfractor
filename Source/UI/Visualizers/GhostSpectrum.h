@@ -20,8 +20,8 @@ public:
     using ProcessFFTFn = std::function<void(const std::vector<float> &srcL,
                                             const std::vector<float> &srcR,
                                             int srcWritePos,
-                                            std::vector<float> &outMidDb,
-                                            std::vector<float> &outSideDb)>;
+                                            std::vector<float> &outPrimaryDb,
+                                            std::vector<float> &outSecondaryDb)>;
 
     using BuildPathFn = std::function<void(juce::Path &path, const std::vector<float> &dbData,
                                            float width, float height, bool closePath)>;
@@ -41,15 +41,15 @@ public:
     void buildPaths(float width, float height, const BuildPathFn &buildPath);
 
     void paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
-               bool showMid, bool showSide, ChannelMode channelMode,
-               const juce::Colour &midCol, const juce::Colour &sideCol) const;
+               bool showPrimary, bool showSecondary, ChannelMode channelMode,
+               const juce::Colour &primaryCol, const juce::Colour &secondaryCol) const;
 
     void clearPaths();
 
-    const std::vector<float> &getSmoothedMidDb() const { return smoothedMidDb; }
-    const std::vector<float> &getSmoothedSideDb() const { return smoothedSideDb; }
-    const juce::Path &getMidPath() const { return midPath; }
-    const juce::Path &getSidePath() const { return sidePath; }
+    const std::vector<float> &getSmoothedPrimaryDb() const { return smoothedPrimaryDb; }
+    const std::vector<float> &getSmoothedSecondaryDb() const { return smoothedSecondaryDb; }
+    const juce::Path &getPrimaryPath() const { return primaryPath; }
+    const juce::Path &getSecondaryPath() const { return secondaryPath; }
 
     /** Drain FIFO without processing (used when frozen). */
     void drainSilently();
@@ -59,9 +59,9 @@ private:
 
     int hopCounter = 0;
 
-    std::vector<float> smoothedMidDb;
-    std::vector<float> smoothedSideDb;
+    std::vector<float> smoothedPrimaryDb;
+    std::vector<float> smoothedSecondaryDb;
 
-    juce::Path midPath;
-    juce::Path sidePath;
+    juce::Path primaryPath;
+    juce::Path secondaryPath;
 };
