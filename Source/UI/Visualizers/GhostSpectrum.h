@@ -41,7 +41,7 @@ public:
     void buildPaths(float width, float height, const BuildPathFn &buildPath);
 
     void paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
-               bool showPrimary, bool showSecondary, ChannelMode channelMode,
+               bool showPrimary, bool showSecondary,
                const juce::Colour &primaryCol, const juce::Colour &secondaryCol) const;
 
     void clearPaths();

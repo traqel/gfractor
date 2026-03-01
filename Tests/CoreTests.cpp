@@ -176,31 +176,31 @@ public:
 
         beginTest("MidSide encoding — identical signals");
         {
-            float mid = 0.0f, side = 0.0f;
-            ChannelDecoder::decode(ChannelMode::MidSide, 1.0f, 1.0f, mid, side);
-            // mid = (1+1)*0.5 = 1, side = (1-1)*0.5 = 0
-            expectWithinAbsoluteError(mid, 1.0f, 1e-6f);
-            expectWithinAbsoluteError(side, 0.0f, 1e-6f);
+            float primary = 0.0f, secondary = 0.0f;
+            ChannelDecoder::decode(ChannelMode::MidSide, 1.0f, 1.0f, primary, secondary);
+            // primary = (1+1)*0.5 = 1, secondary = (1-1)*0.5 = 0
+            expectWithinAbsoluteError(primary, 1.0f, 1e-6f);
+            expectWithinAbsoluteError(secondary, 0.0f, 1e-6f);
         }
 
         beginTest("MidSide encoding — opposite signals");
         {
-            float mid = 0.0f, side = 0.0f;
-            ChannelDecoder::decode(ChannelMode::MidSide, 1.0f, -1.0f, mid, side);
-            // mid = (1+(-1))*0.5 = 0, side = (1-(-1))*0.5 = 1
-            expectWithinAbsoluteError(mid, 0.0f, 1e-6f);
-            expectWithinAbsoluteError(side, 1.0f, 1e-6f);
+            float primary = 0.0f, secondary = 0.0f;
+            ChannelDecoder::decode(ChannelMode::MidSide, 1.0f, -1.0f, primary, secondary);
+            // primary = (1+(-1))*0.5 = 0, secondary = (1-(-1))*0.5 = 1
+            expectWithinAbsoluteError(primary, 0.0f, 1e-6f);
+            expectWithinAbsoluteError(secondary, 1.0f, 1e-6f);
         }
 
         beginTest("MidSide reconstruction");
         {
-            // For arbitrary L/R, verify: l = mid+side, r = mid-side
+            // For arbitrary L/R, verify: l = primary+secondary, r = primary-secondary
             constexpr float l = 0.6f, r = 0.2f;
-            float mid = 0.0f, side = 0.0f;
-            ChannelDecoder::decode(ChannelMode::MidSide, l, r, mid, side);
+            float primary = 0.0f, secondary = 0.0f;
+            ChannelDecoder::decode(ChannelMode::MidSide, l, r, primary, secondary);
 
-            expectWithinAbsoluteError(mid + side, l, 1e-6f);
-            expectWithinAbsoluteError(mid - side, r, 1e-6f);
+            expectWithinAbsoluteError(primary + secondary, l, 1e-6f);
+            expectWithinAbsoluteError(primary - secondary, r, 1e-6f);
         }
 
         beginTest("Zero input");

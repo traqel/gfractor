@@ -93,12 +93,10 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
                            primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour);
     if (showGhost)
         ghostSpectrum.paint(g, spectrumArea, showPrimary, showSecondary,
-                            channelMode,
                             playRef ? primaryColour : refPrimaryColour,
                             playRef ? secondaryColour : refSecondaryColour);
     paintMainPaths(g);
     peakHold.paint(g, spectrumArea, showPrimary, showSecondary, showGhost,
-                   channelMode,
                    playRef ? refPrimaryColour : primaryColour,
                    playRef ? refSecondaryColour : secondaryColour,
                    playRef ? primaryColour : refPrimaryColour,
@@ -144,12 +142,10 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
                      juce::AffineTransform::translation(tx, ty));
     };
 
-    if (channelMode == ChannelMode::LR) {
+    if (showSecondary)
+        drawMain(secondaryPath, cachedSecondaryGrad, activeSecondaryColour);
+    if (showPrimary)
         drawMain(primaryPath, cachedPrimaryGrad, activePrimaryColour);
-    } else {
-        if (showSecondary) drawMain(secondaryPath, cachedSecondaryGrad, activeSecondaryColour);
-        if (showPrimary) drawMain(primaryPath, cachedPrimaryGrad, activePrimaryColour);
-    }
 }
 
 void SpectrumAnalyzer::updateAuditLabel() {
@@ -256,10 +252,17 @@ void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
     // Labels above bars
     g.setFont(Typography::makeBoldFont(9.0f));
     g.setColour(textColour);
-    g.drawText("M", static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
-               juce::Justification::centredBottom);
-    g.drawText("S", static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
-               juce::Justification::centredBottom);
+    if (channelMode == ChannelMode::LR) {
+        g.drawText("L", static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
+                   juce::Justification::centredBottom);
+        g.drawText("R", static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
+                   juce::Justification::centredBottom);
+    } else {
+        g.drawText("M", static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
+                   juce::Justification::centredBottom);
+        g.drawText("S", static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
+                   juce::Justification::centredBottom);
+    }
 }
 
 //==============================================================================

@@ -2,10 +2,10 @@
 
 namespace {
     struct BlurPass { float width, alpha; };
-    static constexpr BlurPass kBlurPasses[] = {
+    constexpr BlurPass kBlurPasses[] = {
         {9.0f, 0.04f}, {5.0f, 0.08f}, {2.5f, 0.18f}, {1.0f, 0.80f}
     };
-    static constexpr float kWhiteMix = 0.45f;
+    constexpr float kWhiteMix = 0.45f;
 }
 
 void PeakHold::setEnabled(const bool enable) {
@@ -72,7 +72,7 @@ void PeakHold::buildGhostPaths(const float width, const float height, const Buil
 }
 
 void PeakHold::renderGlowImage(juce::Image& img, const juce::Path& path,
-                               const juce::Colour col, const int w, const int h) const {
+                               const juce::Colour col, const int w, const int h) {
     if (path.isEmpty() || w <= 0 || h <= 0) {
         img = {};
         return;
@@ -85,9 +85,8 @@ void PeakHold::renderGlowImage(juce::Image& img, const juce::Path& path,
     }
 }
 
-void PeakHold::paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
+void PeakHold::paint(const juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
                      const bool showPrimary, const bool showSecondary, const bool showGhost,
-                     const ChannelMode channelMode,
                      const juce::Colour &activePrimaryCol, const juce::Colour &activeSecondaryCol,
                      const juce::Colour &ghostPrimaryCol, const juce::Colour &ghostSecondaryCol) const {
     if (!enabled)
@@ -102,7 +101,7 @@ void PeakHold::paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumAr
     const int iw = static_cast<int>(spectrumArea.getWidth());
     const int ih = static_cast<int>(spectrumArea.getHeight());
 
-    // Rebuild images when paths changed or when colours / area changed.
+    // Rebuild images when paths changed or when colors / area changed.
     const bool areaChanged    = (spectrumArea != lastSpectrumArea);
     const bool coloursChanged = (effMidCol != lastEffPrimaryCol || effSideCol != lastEffSecondaryCol
                               || effGhostMidCol != lastEffGhostPrimaryCol
@@ -133,25 +132,15 @@ void PeakHold::paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumAr
 
     // Ghost peaks (drawn first, underneath main peaks)
     if (showGhost) {
-        if (channelMode == ChannelMode::LR) {
-            if (peakGhostPrimaryImage.isValid())
-                g.drawImageAt(peakGhostPrimaryImage, tx, ty);
-        } else {
-            if (showSecondary && peakGhostSecondaryImage.isValid())
-                g.drawImageAt(peakGhostSecondaryImage, tx, ty);
-            if (showPrimary && peakGhostPrimaryImage.isValid())
-                g.drawImageAt(peakGhostPrimaryImage, tx, ty);
-        }
+        if (showSecondary && peakGhostSecondaryImage.isValid())
+            g.drawImageAt(peakGhostSecondaryImage, tx, ty);
+        if (showPrimary && peakGhostPrimaryImage.isValid())
+            g.drawImageAt(peakGhostPrimaryImage, tx, ty);
     }
 
     // Main peak paths
-    if (channelMode == ChannelMode::LR) {
-        if (peakPrimaryImage.isValid())
-            g.drawImageAt(peakPrimaryImage, tx, ty);
-    } else {
-        if (showSecondary && peakSecondaryImage.isValid())
-            g.drawImageAt(peakSecondaryImage, tx, ty);
-        if (showPrimary && peakPrimaryImage.isValid())
-            g.drawImageAt(peakPrimaryImage, tx, ty);
-    }
+    if (showSecondary && peakSecondaryImage.isValid())
+        g.drawImageAt(peakSecondaryImage, tx, ty);
+    if (showPrimary && peakPrimaryImage.isValid())
+        g.drawImageAt(peakPrimaryImage, tx, ty);
 }

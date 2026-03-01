@@ -32,8 +32,8 @@ public:
 
     void buildGhostPaths(float width, float height, const BuildPathFn &buildPath);
 
-    void paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
-               bool showPrimary, bool showSecondary, bool showGhost, ChannelMode channelMode,
+    void paint(const juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
+               bool showPrimary, bool showSecondary, bool showGhost,
                const juce::Colour &activePrimaryCol, const juce::Colour &activeSecondaryCol,
                const juce::Colour &ghostPrimaryCol, const juce::Colour &ghostSecondaryCol) const;
 
@@ -68,6 +68,6 @@ private:
     mutable juce::Colour lastEffGhostPrimaryCol;
     mutable juce::Colour lastEffGhostSecondaryCol;
 
-    void renderGlowImage(juce::Image& img, const juce::Path& path,
-                         juce::Colour col, int w, int h) const;
+    static void renderGlowImage(juce::Image& img, const juce::Path& path,
+                         juce::Colour col, int w, int h) ;
 };

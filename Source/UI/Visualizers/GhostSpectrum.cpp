@@ -57,7 +57,7 @@ void GhostSpectrum::buildPaths(const float width, const float height, const Buil
 }
 
 void GhostSpectrum::paint(juce::Graphics &g, const juce::Rectangle<float> &spectrumArea,
-                          const bool showPrimary, const bool showSecondary, const ChannelMode channelMode,
+                          const bool showPrimary, const bool showSecondary,
                           const juce::Colour &primaryCol, const juce::Colour &secondaryCol) const {
     if (primaryPath.isEmpty())
         return;
@@ -73,12 +73,10 @@ void GhostSpectrum::paint(juce::Graphics &g, const juce::Rectangle<float> &spect
                      juce::AffineTransform::translation(tx, ty));
     };
 
-    if (channelMode == ChannelMode::LR) {
+    if (showSecondary)
+        drawGhost(secondaryPath, secondaryCol);
+    if (showPrimary)
         drawGhost(primaryPath, primaryCol);
-    } else {
-        if (showSecondary) drawGhost(secondaryPath, secondaryCol);
-        if (showPrimary) drawGhost(primaryPath, primaryCol);
-    }
 }
 
 void GhostSpectrum::clearPaths() {

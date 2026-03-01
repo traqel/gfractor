@@ -32,10 +32,10 @@ public:
                 dryWet->setValueNotifyingHost(dryWet->convertTo0to1(35.0f));
             if (auto *bypass = apvts.getParameter(ParameterIDs::bypass))
                 bypass->setValueNotifyingHost(1.0f);
-            if (auto *mid = apvts.getParameter(ParameterIDs::outputPrimaryEnable))
-                mid->setValueNotifyingHost(0.0f);
-            if (auto *side = apvts.getParameter(ParameterIDs::outputSecondaryEnable))
-                side->setValueNotifyingHost(1.0f);
+            if (auto *primary = apvts.getParameter(ParameterIDs::outputPrimaryEnable))
+                primary->setValueNotifyingHost(0.0f);
+            if (auto *secondary = apvts.getParameter(ParameterIDs::outputSecondaryEnable))
+                secondary->setValueNotifyingHost(1.0f);
 
             juce::MemoryBlock state;
             source.getStateInformation(state);
