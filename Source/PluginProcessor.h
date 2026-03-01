@@ -112,8 +112,8 @@ public:
 
     //==============================================================================
     // IPeakLevelSource implementation
-    float getPeakMidDb() const override { return dspProcessor.getPeakMidDb(); }
-    float getPeakSideDb() const override { return dspProcessor.getPeakSideDb(); }
+    float getPeakPrimaryDb() const override { return dspProcessor.getPeakPrimaryDb(); }
+    float getPeakSecondaryDb() const override { return dspProcessor.getPeakSecondaryDb(); }
 
     /** Set output mode: 0 = M/S, 1 = L/R, 2 = Tonal/Noise.
      *  T/N mode introduces kFftSize samples of latency via SpectralSeparator. */

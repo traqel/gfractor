@@ -55,7 +55,7 @@ A 5px-wide draggable divider separates the Spectrum Analyzer from the Metering P
 ### Accent Colors
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `midGreen` | `#3DCC6E` | Mid channel curve, logo "g" |
+| `primaryGreen` | `#3DCC6E` | Mid channel curve, logo "g" |
 | `sideAmber` | `#C8A820` | Side channel curve |
 | `blueAccent` | `#1E6ECC` | Active pill buttons, slider accents |
 

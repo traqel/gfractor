@@ -82,9 +82,9 @@ public:
         } else if (parameterID == ParameterIDs::bypass) {
             dspRef.setBypassed(newValue > 0.5f);
         } else if (parameterID == ParameterIDs::outputMidEnable) {
-            dspRef.setMidEnabled(newValue > 0.5f);
+            dspRef.setPrimaryEnabled(newValue > 0.5f);
         } else if (parameterID == ParameterIDs::outputSideEnable) {
-            dspRef.setSideEnabled(newValue > 0.5f);
+            dspRef.setSecondaryEnabled(newValue > 0.5f);
         }
     }
 
@@ -109,10 +109,10 @@ public:
         const auto *sideEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputSideEnable);
 
         if (midEnableParam != nullptr)
-            dspRef.setMidEnabled(midEnableParam->load() > 0.5f);
+            dspRef.setPrimaryEnabled(midEnableParam->load() > 0.5f);
 
         if (sideEnableParam != nullptr)
-            dspRef.setSideEnabled(sideEnableParam->load() > 0.5f);
+            dspRef.setSecondaryEnabled(sideEnableParam->load() > 0.5f);
     }
 
 private:

@@ -44,8 +44,8 @@ public:
     void syncAnalyzerState();
 
     PillButton &getReferencePill() { return referencePill; }
-    PillButton &getMidPill() { return midPill; }
-    PillButton &getSidePill() { return sidePill; }
+    PillButton &getPrimaryPill() { return primaryPill; }
+    PillButton &getSecondaryPill() { return secondaryPill; }
     PillButton &getMetersPill() { return metersPill; }
     PillButton &getTransientPill() { return transientPill; }
     PillButton &getFreezePill() { return freezePill; }
@@ -62,10 +62,10 @@ private:
 
     // Left group — pill buttons
     PillButton referencePill{"Reference", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refMidBlue), true};
+    PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refPrimaryBlue), true};
     DropdownPill modePill{{"M/S", "L/R", "T/N"}, juce::Colour(ColorPalette::blueAccent)};
-    PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
-    PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
+    PillButton primaryPill{"Mid", juce::Colour(ColorPalette::primaryGreen), true};
+    PillButton secondaryPill{"Side", juce::Colour(ColorPalette::secondaryAmber), true};
     PillButton freezePill{
         juce::String::fromUTF8(Symbols::pauseUTF8), juce::Colour(ColorPalette::blueAccent), true
     };
@@ -79,8 +79,8 @@ private:
     float peakSideDisplay = -100.0f;
 
     // Previous raw peak values for repaint gating
-    float prevMid = -100.0f;
-    float prevSide = -100.0f;
+    float primaryMid = -100.0f;
+    float secondarySide = -100.0f;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FooterBar)
 };

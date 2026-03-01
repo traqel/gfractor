@@ -292,8 +292,8 @@ private:
 
         // Test: Disable mid, keep side
         {
-            dsp.setMidEnabled(false);
-            dsp.setSideEnabled(true);
+            dsp.setPrimaryEnabled(false);
+            dsp.setSecondaryEnabled(true);
 
             // Create correlated signal (left = right) -> mid only, no side
             for (int sample = 0; sample < 512; ++sample) {
@@ -311,8 +311,8 @@ private:
         // Test: Disable side, keep mid
         {
             dsp.reset();
-            dsp.setMidEnabled(true);
-            dsp.setSideEnabled(false);
+            dsp.setPrimaryEnabled(true);
+            dsp.setSecondaryEnabled(false);
 
             // Create anti-correlated signal (left = -right) -> side only, no mid
             for (int sample = 0; sample < 512; ++sample) {
@@ -330,8 +330,8 @@ private:
         // Test: Both enabled (no filtering)
         {
             dsp.reset();
-            dsp.setMidEnabled(true);
-            dsp.setSideEnabled(true);
+            dsp.setPrimaryEnabled(true);
+            dsp.setSecondaryEnabled(true);
 
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.3f);
@@ -361,8 +361,8 @@ private:
         // In LR mode, mid/side filtering should be bypassed
         {
             dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
-            dsp.setMidEnabled(false); // These should have no effect in LR mode
-            dsp.setSideEnabled(false);
+            dsp.setPrimaryEnabled(false); // These should have no effect in LR mode
+            dsp.setSecondaryEnabled(false);
 
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.4f);
@@ -380,8 +380,8 @@ private:
         {
             dsp.reset();
         dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
-            dsp.setMidEnabled(false);
-            dsp.setSideEnabled(false);
+            dsp.setPrimaryEnabled(false);
+            dsp.setSecondaryEnabled(false);
 
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.5f);
@@ -807,8 +807,8 @@ private:
             fillBufferWithValue(buffer, 0.5f);
 
             dsp.setOutputMode((block % 2 == 0) ? channelModeFromInt(0) : channelModeFromInt(1));
-            dsp.setMidEnabled(block % 3 == 0);
-            dsp.setSideEnabled(block % 4 == 0);
+            dsp.setPrimaryEnabled(block % 3 == 0);
+            dsp.setSecondaryEnabled(block % 4 == 0);
 
             dsp.process(buffer);
         }

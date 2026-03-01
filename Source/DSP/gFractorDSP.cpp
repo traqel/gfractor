@@ -47,15 +47,15 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
     if (block.getNumChannels() >= 2) {
         const auto *leftData = block.getChannelPointer(0);
         const auto *rightData = block.getChannelPointer(1);
-        float peakMid = 0.0f, peakSide = 0.0f;
+        float peakPrimary = 0.0f, peakSecondary = 0.0f;
         for (size_t i = 0; i < block.getNumSamples(); ++i) {
             const float mid = (leftData[i] + rightData[i]) * 0.5f;
             const float side = (leftData[i] - rightData[i]) * 0.5f;
-            peakMid = juce::jmax(peakMid, std::abs(mid));
-            peakSide = juce::jmax(peakSide, std::abs(side));
+            peakPrimary = juce::jmax(peakPrimary, std::abs(mid));
+            peakSecondary = juce::jmax(peakSecondary, std::abs(side));
         }
-        peakMidDb.store(juce::Decibels::gainToDecibels(peakMid, -100.0f), std::memory_order_relaxed);
-        peakSideDb.store(juce::Decibels::gainToDecibels(peakSide, -100.0f), std::memory_order_relaxed);
+        peakPrimaryDb.store(juce::Decibels::gainToDecibels(peakPrimary, -100.0f), std::memory_order_relaxed);
+        peakSecondaryDb.store(juce::Decibels::gainToDecibels(peakSecondary, -100.0f), std::memory_order_relaxed);
     }
 
     // Push dry signal for wet/dry mixing
@@ -126,11 +126,11 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
     if (outputMode == ChannelMode::TonalNoise) {
         separator.process(buffer);
         // Both channels disabled → silence
-        if (!midEnabled && !sideEnabled)
+        if (!primaryEnabled && !secondaryEnabled)
             buffer.clear();
     }
     // M/S mode: zero the disabled channel inline
-    else if (outputMode == ChannelMode::MidSide && (!midEnabled || !sideEnabled)) {
+    else if (outputMode == ChannelMode::MidSide && (!primaryEnabled || !secondaryEnabled)) {
         if (block.getNumChannels() >= 2) {
             auto *leftData = block.getChannelPointer(0);
             auto *rightData = block.getChannelPointer(1);
@@ -139,8 +139,8 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
                 float mid = (leftData[i] + rightData[i]) * 0.5f;
                 float side = (leftData[i] - rightData[i]) * 0.5f;
 
-                if (!midEnabled) mid = 0.0f;
-                if (!sideEnabled) side = 0.0f;
+                if (!primaryEnabled) mid = 0.0f;
+                if (!secondaryEnabled) side = 0.0f;
 
                 leftData[i] = mid + side;
                 rightData[i] = mid - side;
@@ -183,13 +183,13 @@ void gFractorDSP::setBypassed(const bool shouldBeBypassed) {
         reset();
 }
 
-void gFractorDSP::setMidEnabled(const bool enabled) {
-    midEnabled = enabled;
+void gFractorDSP::setPrimaryEnabled(const bool enabled) {
+    primaryEnabled = enabled;
     updateSeparatorMode();
 }
 
-void gFractorDSP::setSideEnabled(const bool enabled) {
-    sideEnabled = enabled;
+void gFractorDSP::setSecondaryEnabled(const bool enabled) {
+    secondaryEnabled = enabled;
     updateSeparatorMode();
 }
 
@@ -207,9 +207,9 @@ void gFractorDSP::updateSeparatorMode() {
         separator.setMode(SpectralSeparator::Mode::None);
         return;
     }
-    if (midEnabled && !sideEnabled)
+    if (primaryEnabled && !secondaryEnabled)
         separator.setMode(SpectralSeparator::Mode::TonalOnly);
-    else if (!midEnabled && sideEnabled)
+    else if (!primaryEnabled && secondaryEnabled)
         separator.setMode(SpectralSeparator::Mode::NoiseOnly);
     else
         separator.setMode(SpectralSeparator::Mode::None);

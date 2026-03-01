@@ -47,7 +47,7 @@ void HelpPanel::paint(juce::Graphics &g) {
         const auto keyRect = row.removeFromLeft(keyW).reduced(0, 2);
         g.setColour(juce::Colour(ColorPalette::pillInactiveBg));
         g.fillRoundedRectangle(keyRect.toFloat(), 3.0f);
-        g.setColour(juce::Colour(ColorPalette::midGreen));
+        g.setColour(juce::Colour(ColorPalette::primaryGreen));
         g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
         g.drawText(key, keyRect, juce::Justification::centred);
         // Description

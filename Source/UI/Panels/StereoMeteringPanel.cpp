@@ -61,7 +61,7 @@ void StereoMeteringPanel::updateGoniometerImage() const {
     const float scale = cx * 0.88f;
 
     const juce::Image::BitmapData bd(gonioImage, juce::Image::BitmapData::readWrite);
-    const juce::Colour dotColour(ColorPalette::midGreen);
+    const juce::Colour dotColour(ColorPalette::primaryGreen);
 
     const auto &rolling_L = getRollingL();
     const auto &rolling_R = getRollingR();
@@ -271,7 +271,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     const float sigX = static_cast<float>(barBounds.getX()) + fillT * barW;
 
     const juce::Colour fillCol = correlationDisplay >= 0.0f
-                                     ? juce::Colour(ColorPalette::midGreen)
+                                     ? juce::Colour(ColorPalette::primaryGreen)
                                      : juce::Colour(0xffcc4444);
 
     if (std::abs(correlationDisplay) > 0.01f) {
@@ -339,8 +339,8 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
         "31", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"
     };
 
-    const juce::Colour lo = juce::Colour(ColorPalette::midGreen);
-    const juce::Colour hi = juce::Colour(ColorPalette::sideAmber);
+    const juce::Colour lo = juce::Colour(ColorPalette::primaryGreen);
+    const juce::Colour hi = juce::Colour(ColorPalette::secondaryAmber);
 
     g.setFont(Typography::makeFont(Typography::mainFontSize));
 

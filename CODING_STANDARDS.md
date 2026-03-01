@@ -1289,7 +1289,7 @@ All `juce::Colour` values used in the UI must be defined as `inline constexpr ju
 void MyComponent::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colour (ColorPalette::background));
-    g.setColour (juce::Colour (ColorPalette::midGreen));
+    g.setColour (juce::Colour (ColorPalette::primaryGreen));
     g.drawText (label, bounds, juce::Justification::centred);
 }
 
@@ -1312,7 +1312,7 @@ void MyComponent::paint (juce::Graphics& g)
 namespace ColorPalette
 {
     // Accent colors
-    inline constexpr juce::uint32 midGreen   = 0xff3DCC6E;
+    inline constexpr juce::uint32 primaryGreen   = 0xff3DCC6E;
     inline constexpr juce::uint32 sideAmber  = 0xffC8A820;
     inline constexpr juce::uint32 blueAccent = 0xff1E6ECC;
 

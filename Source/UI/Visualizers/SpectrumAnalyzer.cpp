@@ -89,26 +89,26 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
         g.drawImage(gridImage, 0, 0, getWidth(), getHeight(),
                     0, 0, gridImage.getWidth(), gridImage.getHeight());
     tooltip.paintRangeBars(g, spectrumArea, range,
-                           showMid, showSide, showGhost, playRef,
-                           midColour, sideColour, refMidColour, refSideColour);
+                           showPrimary, showSecondary, showGhost, playRef,
+                           primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour);
     if (showGhost)
-        ghostSpectrum.paint(g, spectrumArea, showMid, showSide,
+        ghostSpectrum.paint(g, spectrumArea, showPrimary, showSecondary,
                             channelMode,
-                            playRef ? midColour : refMidColour,
-                            playRef ? sideColour : refSideColour);
+                            playRef ? primaryColour : refPrimaryColour,
+                            playRef ? secondaryColour : refSecondaryColour);
     paintMainPaths(g);
-    peakHold.paint(g, spectrumArea, showMid, showSide, showGhost,
+    peakHold.paint(g, spectrumArea, showPrimary, showSecondary, showGhost,
                    channelMode,
-                   playRef ? refMidColour : midColour,
-                   playRef ? refSideColour : sideColour,
-                   playRef ? midColour : refMidColour,
-                   playRef ? sideColour : refSideColour);
+                   playRef ? refPrimaryColour : primaryColour,
+                   playRef ? refSecondaryColour : secondaryColour,
+                   playRef ? primaryColour : refPrimaryColour,
+                   playRef ? secondaryColour : refSecondaryColour);
     paintAuditFilter(g);
     paintSelectedBand(g);
     tooltip.paintTooltip(g, spectrumArea, range, fftSize, numBins,
                          getSampleRate(), smoothedMidDb, smoothedSideDb,
-                         showMid, showSide, playRef,
-                         midColour, sideColour, refMidColour, refSideColour);
+                         showPrimary, showSecondary, playRef,
+                         primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour);
     paintLevelMeters(g);
 }
 
@@ -119,8 +119,8 @@ void SpectrumAnalyzer::resized() {
 void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     const auto tx = spectrumArea.getX();
     const auto ty = spectrumArea.getY();
-    const auto &activeSideColour = playRef ? refSideColour : sideColour;
-    const auto &activeMidColour = playRef ? refMidColour : midColour;
+    const auto &activeSideColour = playRef ? refSecondaryColour : secondaryColour;
+    const auto &activeMidColour = playRef ? refPrimaryColour : primaryColour;
     const float h = spectrumArea.getHeight();
 
     if (activeMidColour != lastGradMidCol || activeSideColour != lastGradSideCol
@@ -147,8 +147,8 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     if (channelMode == ChannelMode::LR) {
         drawMain(midPath, cachedMidGrad, activeMidColour);
     } else {
-        if (showSide) drawMain(sidePath, cachedSideGrad, activeSideColour);
-        if (showMid) drawMain(midPath, cachedMidGrad, activeMidColour);
+        if (showSecondary) drawMain(sidePath, cachedSideGrad, activeSideColour);
+        if (showPrimary) drawMain(midPath, cachedMidGrad, activeMidColour);
     }
 }
 
@@ -242,13 +242,13 @@ void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
     const float y = spectrumArea.getY();
     const float h = spectrumArea.getHeight();
 
-    const auto &activeMidCol = playRef ? refMidColour : midColour;
-    const auto &activeSideCol = playRef ? refSideColour : sideColour;
+    const auto &activeMidCol = playRef ? refPrimaryColour : primaryColour;
+    const auto &activeSideCol = playRef ? refSecondaryColour : secondaryColour;
 
     const float midT = juce::jlimit(0.0f, 1.0f,
-                                    (meterMidDb - range.minDb) / (range.maxDb - range.minDb));
+                                    (meterPrimaryDb - range.minDb) / (range.maxDb - range.minDb));
     const float sideT = juce::jlimit(0.0f, 1.0f,
-                                     (meterSideDb - range.minDb) / (range.maxDb - range.minDb));
+                                     (meterSecondaryDb - range.minDb) / (range.maxDb - range.minDb));
 
     drawLevelBar(g, {x0, y, barW, h}, midT, activeMidCol, backgroundColour);
     drawLevelBar(g, {x1, y, barW, h}, sideT, activeSideCol, backgroundColour);

@@ -221,10 +221,10 @@ private:
         expect(Defaults::fftOrder <= 14);
 
         // Verify colors are valid
-        expect(Defaults::midColour().isOpaque());
-        expect(Defaults::sideColour().isOpaque());
-        expect(Defaults::refMidColour().isOpaque());
-        expect(Defaults::refSideColour().isOpaque());
+        expect(Defaults::primaryColour().isOpaque());
+        expect(Defaults::secondaryColour().isOpaque());
+        expect(Defaults::refPrimaryColour().isOpaque());
+        expect(Defaults::refSecondaryColour().isOpaque());
     }
 
     //==============================================================================
@@ -557,7 +557,7 @@ private:
         // Verify colors are non-zero (valid ARGB)
         expect(ColorPalette::background > 0);
         expect(ColorPalette::textBright > 0);
-        expect(ColorPalette::midGreen > 0);
+        expect(ColorPalette::primaryGreen > 0);
         expect(ColorPalette::sideAmber > 0);
         expect(ColorPalette::blueAccent > 0);
 

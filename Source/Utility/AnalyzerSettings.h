@@ -19,10 +19,10 @@ struct AnalyzerSettings {
             props->setValue("maxDb", settings.getMaxDb());
             props->setValue("minFreq", settings.getMinFreq());
             props->setValue("maxFreq", settings.getMaxFreq());
-            props->setValue("midColour", static_cast<int>(settings.getMidColour().getARGB()));
-            props->setValue("sideColour", static_cast<int>(settings.getSideColour().getARGB()));
-            props->setValue("refMidColour", static_cast<int>(settings.getRefMidColour().getARGB()));
-            props->setValue("refSideColour", static_cast<int>(settings.getRefSideColour().getARGB()));
+            props->setValue("midColour", static_cast<int>(settings.getPrimaryColour().getARGB()));
+            props->setValue("sideColour", static_cast<int>(settings.getSecondaryColour().getARGB()));
+            props->setValue("refMidColour", static_cast<int>(settings.getRefPrimaryColour().getARGB()));
+            props->setValue("refSideColour", static_cast<int>(settings.getRefSecondaryColour().getARGB()));
             props->setValue("smoothingMode", static_cast<int>(settings.getSmoothing()));
             props->setValue("fftOrder", settings.getFftOrder());
             props->setValue("overlapFactor", settings.getOverlapFactor());
@@ -49,13 +49,13 @@ struct AnalyzerSettings {
             }
 
             if (props->containsKey("midColour"))
-                settings.setMidColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("midColour"))));
+                settings.setPrimaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("midColour"))));
             if (props->containsKey("sideColour"))
-                settings.setSideColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("sideColour"))));
+                settings.setSecondaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("sideColour"))));
             if (props->containsKey("refMidColour"))
-                settings.setRefMidColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refMidColour"))));
+                settings.setRefPrimaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refMidColour"))));
             if (props->containsKey("refSideColour"))
-                settings.setRefSideColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refSideColour"))));
+                settings.setRefSecondaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refSideColour"))));
             if (props->containsKey("smoothingMode"))
                 settings.setSmoothing(static_cast<SmoothingMode>(
                     props->getIntValue("smoothingMode", static_cast<int>(D::smoothing))));

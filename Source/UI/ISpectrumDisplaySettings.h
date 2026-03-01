@@ -20,21 +20,21 @@ struct ISpectrumDisplaySettings {
     virtual float getMaxFreq() const = 0;
 
     // Colors
-    virtual void setMidColour(juce::Colour c) = 0;
+    virtual void setPrimaryColour(juce::Colour c) = 0;
 
-    virtual void setSideColour(juce::Colour c) = 0;
+    virtual void setSecondaryColour(juce::Colour c) = 0;
 
-    virtual void setRefMidColour(juce::Colour c) = 0;
+    virtual void setRefPrimaryColour(juce::Colour c) = 0;
 
-    virtual void setRefSideColour(juce::Colour c) = 0;
+    virtual void setRefSecondaryColour(juce::Colour c) = 0;
 
-    virtual juce::Colour getMidColour() const = 0;
+    virtual juce::Colour getPrimaryColour() const = 0;
 
-    virtual juce::Colour getSideColour() const = 0;
+    virtual juce::Colour getSecondaryColour() const = 0;
 
-    virtual juce::Colour getRefMidColour() const = 0;
+    virtual juce::Colour getRefPrimaryColour() const = 0;
 
-    virtual juce::Colour getRefSideColour() const = 0;
+    virtual juce::Colour getRefSecondaryColour() const = 0;
 
     // FFT / smoothing / slope
     virtual void setFftOrder(int order) = 0;

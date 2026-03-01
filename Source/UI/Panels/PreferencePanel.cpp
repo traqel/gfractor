@@ -17,8 +17,8 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
       snapshot{
           settings.getMinDb(), settings.getMaxDb(),
           settings.getMinFreq(), settings.getMaxFreq(),
-          settings.getMidColour(), settings.getSideColour(),
-          settings.getRefMidColour(), settings.getRefSideColour(),
+          settings.getPrimaryColour(), settings.getSecondaryColour(),
+          settings.getRefPrimaryColour(), settings.getRefSecondaryColour(),
           settings.getSmoothing(), settings.getFftOrder(), settings.getOverlapFactor(),
           settings.getCurveDecay(), settings.getSlope(),
           ColorPalette::getTheme(),
@@ -90,25 +90,25 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     maxFreqLabel.setJustificationType(juce::Justification::centredRight);
 
     // --- Color swatches ---
-    midSwatch.colour = settings.getMidColour();
-    sideSwatch.colour = settings.getSideColour();
-    refMidSwatch.colour = settings.getRefMidColour();
-    refSideSwatch.colour = settings.getRefSideColour();
+    primarySwatch.colour = settings.getPrimaryColour();
+    secondarySwatch.colour = settings.getSecondaryColour();
+    refPrimarySwatch.colour = settings.getRefPrimaryColour();
+    refSecondarySwatch.colour = settings.getRefSecondaryColour();
 
-    midSwatch.label = "Mid";
-    sideSwatch.label = "Side";
-    refMidSwatch.label = "Ref M";
-    refSideSwatch.label = "Ref S";
+    primarySwatch.label = "Mid";
+    secondarySwatch.label = "Side";
+    refPrimarySwatch.label = "Ref M";
+    refSecondarySwatch.label = "Ref S";
 
-    midSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setMidColour(c); };
-    sideSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setSideColour(c); };
-    refMidSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefMidColour(c); };
-    refSideSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefSideColour(c); };
+    primarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setPrimaryColour(c); };
+    secondarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setSecondaryColour(c); };
+    refPrimarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefPrimaryColour(c); };
+    refSecondarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefSecondaryColour(c); };
 
-    addAndMakeVisible(midSwatch);
-    addAndMakeVisible(sideSwatch);
-    addAndMakeVisible(refMidSwatch);
-    addAndMakeVisible(refSideSwatch);
+    addAndMakeVisible(primarySwatch);
+    addAndMakeVisible(secondarySwatch);
+    addAndMakeVisible(refPrimarySwatch);
+    addAndMakeVisible(refSecondarySwatch);
 
     addAndMakeVisible(coloursLabel);
     coloursLabel.setText("Colours", juce::dontSendNotification);
@@ -337,13 +337,13 @@ void PreferencePanel::resized() {
     const int totalSwatchAreaW = colourRow.getWidth();
     const int swatchW = (totalSwatchAreaW - 3 * swatchGap) / 4;
 
-    midSwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    primarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
     colourRow.removeFromLeft(swatchGap);
-    sideSwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    secondarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
     colourRow.removeFromLeft(swatchGap);
-    refMidSwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    refPrimarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
     colourRow.removeFromLeft(swatchGap);
-    refSideSwatch.setBounds(colourRow);
+    refSecondarySwatch.setBounds(colourRow);
 
     bounds.removeFromTop(Spacing::gapL); // spacing
 
@@ -485,10 +485,10 @@ ColorPalette::Theme PreferencePanel::idToTheme(const int id) {
 void PreferencePanel::revertToSnapshot() {
     settingsRef.setDbRange(snapshot.minDb, snapshot.maxDb);
     settingsRef.setFreqRange(snapshot.minFreq, snapshot.maxFreq);
-    settingsRef.setMidColour(snapshot.midColour);
-    settingsRef.setSideColour(snapshot.sideColour);
-    settingsRef.setRefMidColour(snapshot.refMidColour);
-    settingsRef.setRefSideColour(snapshot.refSideColour);
+    settingsRef.setPrimaryColour(snapshot.primaryColour);
+    settingsRef.setSecondaryColour(snapshot.secondaryColour);
+    settingsRef.setRefPrimaryColour(snapshot.refPrimaryColour);
+    settingsRef.setRefSecondaryColour(snapshot.refSecondaryColour);
     settingsRef.setSmoothing(snapshot.smoothing);
     smoothingCombo.setSelectedId(smoothingModeToId(snapshot.smoothing), juce::dontSendNotification);
 
@@ -519,10 +519,10 @@ void PreferencePanel::resetToDefaults() {
 
     settingsRef.setDbRange(D::minDb, D::maxDb);
     settingsRef.setFreqRange(D::minFreq, D::maxFreq);
-    settingsRef.setMidColour(D::midColour());
-    settingsRef.setSideColour(D::sideColour());
-    settingsRef.setRefMidColour(D::refMidColour());
-    settingsRef.setRefSideColour(D::refSideColour());
+    settingsRef.setPrimaryColour(D::primaryColour());
+    settingsRef.setSecondaryColour(D::secondaryColour());
+    settingsRef.setRefPrimaryColour(D::refPrimaryColour());
+    settingsRef.setRefSecondaryColour(D::refSecondaryColour());
 
     settingsRef.setSmoothing(D::smoothing);
     smoothingCombo.setSelectedId(smoothingModeToId(D::smoothing), juce::dontSendNotification);
@@ -555,15 +555,15 @@ void PreferencePanel::resetToDefaults() {
         onBandHintsChanged(true);
 
     // Update color swatches
-    midSwatch.colour = D::midColour();
-    sideSwatch.colour = D::sideColour();
-    refMidSwatch.colour = D::refMidColour();
-    refSideSwatch.colour = D::refSideColour();
+    primarySwatch.colour = D::primaryColour();
+    secondarySwatch.colour = D::secondaryColour();
+    refPrimarySwatch.colour = D::refPrimaryColour();
+    refSecondarySwatch.colour = D::refSecondaryColour();
 
-    midSwatch.repaint();
-    sideSwatch.repaint();
-    refMidSwatch.repaint();
-    refSideSwatch.repaint();
+    primarySwatch.repaint();
+    secondarySwatch.repaint();
+    refPrimarySwatch.repaint();
+    refSecondarySwatch.repaint();
 
     AnalyzerSettings::save(settingsRef);
     AnalyzerSettings::saveTheme(ColorPalette::getTheme());

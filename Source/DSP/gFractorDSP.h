@@ -40,9 +40,9 @@ public:
 
     void setBypassed(bool shouldBeBypassed);
 
-    void setMidEnabled(bool enabled);
+    void setPrimaryEnabled(bool enabled);
 
-    void setSideEnabled(bool enabled);
+    void setSecondaryEnabled(bool enabled);
 
     /** Set dry/wet mix proportion (0.0 = fully dry, 1.0 = fully wet). */
     void setDryWet(float proportion);
@@ -62,12 +62,12 @@ public:
     void setBandFilter(bool active, float frequencyHz, float q);
 
     /** Peak level metering (realtime-safe, atomic reads) */
-    float getPeakMidDb() const { return peakMidDb.load(std::memory_order_relaxed); }
-    float getPeakSideDb() const { return peakSideDb.load(std::memory_order_relaxed); }
+    float getPeakPrimaryDb() const { return peakPrimaryDb.load(std::memory_order_relaxed); }
+    float getPeakSecondaryDb() const { return peakSecondaryDb.load(std::memory_order_relaxed); }
 
     void resetPeaks() {
-        peakMidDb.store(-100.0f, std::memory_order_relaxed);
-        peakSideDb.store(-100.0f, std::memory_order_relaxed);
+        peakPrimaryDb.store(-100.0f, std::memory_order_relaxed);
+        peakSecondaryDb.store(-100.0f, std::memory_order_relaxed);
     }
 
 private:
@@ -76,8 +76,8 @@ private:
     juce::dsp::ProcessSpec currentSpec{};
     bool isPrepared = false;
     bool bypassed = false;
-    bool midEnabled  = true;
-    bool sideEnabled = true;
+    bool primaryEnabled = true;
+    bool secondaryEnabled = true;
     ChannelMode outputMode = ChannelMode::MidSide;
 
     SpectralSeparator separator;
@@ -119,8 +119,8 @@ private:
 
     //==============================================================================
     // Peak level metering (written on audio thread, read on UI thread)
-    std::atomic<float> peakMidDb{-100.0f};
-    std::atomic<float> peakSideDb{-100.0f};
+    std::atomic<float> peakPrimaryDb{-100.0f};
+    std::atomic<float> peakSecondaryDb{-100.0f};
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(gFractorDSP)

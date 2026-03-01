@@ -3,7 +3,7 @@
 struct IPeakLevelSource {
     virtual ~IPeakLevelSource() = default;
 
-    virtual float getPeakMidDb() const = 0;
+    virtual float getPeakPrimaryDb() const = 0;
 
-    virtual float getPeakSideDb() const = 0;
+    virtual float getPeakSecondaryDb() const = 0;
 };

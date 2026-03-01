@@ -92,7 +92,7 @@ private:
 
         void paint(juce::Graphics &g) override {
             const auto col = (isHovered || isDragging)
-                                 ? juce::Colour(ColorPalette::midGreen).withAlpha(0.45f)
+                                 ? juce::Colour(ColorPalette::primaryGreen).withAlpha(0.45f)
                                  : juce::Colour(ColorPalette::border);
             g.setColour(col);
             g.drawVerticalLine(getWidth() / 2, 0.0f, static_cast<float>(getHeight()));

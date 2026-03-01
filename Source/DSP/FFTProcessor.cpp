@@ -26,8 +26,8 @@ void FFTProcessor::setFftOrder(const int order, const float newMinDb) {
                                         / static_cast<float>(fftSize)));
 
     // Resize FFT work buffers
-    fftDataMid.assign(static_cast<size_t>(fftSize * 2), 0.0f);
-    fftDataSide.assign(static_cast<size_t>(fftSize * 2), 0.0f);
+    fftDataPrimary.assign(static_cast<size_t>(fftSize * 2), 0.0f);
+    fftDataSecondary.assign(static_cast<size_t>(fftSize * 2), 0.0f);
 
     // Resize smoothing arrays
     smoothingRanges.resize(static_cast<size_t>(numBins));
@@ -61,22 +61,22 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
 
         float ch1, ch2;
         ChannelDecoder::decode(channelMode, l, r, ch1, ch2);
-        fftDataMid[static_cast<size_t>(j)] = ch1 * w;
-        fftDataSide[static_cast<size_t>(j)] = ch2 * w;
+        fftDataPrimary[static_cast<size_t>(j)] = ch1 * w;
+        fftDataSecondary[static_cast<size_t>(j)] = ch2 * w;
     }
 
     // Zero imaginary parts
-    std::fill(fftDataMid.begin() + fftSize, fftDataMid.end(), 0.0f);
-    std::fill(fftDataSide.begin() + fftSize, fftDataSide.end(), 0.0f);
+    std::fill(fftDataPrimary.begin() + fftSize, fftDataPrimary.end(), 0.0f);
+    std::fill(fftDataSecondary.begin() + fftSize, fftDataSecondary.end(), 0.0f);
 
-    forwardFFT->performFrequencyOnlyForwardTransform(fftDataMid.data());
-    forwardFFT->performFrequencyOnlyForwardTransform(fftDataSide.data());
+    forwardFFT->performFrequencyOnlyForwardTransform(fftDataPrimary.data());
+    forwardFFT->performFrequencyOnlyForwardTransform(fftDataSecondary.data());
 
     // Apply precomputed slope gains — dB/octave relative to 1 kHz pivot
     if (std::abs(slopeDb) > 0.001f) {
         for (int bin = 1; bin < numBins; ++bin) {
-            fftDataMid[static_cast<size_t>(bin)] *= slopeGains[static_cast<size_t>(bin)];
-            fftDataSide[static_cast<size_t>(bin)] *= slopeGains[static_cast<size_t>(bin)];
+            fftDataPrimary[static_cast<size_t>(bin)] *= slopeGains[static_cast<size_t>(bin)];
+            fftDataSecondary[static_cast<size_t>(bin)] *= slopeGains[static_cast<size_t>(bin)];
         }
     }
 
@@ -86,15 +86,15 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
     //  - Tonal  (fftDataMid): bins that stand clearly above the noise floor
     //    (deterministic / sinusoidal content); all other bins zeroed → minDb.
     if (channelMode == ChannelMode::TonalNoise) {
-        computeNoiseFloor(fftDataSide, fftDataMid);
+        computeNoiseFloor(fftDataSecondary, fftDataPrimary);
         // Gate: a bin is considered tonal only if it exceeds the local noise
         // floor by kSinusoidalRatio (≈ 6 dB). Everything else is zeroed so it
         // collapses to minDb in the subsequent gainToDecibels conversion.
         constexpr float kSinusoidalRatio = 2.0f;
         for (int bin = 0; bin < numBins; ++bin) {
             const auto b = static_cast<size_t>(bin);
-            if (fftDataMid[b] <= kSinusoidalRatio * fftDataSide[b])
-                fftDataMid[b] = 0.0f;
+            if (fftDataPrimary[b] <= kSinusoidalRatio * fftDataSecondary[b])
+                fftDataPrimary[b] = 0.0f;
         }
     }
 
@@ -102,9 +102,9 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
     const float normFactor = DSP::FFT::normFactor / static_cast<float>(fftSize);
     for (int bin = 0; bin < numBins; ++bin) {
         const float midDbVal = juce::Decibels::gainToDecibels(
-            fftDataMid[static_cast<size_t>(bin)] * normFactor, minDb);
+            fftDataPrimary[static_cast<size_t>(bin)] * normFactor, minDb);
         const float sideDbVal = juce::Decibels::gainToDecibels(
-            fftDataSide[static_cast<size_t>(bin)] * normFactor, minDb);
+            fftDataSecondary[static_cast<size_t>(bin)] * normFactor, minDb);
 
         auto &smMid = outMidDb[static_cast<size_t>(bin)];
         auto &smSide = outSideDb[static_cast<size_t>(bin)];

@@ -35,7 +35,7 @@
 
 | Token | Hex | Usage |
 |---|---|---|
-| `midGreen` | `#3DCC6E` | Mid channel — spectrum curve, pill button |
+| `primaryGreen` | `#3DCC6E` | Mid channel — spectrum curve, pill button |
 | `sideAmber` | `#C8A820` | Side channel — spectrum curve, pill button |
 | `blueAccent` | `#1E6ECC` | Primary accent — knobs, sliders, active pills |
 
@@ -184,7 +184,7 @@ Rounded-rectangle toggle button used throughout the footer.
 | Ghost | `refMidBlue` | Outline-only |
 | Spectrum | `blueAccent` | Filled |
 | Sonogram | `blueAccent` | Filled |
-| Mid | `midGreen` | Outline-only |
+| Mid | `primaryGreen` | Outline-only |
 | Side | `sideAmber` | Outline-only |
 | L+R | `blueAccent` | Outline-only |
 | Stereo Meters | `blueAccent` | Outline-only |
@@ -239,7 +239,7 @@ Read-only keyboard shortcut and mouse hint reference. Dismissed via backdrop cli
 
 - Vertical drag handle between analyzer and metering panel
 - Cursor: left-right resize
-- Hover/drag highlight: `midGreen` @ 45% alpha
+- Hover/drag highlight: `primaryGreen` @ 45% alpha
 
 ---
 

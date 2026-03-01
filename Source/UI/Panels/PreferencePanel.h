@@ -17,10 +17,10 @@
  */
 class PreferencePanel : public juce::Component {
 public:
-    PreferencePanel(ISpectrumDisplaySettings &settings,
-                    std::function<void()> onThemeChanged = {},
-                    bool bandHintsOn = true,
-                    std::function<void(bool)> onBandHintsChanged = {});
+    explicit PreferencePanel(ISpectrumDisplaySettings &settings,
+                             std::function<void()> onThemeChanged = {},
+                             bool bandHintsOn = true,
+                             std::function<void(bool)> onBandHintsChanged = {});
 
     void paint(juce::Graphics &g) override;
 
@@ -55,7 +55,7 @@ private:
     struct Snapshot {
         float minDb, maxDb;
         float minFreq, maxFreq;
-        juce::Colour midColour, sideColour, refMidColour, refSideColour;
+        juce::Colour primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour;
         SmoothingMode smoothing;
         int fftOrder;
         int overlapFactor;
@@ -74,7 +74,7 @@ private:
     juce::Slider minFreqSlider, maxFreqSlider;
     juce::Label minFreqLabel, maxFreqLabel;
 
-    ColourSwatch midSwatch, sideSwatch, refMidSwatch, refSideSwatch;
+    ColourSwatch primarySwatch, secondarySwatch, refPrimarySwatch, refSecondarySwatch;
     juce::Label coloursLabel;
 
     juce::ComboBox fftOrderCombo;

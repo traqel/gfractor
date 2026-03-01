@@ -22,16 +22,16 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
         const bool tn = (index == 2);
 
         // L/R mode hides the per-channel visibility pills
-        midPill.setEnabled(!lr);
-        sidePill.setEnabled(!lr);
+        primaryPill.setEnabled(!lr);
+        secondaryPill.setEnabled(!lr);
 
         // Relabel pills to match the active channel pair
         if (tn) {
-            midPill.setButtonText("Tonal");
-            sidePill.setButtonText("Noise");
+            primaryPill.setButtonText("Tonal");
+            secondaryPill.setButtonText("Noise");
         } else {
-            midPill.setButtonText("Mid");
-            sidePill.setButtonText("Side");
+            primaryPill.setButtonText("Mid");
+            secondaryPill.setButtonText("Side");
         }
 
         controlsRef.setChannelMode(index);
@@ -40,18 +40,18 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     addAndMakeVisible(modePill);
 
     // Mid pill — APVTS-bound
-    midPill.attachToParameter(processorRef.getAPVTS(), "outputMidEnable");
-    midPill.onClick = [this]() {
-        controlsRef.setMidVisible(midPill.getToggleState());
+    primaryPill.attachToParameter(processorRef.getAPVTS(), "outputMidEnable");
+    primaryPill.onClick = [this]() {
+        controlsRef.setMidVisible(primaryPill.getToggleState());
     };
-    addAndMakeVisible(midPill);
+    addAndMakeVisible(primaryPill);
 
     // Side pill — APVTS-bound
-    sidePill.attachToParameter(processorRef.getAPVTS(), "outputSideEnable");
-    sidePill.onClick = [this]() {
-        controlsRef.setSideVisible(sidePill.getToggleState());
+    secondaryPill.attachToParameter(processorRef.getAPVTS(), "outputSideEnable");
+    secondaryPill.onClick = [this]() {
+        controlsRef.setSideVisible(secondaryPill.getToggleState());
     };
-    addAndMakeVisible(sidePill);
+    addAndMakeVisible(secondaryPill);
 
     // Ghost pill — show/hide secondary channel spectrogram
     ghostPill.setToggleState(true, juce::dontSendNotification);
@@ -75,8 +75,8 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
         controlsRef.setFrozen(frozen);
         // Show ▶ when frozen (click to resume), ⏸ when running (click to freeze)
         freezePill.setButtonText(frozen
-            ? juce::String::fromUTF8(Symbols::playUTF8)
-            : juce::String::fromUTF8(Symbols::pauseUTF8));
+                                     ? juce::String::fromUTF8(Symbols::playUTF8)
+                                     : juce::String::fromUTF8(Symbols::pauseUTF8));
     };
     addAndMakeVisible(freezePill);
 
@@ -102,10 +102,10 @@ void FooterBar::paint(juce::Graphics &g) {
 
 void FooterBar::applyTheme() {
     referencePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
-    ghostPill.setActiveColour(juce::Colour(ColorPalette::refMidBlue));
+    ghostPill.setActiveColour(juce::Colour(ColorPalette::refPrimaryBlue));
     modePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
-    midPill.setActiveColour(juce::Colour(ColorPalette::midGreen));
-    sidePill.setActiveColour(juce::Colour(ColorPalette::sideAmber));
+    primaryPill.setActiveColour(juce::Colour(ColorPalette::primaryGreen));
+    secondaryPill.setActiveColour(juce::Colour(ColorPalette::secondaryAmber));
     freezePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     infinitePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     metersPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
@@ -132,8 +132,8 @@ void FooterBar::resized() {
     fb.items.add(Item(64, ph, modePill).withMargin(Margin(0, gl, 0, analyzerLeftMargin)));
 
     // ── [Mid  Side] mute group ────────────────────────────────────────────────
-    fb.items.add(Item(56, ph, midPill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(58, ph, sidePill).withMargin(Margin(0, gl, 0, 0)));
+    fb.items.add(Item(56, ph, primaryPill).withMargin(Margin(0, gs, 0, 0)));
+    fb.items.add(Item(58, ph, secondaryPill).withMargin(Margin(0, gl, 0, 0)));
 
     // ── [Reference  Ghost] ───────────────────────────────────────────────────
     fb.items.add(Item(100, ph, referencePill).withMargin(Margin(0, gs, 0, 0)));
@@ -156,8 +156,8 @@ void FooterBar::resized() {
 
 void FooterBar::timerCallback() {
     // Smooth decay for peak display (fast attack, slow release)
-    const float newMid = peakSourceRef.getPeakMidDb();
-    const float newSide = peakSourceRef.getPeakSideDb();
+    const float newMid = peakSourceRef.getPeakPrimaryDb();
+    const float newSide = peakSourceRef.getPeakSecondaryDb();
 
     peakMidDisplay = (newMid > peakMidDisplay)
                          ? newMid
@@ -169,10 +169,10 @@ void FooterBar::timerCallback() {
 
     controlsRef.setPeakLevels(peakMidDisplay, peakSideDisplay);
 
-    if (std::abs(newMid - prevMid) > 0.1f || std::abs(newSide - prevSide) > 0.1f)
+    if (std::abs(newMid - primaryMid) > 0.1f || std::abs(newSide - secondarySide) > 0.1f)
         repaint();
-    prevMid = newMid;
-    prevSide = newSide;
+    primaryMid = newMid;
+    secondarySide = newSide;
 }
 
 void FooterBar::syncAnalyzerState() {

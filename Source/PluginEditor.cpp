@@ -314,12 +314,12 @@ bool gFractorAudioProcessorEditor::keyPressed(const juce::KeyPress &key,
     }
 
     if (key == juce::KeyPress('m')) {
-        footerBar.getMidPill().triggerClick();
+        footerBar.getPrimaryPill().triggerClick();
         return true;
     }
 
     if (key == juce::KeyPress('s')) {
-        footerBar.getSidePill().triggerClick();
+        footerBar.getSecondaryPill().triggerClick();
         return true;
     }
 

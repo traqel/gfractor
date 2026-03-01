@@ -101,12 +101,12 @@ public:
 
     /** Show/hide mid and side spectrum paths (main + ghost) */
     void setMidVisible(const bool visible) override {
-        showMid = visible;
+        showPrimary = visible;
         repaint();
     }
 
     void setSideVisible(const bool visible) override {
-        showSide = visible;
+        showSecondary = visible;
         repaint();
     }
 
@@ -120,8 +120,8 @@ public:
 
     /** Feed processor peak levels for the right-side M/S meter bars (call at ~30 Hz). */
     void setPeakLevels(const float midDb, const float sideDb) override {
-        meterMidDb = midDb;
-        meterSideDb = sideDb;
+        meterPrimaryDb = midDb;
+        meterSecondaryDb = sideDb;
     }
 
     void setChannelMode(const int mode) override {
@@ -169,23 +169,23 @@ public:
 
     void setFreqRange(float newMinFreq, float newMaxFreq) override;
 
-    void setMidColour(const juce::Colour c) override {
-        midColour = c;
+    void setPrimaryColour(const juce::Colour c) override {
+        primaryColour = c;
         repaint();
     }
 
-    void setSideColour(const juce::Colour c) override {
-        sideColour = c;
+    void setSecondaryColour(const juce::Colour c) override {
+        secondaryColour = c;
         repaint();
     }
 
-    void setRefMidColour(const juce::Colour c) override {
-        refMidColour = c;
+    void setRefPrimaryColour(const juce::Colour c) override {
+        refPrimaryColour = c;
         repaint();
     }
 
-    void setRefSideColour(const juce::Colour c) override {
-        refSideColour = c;
+    void setRefSecondaryColour(const juce::Colour c) override {
+        refSecondaryColour = c;
         repaint();
     }
 
@@ -222,10 +222,10 @@ public:
     float getMaxDb() const override { return range.maxDb; }
     float getMinFreq() const override { return range.minFreq; }
     float getMaxFreq() const override { return range.maxFreq; }
-    juce::Colour getMidColour() const override { return midColour; }
-    juce::Colour getSideColour() const override { return sideColour; }
-    juce::Colour getRefMidColour() const override { return refMidColour; }
-    juce::Colour getRefSideColour() const override { return refSideColour; }
+    juce::Colour getPrimaryColour() const override { return primaryColour; }
+    juce::Colour getSecondaryColour() const override { return secondaryColour; }
+    juce::Colour getRefPrimaryColour() const override { return refPrimaryColour; }
+    juce::Colour getRefSecondaryColour() const override { return refSecondaryColour; }
 
     /** Left margin reserved for dB axis labels — used by FooterBar to align its buttons. */
     static constexpr int leftMargin = Layout::SpectrumAnalyzer::leftMargin;
@@ -292,14 +292,14 @@ private:
 
     // Colors — direct mode
 
-    juce::Colour midColour{Defaults::midColour()};
-    juce::Colour sideColour{Defaults::sideColour()};
+    juce::Colour primaryColour{Defaults::primaryColour()};
+    juce::Colour secondaryColour{Defaults::secondaryColour()};
     // Colors — reference mode
-    juce::Colour refMidColour{Defaults::refMidColour()};
-    juce::Colour refSideColour{Defaults::refSideColour()};
+    juce::Colour refPrimaryColour{Defaults::refPrimaryColour()};
+    juce::Colour refSecondaryColour{Defaults::refSecondaryColour()};
     bool playRef = false;
-    bool showMid = true;
-    bool showSide = true;
+    bool showPrimary = true;
+    bool showSecondary = true;
     bool showGhost = false;
     bool sidechainAvailable = false;
     juce::Colour backgroundColour{ColorPalette::spectrumBg};
@@ -309,8 +309,8 @@ private:
     juce::Colour bandHeaderColor{ColorPalette::spectrumBorder};
 
     // Right-side M/S peak level meters
-    float meterMidDb = -100.0f;
-    float meterSideDb = -100.0f;
+    float meterPrimaryDb = -100.0f;
+    float meterSecondaryDb = -100.0f;
 
     void paintLevelMeters(juce::Graphics &g) const;
 

@@ -85,8 +85,8 @@ private:
     std::vector<float> hannWindow;
 
     // Work buffers (UI thread only)
-    std::vector<float> fftDataMid;
-    std::vector<float> fftDataSide;
+    std::vector<float> fftDataPrimary;
+    std::vector<float> fftDataSecondary;
 
     // Smoothing ranges for 1/3-octave
     struct SmoothingRange {

@@ -17,11 +17,11 @@ namespace ColorPalette {
         std::uint32_t grid;
         std::uint32_t border;
         std::uint32_t spectrumBorder;
-        std::uint32_t midGreen;
-        std::uint32_t sideAmber;
+        std::uint32_t primaryGreen;
+        std::uint32_t secondaryAmber;
         std::uint32_t blueAccent;
-        std::uint32_t refMidBlue;
-        std::uint32_t refSidePink;
+        std::uint32_t refPrimaryBlue;
+        std::uint32_t refSecondaryPink;
         std::uint32_t textBright;
         std::uint32_t textLight;
         std::uint32_t textMuted;
@@ -132,12 +132,12 @@ namespace ColorPalette {
     inline std::uint32_t border = balancedTheme.border;
     inline std::uint32_t spectrumBorder = balancedTheme.spectrumBorder;
 
-    inline std::uint32_t midGreen = balancedTheme.midGreen;
-    inline std::uint32_t sideAmber = balancedTheme.sideAmber;
+    inline std::uint32_t primaryGreen = balancedTheme.primaryGreen;
+    inline std::uint32_t secondaryAmber = balancedTheme.secondaryAmber;
     inline std::uint32_t blueAccent = balancedTheme.blueAccent;
 
-    inline std::uint32_t refMidBlue = balancedTheme.refMidBlue;
-    inline std::uint32_t refSidePink = balancedTheme.refSidePink;
+    inline std::uint32_t refPrimaryBlue = balancedTheme.refPrimaryBlue;
+    inline std::uint32_t refSecondaryPink = balancedTheme.refSecondaryPink;
 
     inline std::uint32_t textBright = balancedTheme.textBright;
     inline std::uint32_t textLight = balancedTheme.textLight;
@@ -163,12 +163,12 @@ namespace ColorPalette {
         border = spec.border;
         spectrumBorder = spec.spectrumBorder;
 
-        midGreen = spec.midGreen;
-        sideAmber = spec.sideAmber;
+        primaryGreen = spec.primaryGreen;
+        secondaryAmber = spec.secondaryAmber;
         blueAccent = spec.blueAccent;
 
-        refMidBlue = spec.refMidBlue;
-        refSidePink = spec.refSidePink;
+        refPrimaryBlue = spec.refPrimaryBlue;
+        refSecondaryPink = spec.refSecondaryPink;
 
         textBright = spec.textBright;
         textLight = spec.textLight;

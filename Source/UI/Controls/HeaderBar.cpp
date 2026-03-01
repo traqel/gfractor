@@ -37,7 +37,7 @@ void HeaderBar::paint(juce::Graphics &g) {
 
     // Draw "g" in accent teal
     g.setFont(logoFont);
-    g.setColour(juce::Colour(ColorPalette::midGreen));
+    g.setColour(juce::Colour(ColorPalette::primaryGreen));
     g.drawText("g", logoX, logoY, static_cast<int>(gWidth) + 2, logoH,
                juce::Justification::centredLeft);
 
