@@ -237,21 +237,21 @@ void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
     constexpr float gap = Layout::SpectrumAnalyzer::barGap;
     constexpr float padLeft = Layout::SpectrumAnalyzer::barPaddingLeft;
 
-    const float x0 = spectrumArea.getRight() + padLeft; // mid-bar left
-    const float x1 = x0 + barW + gap; // sidebar left
+    const float x0 = spectrumArea.getRight() + padLeft; // primary-bar left
+    const float x1 = x0 + barW + gap; // secondary-bar left
     const float y = spectrumArea.getY();
     const float h = spectrumArea.getHeight();
 
-    const auto &activeMidCol = playRef ? refPrimaryColour : primaryColour;
-    const auto &activeSideCol = playRef ? refSecondaryColour : secondaryColour;
+    const auto &activePrimaryCol = playRef ? refPrimaryColour : primaryColour;
+    const auto &activeSecondaryCol = playRef ? refSecondaryColour : secondaryColour;
 
-    const float midT = juce::jlimit(0.0f, 1.0f,
-                                    (meterPrimaryDb - range.minDb) / (range.maxDb - range.minDb));
-    const float sideT = juce::jlimit(0.0f, 1.0f,
-                                     (meterSecondaryDb - range.minDb) / (range.maxDb - range.minDb));
+    const float primaryT = juce::jlimit(0.0f, 1.0f,
+                                       (meterPrimaryDb - range.minDb) / (range.maxDb - range.minDb));
+    const float secondaryT = juce::jlimit(0.0f, 1.0f,
+                                         (meterSecondaryDb - range.minDb) / (range.maxDb - range.minDb));
 
-    drawLevelBar(g, {x0, y, barW, h}, midT, activeMidCol, backgroundColour);
-    drawLevelBar(g, {x1, y, barW, h}, sideT, activeSideCol, backgroundColour);
+    drawLevelBar(g, {x0, y, barW, h}, primaryT, activePrimaryCol, backgroundColour);
+    drawLevelBar(g, {x1, y, barW, h}, secondaryT, activeSecondaryCol, backgroundColour);
 
     // Labels above bars
     g.setFont(Typography::makeBoldFont(9.0f));

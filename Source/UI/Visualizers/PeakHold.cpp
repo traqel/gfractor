@@ -45,16 +45,16 @@ bool PeakHold::accumulate(const std::vector<float> &primaryDb, const std::vector
     return changed;
 }
 
-bool PeakHold::accumulateGhost(const std::vector<float> &midDb, const std::vector<float> &sideDb,
+bool PeakHold::accumulateGhost(const std::vector<float> &primaryDb, const std::vector<float> &secondaryDb,
                                const int numBins) {
     bool changed = false;
     for (int bin = 0; bin < numBins; ++bin) {
         const auto b = static_cast<size_t>(bin);
-        const float nextMid = std::max(peakGhostPrimaryDb[b], midDb[b]);
-        const float nextSide = std::max(peakGhostSecondaryDb[b], sideDb[b]);
-        changed = changed || (nextMid > peakGhostPrimaryDb[b]) || (nextSide > peakGhostSecondaryDb[b]);
-        peakGhostPrimaryDb[b] = nextMid;
-        peakGhostSecondaryDb[b] = nextSide;
+        const float nextPrimary = std::max(peakGhostPrimaryDb[b], primaryDb[b]);
+        const float nextSecondary = std::max(peakGhostSecondaryDb[b], secondaryDb[b]);
+        changed = changed || (nextPrimary > peakGhostPrimaryDb[b]) || (nextSecondary > peakGhostSecondaryDb[b]);
+        peakGhostPrimaryDb[b] = nextPrimary;
+        peakGhostSecondaryDb[b] = nextSecondary;
     }
     return changed;
 }

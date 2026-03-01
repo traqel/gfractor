@@ -26,7 +26,7 @@ public:
 
     bool accumulate(const std::vector<float> &primaryDb, const std::vector<float> &secondaryDb, int numBins);
 
-    bool accumulateGhost(const std::vector<float> &midDb, const std::vector<float> &sideDb, int numBins);
+    bool accumulateGhost(const std::vector<float> &primaryDb, const std::vector<float> &secondaryDb, int numBins);
 
     void buildPaths(float width, float height, const BuildPathFn &buildPath);
 

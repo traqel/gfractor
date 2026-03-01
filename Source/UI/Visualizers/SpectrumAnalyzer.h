@@ -21,9 +21,9 @@
 #include "../../DSP/IGhostDataSink.h"
 
 /**
- * Mid-Side Spectrum Analyzer Component
+ * Primary/Secondary Spectrum Analyzer Component
  *
- * Displays real-time frequency spectrum with separate mid and side channels.
+ * Displays real-time frequency spectrum with separate primary and secondary channels.
  * Uses lock-free FIFO for realtime-safe audio data transfer from the audio thread.
  *
  * Features:
@@ -118,10 +118,10 @@ public:
     /** Show/hide sidechain hint message */
     void setSidechainAvailable(const bool available) override { sidechainAvailable = available; }
 
-    /** Feed processor peak levels for the right-side M/S meter bars (call at ~30 Hz). */
-    void setPeakLevels(const float midDb, const float sideDb) override {
-        meterPrimaryDb = midDb;
-        meterSecondaryDb = sideDb;
+    /** Feed processor peak levels for the right-side primary/secondary meter bars (call at ~30 Hz). */
+    void setPeakLevels(const float primaryDb, const float secondaryDb) override {
+        meterPrimaryDb = primaryDb;
+        meterSecondaryDb = secondaryDb;
     }
 
     void setChannelMode(const int mode) override {
