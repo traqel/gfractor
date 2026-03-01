@@ -95,9 +95,9 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     refPrimarySwatch.colour = settings.getRefPrimaryColour();
     refSecondarySwatch.colour = settings.getRefSecondaryColour();
 
-    primarySwatch.label = "Mid";
-    secondarySwatch.label = "Side";
-    refPrimarySwatch.label = "Ref M";
+    primarySwatch.label = "Primary";
+    secondarySwatch.label = "Secondary";
+    refPrimarySwatch.label = "Ref P";
     refSecondarySwatch.label = "Ref S";
 
     primarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setPrimaryColour(c); };

@@ -7,8 +7,8 @@ namespace ParameterIDs {
     inline constexpr auto gain = "gain";
     inline constexpr auto dryWet = "dryWet";
     inline constexpr auto bypass = "bypass";
-    inline constexpr auto outputMidEnable = "outputMidEnable";
-    inline constexpr auto outputSideEnable = "outputSideEnable";
+    inline constexpr auto outputPrimaryEnable = "outputPrimaryEnable";
+    inline constexpr auto outputSecondaryEnable = "outputSecondaryEnable";
 
     // Parameter version for state compatibility
     inline constexpr int parameterVersion = 1;

@@ -821,8 +821,8 @@ public:
                 ParameterIDs::gain,
                 ParameterIDs::dryWet,
                 ParameterIDs::bypass,
-                ParameterIDs::outputMidEnable,
-                ParameterIDs::outputSideEnable,
+                ParameterIDs::outputPrimaryEnable,
+                ParameterIDs::outputSecondaryEnable,
             };
             for (const auto *id : ids) {
                 expect(juce::Identifier::isValidIdentifier(juce::String(id)),

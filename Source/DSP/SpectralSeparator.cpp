@@ -21,8 +21,8 @@ void SpectralSeparator::prepare (const juce::dsp::ProcessSpec& spec)
     for (int ch = 0; ch < numCh; ++ch)
     {
         const auto c = static_cast<size_t> (ch);
-        inputBuf[c].assign (static_cast<size_t> (kFftSize),    0.0f);
-        olaBuf  [c].assign (static_cast<size_t> (kOlaBufSize), 0.0f);
+        inputBuf[c].assign (kFftSize,    0.0f);
+        olaBuf  [c].assign (kOlaBufSize, 0.0f);
     }
 
     reset();

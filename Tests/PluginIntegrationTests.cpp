@@ -32,9 +32,9 @@ public:
                 dryWet->setValueNotifyingHost(dryWet->convertTo0to1(35.0f));
             if (auto *bypass = apvts.getParameter(ParameterIDs::bypass))
                 bypass->setValueNotifyingHost(1.0f);
-            if (auto *mid = apvts.getParameter(ParameterIDs::outputMidEnable))
+            if (auto *mid = apvts.getParameter(ParameterIDs::outputPrimaryEnable))
                 mid->setValueNotifyingHost(0.0f);
-            if (auto *side = apvts.getParameter(ParameterIDs::outputSideEnable))
+            if (auto *side = apvts.getParameter(ParameterIDs::outputSecondaryEnable))
                 side->setValueNotifyingHost(1.0f);
 
             juce::MemoryBlock state;
@@ -54,8 +54,8 @@ public:
             expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::gain), 9.0f, 0.25f);
             expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::dryWet), 35.0f, 1.0f);
             expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::bypass), 1.0f, 0.01f);
-            expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::outputMidEnable), 0.0f, 0.01f);
-            expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::outputSideEnable), 1.0f, 0.01f);
+            expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::outputPrimaryEnable), 0.0f, 0.01f);
+            expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::outputSecondaryEnable), 1.0f, 0.01f);
 
             restored.prepareToPlay(44100.0, 128);
             juce::AudioBuffer<float> block(2, 128);

@@ -558,7 +558,7 @@ private:
         expect(ColorPalette::background > 0);
         expect(ColorPalette::textBright > 0);
         expect(ColorPalette::primaryGreen > 0);
-        expect(ColorPalette::sideAmber > 0);
+        expect(ColorPalette::secondaryAmber > 0);
         expect(ColorPalette::blueAccent > 0);
 
         // Test Light theme

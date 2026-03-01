@@ -49,14 +49,14 @@ namespace ParameterLayout {
 
         // Output Mid enable (boolean)
         layout.add(std::make_unique<juce::AudioParameterBool>(
-            juce::ParameterID{ParameterIDs::outputMidEnable, ParameterIDs::parameterVersion},
+            juce::ParameterID{ParameterIDs::outputPrimaryEnable, ParameterIDs::parameterVersion},
             ParameterDefaults::OutputMid::name,
             ParameterDefaults::OutputMid::defaultValue
         ));
 
         // Output Side enable (boolean)
         layout.add(std::make_unique<juce::AudioParameterBool>(
-            juce::ParameterID{ParameterIDs::outputSideEnable, ParameterIDs::parameterVersion},
+            juce::ParameterID{ParameterIDs::outputSecondaryEnable, ParameterIDs::parameterVersion},
             ParameterDefaults::OutputSide::name,
             ParameterDefaults::OutputSide::defaultValue
         ));

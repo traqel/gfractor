@@ -48,8 +48,8 @@ public:
         apvtsRef.addParameterListener(ParameterIDs::gain, this);
         apvtsRef.addParameterListener(ParameterIDs::dryWet, this);
         apvtsRef.addParameterListener(ParameterIDs::bypass, this);
-        apvtsRef.addParameterListener(ParameterIDs::outputMidEnable, this);
-        apvtsRef.addParameterListener(ParameterIDs::outputSideEnable, this);
+        apvtsRef.addParameterListener(ParameterIDs::outputPrimaryEnable, this);
+        apvtsRef.addParameterListener(ParameterIDs::outputSecondaryEnable, this);
 
         // Initialize DSP with current parameter values
         updateAllParameters();
@@ -62,8 +62,8 @@ public:
         apvtsRef.removeParameterListener(ParameterIDs::gain, this);
         apvtsRef.removeParameterListener(ParameterIDs::dryWet, this);
         apvtsRef.removeParameterListener(ParameterIDs::bypass, this);
-        apvtsRef.removeParameterListener(ParameterIDs::outputMidEnable, this);
-        apvtsRef.removeParameterListener(ParameterIDs::outputSideEnable, this);
+        apvtsRef.removeParameterListener(ParameterIDs::outputPrimaryEnable, this);
+        apvtsRef.removeParameterListener(ParameterIDs::outputSecondaryEnable, this);
     }
 
     /**
@@ -81,9 +81,9 @@ public:
             dspRef.setDryWet(newValue / 100.0f); // parameter is 0–100%, DSP expects 0–1
         } else if (parameterID == ParameterIDs::bypass) {
             dspRef.setBypassed(newValue > 0.5f);
-        } else if (parameterID == ParameterIDs::outputMidEnable) {
+        } else if (parameterID == ParameterIDs::outputPrimaryEnable) {
             dspRef.setPrimaryEnabled(newValue > 0.5f);
-        } else if (parameterID == ParameterIDs::outputSideEnable) {
+        } else if (parameterID == ParameterIDs::outputSecondaryEnable) {
             dspRef.setSecondaryEnabled(newValue > 0.5f);
         }
     }
@@ -105,8 +105,8 @@ public:
         if (bypassParam != nullptr)
             dspRef.setBypassed(bypassParam->load() > 0.5f);
 
-        const auto *midEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputMidEnable);
-        const auto *sideEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputSideEnable);
+        const auto *midEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputPrimaryEnable);
+        const auto *sideEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputSecondaryEnable);
 
         if (midEnableParam != nullptr)
             dspRef.setPrimaryEnabled(midEnableParam->load() > 0.5f);

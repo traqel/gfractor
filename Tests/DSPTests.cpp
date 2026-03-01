@@ -504,8 +504,8 @@ private:
 
             dsp.process(buffer);
 
-            const float midDb = dsp.getPeakMidDb();
-            const float sideDb = dsp.getPeakSideDb();
+            const float midDb = dsp.getPeakPrimaryDb();
+            const float sideDb = dsp.getPeakSecondaryDb();
 
             // Mid should be ~-6dB (0.5 linear)
             expectGreaterThan(midDb, -10.0f);
@@ -528,8 +528,8 @@ private:
 
             dsp.process(buffer);
 
-            const float midDb = dsp.getPeakMidDb();
-            const float sideDb = dsp.getPeakSideDb();
+            const float midDb = dsp.getPeakPrimaryDb();
+            const float sideDb = dsp.getPeakSecondaryDb();
 
             // Mid should be at -inf (0.0)
             expectLessThan(midDb, -60.0f);
@@ -551,8 +551,8 @@ private:
 
             dsp.process(buffer);
 
-            const float midDb = dsp.getPeakMidDb();
-            const float sideDb = dsp.getPeakSideDb();
+            const float midDb = dsp.getPeakPrimaryDb();
+            const float sideDb = dsp.getPeakSecondaryDb();
 
             // Both should have energy
             expectGreaterThan(midDb, -20.0f);
@@ -567,15 +567,15 @@ private:
 
             dsp.process(buffer);
 
-            expectLessThan(dsp.getPeakMidDb(), -60.0f);
-            expectLessThan(dsp.getPeakSideDb(), -60.0f);
+            expectLessThan(dsp.getPeakPrimaryDb(), -60.0f);
+            expectLessThan(dsp.getPeakSecondaryDb(), -60.0f);
         }
 
         // Test: resetPeaks()
         {
             dsp.resetPeaks();
-            expectEquals(dsp.getPeakMidDb(), -100.0f);
-            expectEquals(dsp.getPeakSideDb(), -100.0f);
+            expectEquals(dsp.getPeakPrimaryDb(), -100.0f);
+            expectEquals(dsp.getPeakSecondaryDb(), -100.0f);
         }
     }
 
