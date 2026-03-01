@@ -3,9 +3,9 @@
 struct ISpectrumControls {
     virtual ~ISpectrumControls() = default;
 
-    virtual void setMidVisible(bool visible) = 0;
+    virtual void setPrimaryVisible(bool visible) = 0;
 
-    virtual void setSideVisible(bool visible) = 0;
+    virtual void setSecondaryVisible(bool visible) = 0;
 
     virtual void setGhostVisible(bool visible) = 0;
 

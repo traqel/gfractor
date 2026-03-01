@@ -39,17 +39,17 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     };
     addAndMakeVisible(modePill);
 
-    // Mid pill — APVTS-bound
-    primaryPill.attachToParameter(processorRef.getAPVTS(), "outputMidEnable");
+    // Primary pill — APVTS-bound
+    primaryPill.attachToParameter(processorRef.getAPVTS(), "outputPrimaryEnable");
     primaryPill.onClick = [this]() {
-        controlsRef.setMidVisible(primaryPill.getToggleState());
+        controlsRef.setPrimaryVisible(primaryPill.getToggleState());
     };
     addAndMakeVisible(primaryPill);
 
-    // Side pill — APVTS-bound
-    secondaryPill.attachToParameter(processorRef.getAPVTS(), "outputSideEnable");
+    // Secondary pill — APVTS-bound
+    secondaryPill.attachToParameter(processorRef.getAPVTS(), "outputSecondaryEnable");
     secondaryPill.onClick = [this]() {
-        controlsRef.setSideVisible(secondaryPill.getToggleState());
+        controlsRef.setSecondaryVisible(secondaryPill.getToggleState());
     };
     addAndMakeVisible(secondaryPill);
 

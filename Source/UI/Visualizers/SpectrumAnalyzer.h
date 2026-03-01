@@ -100,12 +100,12 @@ public:
     }
 
     /** Show/hide mid and side spectrum paths (main + ghost) */
-    void setMidVisible(const bool visible) override {
+    void setPrimaryVisible(const bool visible) override {
         showPrimary = visible;
         repaint();
     }
 
-    void setSideVisible(const bool visible) override {
+    void setSecondaryVisible(const bool visible) override {
         showSecondary = visible;
         repaint();
     }
