@@ -16,6 +16,14 @@ This is a **Claude Code plugin configuration** called "JUCE Dev Team" — it pro
 
 ## Key Concepts
 
+### Primary/Secondary Channel Mode Abstraction
+This plugin operates in three channel modes:
+- **Mid/Side (M/S)**: Mid = Primary, Side = Secondary
+- **Left/Right (L/R)**: Left = Primary, Right = Secondary  
+- **Tonal/Noise (T/N)**: Tonal = Primary, Noise = Secondary
+
+**Primary/Secondary is the generic abstraction** — all three modes (M/S, L/R, T/N) can be treated uniformly as Primary/Secondary in classes and components that don't need to know the specific channel mode.
+
 ### Agent Delegation
 Users invoke agents via `@agent-name` mentions. Claude auto-delegates to the right specialist based on context. The 13 agents cover: technical-lead, dsp-engineer, plugin-engineer, ui-engineer, daw-compatibility-engineer, qa-engineer, test-automation-engineer, build-engineer, support-engineer, telemetry-engineer, security-engineer, audio-content-engineer, platform-engineer.
 

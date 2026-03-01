@@ -8,7 +8,7 @@
  */
 enum class ChannelMode { MidSide, LR, TonalNoise };
 
-inline ChannelMode channelModeFromInt(int index) {
+inline ChannelMode channelModeFromInt(const int index) {
     switch (index) {
         case 1: return ChannelMode::LR;
         case 2: return ChannelMode::TonalNoise;
