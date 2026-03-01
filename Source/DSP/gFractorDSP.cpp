@@ -7,6 +7,13 @@ void gFractorDSP::prepare(const juce::dsp::ProcessSpec &spec) {
     gainProcessor.prepare(spec);
     dryWetMixer.prepare(spec);
 
+    // Tonal/Transient: dual-EMA transient detector coefficients
+    const auto sr = static_cast<float>(spec.sampleRate);
+    fastEnvAlpha = 1.0f - std::exp(-1.0f / (sr * 0.002f)); // ~2ms
+    slowEnvAlpha = 1.0f - std::exp(-1.0f / (sr * 0.08f));  // ~80ms
+    fastEnvState = 0.0f;
+    slowEnvState = 0.0f;
+
     // Set smoothing ramp length (50ms to prevent zipper noise)
     gainSmoothed.reset(spec.sampleRate, 0.05);
     gainSmoothed.setCurrentAndTargetValue(juce::Decibels::decibelsToGain(0.0f));
@@ -119,21 +126,30 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
         lastBandQ = -1.0f;
     }
 
-    // Tonal/Noise mode: SpectralSeparator handles channel separation via STFT
-    if (outputMode == ChannelMode::TonalNoise) {
+    // Tonal/Transient mode: dual-EMA transient detector
+    // Left  → Transient (Primary):  signal weighted by how far fast envelope exceeds slow
+    // Right → Tonal    (Secondary): complement (sustained energy)
+    if (outputMode == ChannelMode::TonalTransient) {
         if (block.getNumChannels() >= 2) {
-            auto *leftData = block.getChannelPointer(0);
+            auto *leftData  = block.getChannelPointer(0);
             auto *rightData = block.getChannelPointer(1);
 
             for (size_t i = 0; i < block.getNumSamples(); ++i) {
-                float tonal = leftData[i];
-                float noise = rightData[i];
+                const float absMono = std::abs(leftData[i] + rightData[i]) * 0.5f;
 
-                if (!primaryEnabled) tonal = 0.0f;
-                if (!secondaryEnabled) noise = 0.0f;
+                fastEnvState += (absMono - fastEnvState) * fastEnvAlpha;
+                slowEnvState += (absMono - slowEnvState) * slowEnvAlpha;
 
-                leftData[i] = tonal;
-                rightData[i] = noise;
+                const float transientGain = (fastEnvState > 1e-9f)
+                    ? juce::jlimit(0.0f, 1.0f, (fastEnvState - slowEnvState) / fastEnvState)
+                    : 0.0f;
+
+                // Combine enabled components into a single gain applied to stereo L/R
+                const float gain = (primaryEnabled   ? transientGain          : 0.0f)
+                                 + (secondaryEnabled ? (1.0f - transientGain) : 0.0f);
+
+                leftData[i]  *= gain;
+                rightData[i] *= gain;
             }
         }
     }
@@ -178,6 +194,9 @@ void gFractorDSP::reset() {
     if (!isPrepared)
         return;
 
+    fastEnvState = 0.0f;
+    slowEnvState = 0.0f;
+
     // Clear internal state of all processors
     gainProcessor.reset();
     dryWetMixer.reset();
@@ -196,6 +215,11 @@ void gFractorDSP::setGain(const float gainDB) {
 
     // Also set the gain processor directly (it will be used when not smoothing)
     gainProcessor.setGainDecibels(gainDB);
+}
+
+void gFractorDSP::setTransientLength(const float ms) {
+    if (isPrepared)
+        fastEnvAlpha = 1.0f - std::exp(-1.0f / (static_cast<float>(currentSpec.sampleRate) * ms * 0.001f));
 }
 
 void gFractorDSP::setBypassed(const bool shouldBeBypassed) {

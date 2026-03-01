@@ -43,6 +43,9 @@ public:
 
     void setSecondaryEnabled(bool enabled);
 
+    /** Set transient length (fast envelope time constant in ms). Recomputes fastEnvAlpha. */
+    void setTransientLength(float ms);
+
     /** Set dry/wet mix proportion (0.0 = fully dry, 1.0 = fully wet). */
     void setDryWet(float proportion);
 
@@ -108,6 +111,14 @@ private:
     float lastBandQ = -1.0f;
 
     //==============================================================================
+    // Tonal/Transient audio separation — dual-EMA transient detector
+    // fastEnvState tracks instantaneous energy; slowEnvState tracks sustained energy.
+    // transientGain = (fast - slow) / fast; tonalGain = 1 - transientGain.
+    float fastEnvState = 0.0f;   // fast-tracking envelope (~2ms)
+    float slowEnvState = 0.0f;   // slow-tracking envelope (~80ms)
+    float fastEnvAlpha = 0.02f;  // EMA smoothing coefficient — recomputed in prepare()
+    float slowEnvAlpha = 3e-4f;  // EMA smoothing coefficient — recomputed in prepare()
+
     // Peak level metering (written on audio thread, read on UI thread)
     std::atomic<float> peakPrimaryDb{-100.0f};
     std::atomic<float> peakSecondaryDb{-100.0f};

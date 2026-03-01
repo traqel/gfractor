@@ -129,7 +129,7 @@ public:
         switch (mode) {
             case 1: cm = ChannelMode::LR;
                 break;
-            case 2: cm = ChannelMode::TonalNoise;
+            case 2: cm = ChannelMode::TonalTransient;
                 break;
             default: cm = ChannelMode::MidSide;
                 break;

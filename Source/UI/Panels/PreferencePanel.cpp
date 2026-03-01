@@ -10,10 +10,12 @@
 
 //==============================================================================
 PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
+                                 juce::AudioProcessorValueTreeState &apvts,
                                  std::function<void()> themeChangedCallback,
                                  const bool bandHintsOn,
                                  std::function<void(bool)> bandHintsChangedCallback)
     : settingsRef(settings),
+      apvtsRef(apvts),
       snapshot{
           settings.getMinDb(), settings.getMaxDb(),
           settings.getMinFreq(), settings.getMaxFreq(),
@@ -22,7 +24,8 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
           settings.getSmoothing(), settings.getFftOrder(), settings.getOverlapFactor(),
           settings.getCurveDecay(), settings.getSlope(),
           ColorPalette::getTheme(),
-          bandHintsOn
+          bandHintsOn,
+          apvts.getRawParameterValue("transientLength")->load()
       },
       onThemeChanged(std::move(themeChangedCallback)),
       onBandHintsChanged(std::move(bandHintsChangedCallback)) {
@@ -192,6 +195,21 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     slopeLabel.setText("Slope", juce::dontSendNotification);
     slopeLabel.setJustificationType(juce::Justification::centredRight);
 
+    // --- Transient length slider ---
+    addAndMakeVisible(transientLengthSlider);
+    transientLengthSlider.setRange(1.0, 50.0, 0.1);
+    transientLengthSlider.setSkewFactorFromMidPoint(10.0);
+    transientLengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
+    transientLengthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    transientLengthSlider.setTextValueSuffix(" ms");
+    transientLengthSlider.setNumDecimalPlacesToDisplay(1);
+    transientLengthAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvtsRef, "transientLength", transientLengthSlider);
+
+    addAndMakeVisible(transientLengthLabel);
+    transientLengthLabel.setText("Trans Len", juce::dontSendNotification);
+    transientLengthLabel.setJustificationType(juce::Justification::centredRight);
+
     // --- Theme combo box ---
     addAndMakeVisible(themeCombo);
     themeCombo.addItem("Dark", 1);
@@ -253,6 +271,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     applyLabelFont(smoothingLabel);
     applyLabelFont(decayLabel);
     applyLabelFont(slopeLabel);
+    applyLabelFont(transientLengthLabel);
     applyLabelFont(themeLabel);
     applyLabelFont(bandHintsLabel);
 
@@ -318,6 +337,10 @@ void PreferencePanel::resized() {
     bounds.removeFromTop(Spacing::gapS); // spacing
 
     layoutRow(slopeLabel, slopeSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(transientLengthLabel, transientLengthSlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -504,6 +527,10 @@ void PreferencePanel::revertToSnapshot() {
     slopeSlider.setValue(snapshot.slope, juce::dontSendNotification);
     settingsRef.setSlope(snapshot.slope);
 
+    if (auto *param = apvtsRef.getParameter("transientLength"))
+        param->setValueNotifyingHost(param->convertTo0to1(snapshot.transientLength));
+    transientLengthSlider.setValue(snapshot.transientLength, juce::dontSendNotification);
+
     ColorPalette::setTheme(snapshot.theme);
     themeCombo.setSelectedId(themeToId(snapshot.theme), juce::dontSendNotification);
     if (onThemeChanged)
@@ -544,6 +571,10 @@ void PreferencePanel::resetToDefaults() {
 
     slopeSlider.setValue(0.0, juce::dontSendNotification);
     settingsRef.setSlope(0.0f);
+
+    if (auto *param = apvtsRef.getParameter("transientLength"))
+        param->setValueNotifyingHost(param->convertTo0to1(2.0f));
+    transientLengthSlider.setValue(2.0, juce::dontSendNotification);
 
     ColorPalette::setTheme(ColorPalette::Theme::Balanced);
     themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Balanced), juce::dontSendNotification);

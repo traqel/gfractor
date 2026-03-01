@@ -9,6 +9,7 @@ namespace ParameterIDs {
     inline constexpr auto bypass = "bypass";
     inline constexpr auto outputPrimaryEnable = "outputPrimaryEnable";
     inline constexpr auto outputSecondaryEnable = "outputSecondaryEnable";
+    inline constexpr auto transientLength = "transientLength";
 
     // Parameter version for state compatibility
     inline constexpr int parameterVersion = 1;

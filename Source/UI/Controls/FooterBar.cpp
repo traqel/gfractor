@@ -15,7 +15,7 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     referencePill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(referencePill);
 
-    // Mode dropdown — 0 = M/S, 1 = L/R, 2 = T/N
+    // Mode dropdown — 0 = M/S, 1 = L/R, 2 = T/T
     modePill.setSelectedIndex(0);
     modePill.onChange = [this](const int index) {
         switch (index) {
@@ -30,8 +30,8 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
                 break;
 
             case 2:
-                primaryPill.setButtonText("Tonal");
-                secondaryPill.setButtonText("Noise");
+                primaryPill.setButtonText("Trans");
+                secondaryPill.setButtonText("Tonal");
                 break;
             default:
                 primaryPill.setButtonText("Left");

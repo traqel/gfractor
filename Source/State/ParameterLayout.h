@@ -61,6 +61,20 @@ namespace ParameterLayout {
             ParameterDefaults::OutputSide::defaultValue
         ));
 
+        // Transient length — fast envelope time constant (1–50 ms, default 2 ms)
+        layout.add(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{ParameterIDs::transientLength, ParameterIDs::parameterVersion},
+            ParameterDefaults::TransientLength::name,
+            juce::NormalisableRange(
+                ParameterDefaults::TransientLength::minValue,
+                ParameterDefaults::TransientLength::maxValue,
+                ParameterDefaults::TransientLength::stepSize
+            ),
+            ParameterDefaults::TransientLength::defaultValue,
+            juce::AudioParameterFloatAttributes()
+            .withLabel(ParameterDefaults::TransientLength::suffix)
+        ));
+
         return layout;
     }
 } // namespace ParameterLayout

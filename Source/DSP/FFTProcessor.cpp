@@ -34,6 +34,8 @@ void FFTProcessor::setFftOrder(const int order, const float newMinDb) {
     smoothingTemp.resize(static_cast<size_t>(numBins));
     smoothingPrefix.resize(static_cast<size_t>(numBins + 1));
 
+    tonalAccum.assign(static_cast<size_t>(numBins), 0.0f);
+
     precomputeSmoothingRanges();
     precomputeSlopeGains();
 }
@@ -77,6 +79,17 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
         for (int bin = 1; bin < numBins; ++bin) {
             fftDataPrimary[static_cast<size_t>(bin)] *= slopeGains[static_cast<size_t>(bin)];
             fftDataSecondary[static_cast<size_t>(bin)] *= slopeGains[static_cast<size_t>(bin)];
+        }
+    }
+
+    // Tonal/Transient bin-wise separation (display path only)
+    if (channelMode == ChannelMode::TonalTransient) {
+        for (int bin = 0; bin < numBins; ++bin) {
+            const float mag = fftDataPrimary[static_cast<size_t>(bin)];
+            auto &tonal = tonalAccum[static_cast<size_t>(bin)];
+            tonal = tonal * kTonalDecay + mag * (1.0f - kTonalDecay);
+            fftDataPrimary[static_cast<size_t>(bin)]   = juce::jmax(0.0f, mag - tonal); // transient
+            fftDataSecondary[static_cast<size_t>(bin)] = tonal;                         // tonal
         }
     }
 

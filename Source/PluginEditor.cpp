@@ -70,6 +70,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
                 helpPanel.reset(); // close help panel if open
                 preferencePanel = std::make_unique<PreferencePanel>(
                     spectrumAnalyzer,
+                    audioProcessor.getAPVTS(),
                     [this]() { applyTheme(); },
                     spectrumAnalyzer.getBandHintsVisible(),
                     [this](const bool v) { spectrumAnalyzer.setBandHintsVisible(v); });

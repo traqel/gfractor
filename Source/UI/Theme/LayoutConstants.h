@@ -18,7 +18,7 @@ namespace Layout {
         inline constexpr int headerHeight = 30;
         inline constexpr int buttonWidth = 74;
         inline constexpr int panelWidth = 350;
-        inline constexpr int panelHeight = 500;
+        inline constexpr int panelHeight = 534;
     }
 
     //==========================================================================

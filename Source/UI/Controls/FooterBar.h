@@ -63,7 +63,7 @@ private:
     // Left group — pill buttons
     PillButton referencePill{"Reference", juce::Colour(ColorPalette::blueAccent), true};
     PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refPrimaryBlue), true};
-    DropdownPill modePill{{"M/S", "L/R", "T/N"}, juce::Colour(ColorPalette::blueAccent)};
+    DropdownPill modePill{{"M/S", "L/R", "T/T"}, juce::Colour(ColorPalette::blueAccent)};
     PillButton primaryPill{"Mid", juce::Colour(ColorPalette::primaryGreen), true};
     PillButton secondaryPill{"Side", juce::Colour(ColorPalette::secondaryAmber), true};
     PillButton freezePill{

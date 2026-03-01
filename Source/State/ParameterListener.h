@@ -50,6 +50,7 @@ public:
         apvtsRef.addParameterListener(ParameterIDs::bypass, this);
         apvtsRef.addParameterListener(ParameterIDs::outputPrimaryEnable, this);
         apvtsRef.addParameterListener(ParameterIDs::outputSecondaryEnable, this);
+        apvtsRef.addParameterListener(ParameterIDs::transientLength, this);
 
         // Initialize DSP with current parameter values
         updateAllParameters();
@@ -64,6 +65,7 @@ public:
         apvtsRef.removeParameterListener(ParameterIDs::bypass, this);
         apvtsRef.removeParameterListener(ParameterIDs::outputPrimaryEnable, this);
         apvtsRef.removeParameterListener(ParameterIDs::outputSecondaryEnable, this);
+        apvtsRef.removeParameterListener(ParameterIDs::transientLength, this);
     }
 
     /**
@@ -85,6 +87,8 @@ public:
             dspRef.setPrimaryEnabled(newValue > 0.5f);
         } else if (parameterID == ParameterIDs::outputSecondaryEnable) {
             dspRef.setSecondaryEnabled(newValue > 0.5f);
+        } else if (parameterID == ParameterIDs::transientLength) {
+            dspRef.setTransientLength(newValue);
         }
     }
 
@@ -113,6 +117,9 @@ public:
 
         if (sideEnableParam != nullptr)
             dspRef.setSecondaryEnabled(sideEnableParam->load() > 0.5f);
+
+        if (const auto *tl = apvtsRef.getRawParameterValue(ParameterIDs::transientLength))
+            dspRef.setTransientLength(tl->load());
     }
 
 private:

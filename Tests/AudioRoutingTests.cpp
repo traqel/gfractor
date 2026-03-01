@@ -4,7 +4,7 @@
   Comprehensive tests for audio signal routing at the DSP level including:
   - L/R pass-through
   - M/S pass-through  
-  - T/N pass-through
+  - T/T pass-through
   - Channel mode switching
   - Primary/Secondary disable routing
   - Stereo correlation routing
@@ -96,7 +96,7 @@ private:
     }
 
     void testTonalNoisePassthrough() {
-        beginTest("T/N Pass-through");
+        beginTest("T/T Pass-through");
 
         gFractorDSP dsp;
         constexpr juce::dsp::ProcessSpec spec{44100.0, 512, 2};
@@ -104,7 +104,7 @@ private:
 
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setOutputMode(ChannelMode::TonalNoise);
+        dsp.setOutputMode(ChannelMode::TonalTransient);
         dsp.setPrimaryEnabled(true);
         dsp.setSecondaryEnabled(true);
 
@@ -164,7 +164,7 @@ private:
         expectWithinAbsoluteError(lrOutput0, 0.5f, 0.01f);
         expectWithinAbsoluteError(lrOutput1, 0.5f, 0.01f);
 
-        dsp.setOutputMode(ChannelMode::TonalNoise);
+        dsp.setOutputMode(ChannelMode::TonalTransient);
         dsp.reset();
 
         for (int sample = 0; sample < 512; ++sample) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 #include <functional>
 #include "../ISpectrumDisplaySettings.h"
 #include "../Theme/ColorPalette.h"
@@ -17,10 +18,11 @@
  */
 class PreferencePanel : public juce::Component {
 public:
-    explicit PreferencePanel(ISpectrumDisplaySettings &settings,
-                             std::function<void()> onThemeChanged = {},
-                             bool bandHintsOn = true,
-                             std::function<void(bool)> onBandHintsChanged = {});
+    PreferencePanel(ISpectrumDisplaySettings &settings,
+                    juce::AudioProcessorValueTreeState &apvts,
+                    std::function<void()> onThemeChanged = {},
+                    bool bandHintsOn = true,
+                    std::function<void(bool)> onBandHintsChanged = {});
 
     void paint(juce::Graphics &g) override;
 
@@ -63,9 +65,11 @@ private:
         float slope;
         ColorPalette::Theme theme;
         bool bandHints;
+        float transientLength;
     };
 
     ISpectrumDisplaySettings &settingsRef;
+    juce::AudioProcessorValueTreeState &apvtsRef;
     const Snapshot snapshot;
 
     juce::Slider minDbSlider, maxDbSlider;
@@ -91,6 +95,10 @@ private:
 
     juce::Slider slopeSlider;
     juce::Label slopeLabel;
+
+    juce::Slider transientLengthSlider;
+    juce::Label transientLengthLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> transientLengthAttachment;
 
     juce::ComboBox themeCombo;
     juce::Label themeLabel;

@@ -102,6 +102,10 @@ private:
     // Precomputed slope gain table (one entry per bin)
     std::vector<float> slopeGains;
 
+    // Tonal/Transient separation state
+    std::vector<float> tonalAccum;
+    static constexpr float kTonalDecay = 0.85f;
+
     // Processing parameters
     ChannelMode channelMode = ChannelMode::MidSide;
     SmoothingMode smoothingMode = Defaults::smoothing;
