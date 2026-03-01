@@ -55,12 +55,12 @@ public:
      * @param srcL         Left channel rolling buffer
      * @param srcR         Right channel rolling buffer
      * @param srcWritePos  Current write position in the rolling buffer
-     * @param outMidDb     Output: temporally smoothed mid-dB values
-     * @param outSideDb    Output: temporally smoothed side dB values
+     * @param outPrimaryDb     Output: temporally smoothed primary dB values
+     * @param outSecondaryDb    Output: temporally smoothed secondary dB values
      */
     void processBlock(const std::vector<float> &srcL, const std::vector<float> &srcR,
                       int srcWritePos,
-                      std::vector<float> &outMidDb, std::vector<float> &outSideDb);
+                      std::vector<float> &outPrimaryDb, std::vector<float> &outSecondaryDb);
 
     // Accessors
     int getFftOrder() const { return fftOrder; }

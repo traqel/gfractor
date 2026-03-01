@@ -72,8 +72,8 @@ void StereoMeteringPanel::updateGoniometerImage() const {
         const float l = rolling_L[static_cast<size_t>(i)];
         const float r = rolling_R[static_cast<size_t>(i)];
 
-        // M/S rotation: mid = (L+R)*0.5 maps to vertical (up = positive)
-        //               side = (L-R)*0.5 maps to horizontal
+        // Primary/secondary rotation: primary = (L+R)*0.5 maps to vertical (up = positive)
+        //                            secondary = (L-R)*0.5 maps to horizontal
         const float dotX = (l - r) * 0.5f * scale + cx;
         const float dotY = cy - (l + r) * 0.5f * scale;
 

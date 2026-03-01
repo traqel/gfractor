@@ -160,7 +160,7 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     sidechainAvailable.store(hasSidechain);
 
     // In reference mode, replace main input with sidechain so the full
-    // processing chain (analyzer, mid/side, audition filter) applies to it
+    // processing chain (analyzer, primary/secondary, audition filter) applies to it
     if (isRefMode && hasSidechain) {
         auto mainInput = getBusBuffer(buffer, true, 0);
         for (int ch = 0; ch < mainInput.getNumChannels(); ++ch) {

@@ -51,7 +51,7 @@ void FFTProcessor::setSmoothing(const SmoothingMode mode) {
 
 void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vector<float> &srcR,
                                 const int srcWritePos,
-                                std::vector<float> &outMidDb, std::vector<float> &outSideDb) {
+                                std::vector<float> &outPrimaryDb, std::vector<float> &outSecondaryDb) {
     // Unwrap circular buffer into FFT input, applying channel decode + window
     for (int j = 0; j < fftSize; ++j) {
         const int idx = (srcWritePos + j) % fftSize;
@@ -83,21 +83,21 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
     // Convert to dB and apply temporal smoothing
     const float normFactor = DSP::FFT::normFactor / static_cast<float>(fftSize);
     for (int bin = 0; bin < numBins; ++bin) {
-        const float midDbVal = juce::Decibels::gainToDecibels(
+        const float primaryDbVal = juce::Decibels::gainToDecibels(
             fftDataPrimary[static_cast<size_t>(bin)] * normFactor, minDb);
-        const float sideDbVal = juce::Decibels::gainToDecibels(
+        const float secondaryDbVal = juce::Decibels::gainToDecibels(
             fftDataSecondary[static_cast<size_t>(bin)] * normFactor, minDb);
 
-        auto &smMid = outMidDb[static_cast<size_t>(bin)];
-        auto &smSide = outSideDb[static_cast<size_t>(bin)];
+        auto &smPrimary = outPrimaryDb[static_cast<size_t>(bin)];
+        auto &smSecondary = outSecondaryDb[static_cast<size_t>(bin)];
 
-        smMid = (midDbVal > smMid) ? midDbVal : smMid * temporalDecay + midDbVal * (1.0f - temporalDecay);
-        smSide = (sideDbVal > smSide) ? sideDbVal : smSide * temporalDecay + sideDbVal * (1.0f - temporalDecay);
+        smPrimary = (primaryDbVal > smPrimary) ? primaryDbVal : smPrimary * temporalDecay + primaryDbVal * (1.0f - temporalDecay);
+        smSecondary = (secondaryDbVal > smSecondary) ? secondaryDbVal : smSecondary * temporalDecay + secondaryDbVal * (1.0f - temporalDecay);
     }
 
     if (smoothingMode != SmoothingMode::None) {
-        applyOctaveSmoothing(outMidDb);
-        applyOctaveSmoothing(outSideDb);
+        applyOctaveSmoothing(outPrimaryDb);
+        applyOctaveSmoothing(outSecondaryDb);
     }
 }
 

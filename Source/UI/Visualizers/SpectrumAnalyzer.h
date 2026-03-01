@@ -99,7 +99,7 @@ public:
         repaint();
     }
 
-    /** Show/hide mid and side spectrum paths (main + ghost) */
+    /** Show/hide primary and secondary spectrum paths (main + ghost) */
     void setPrimaryVisible(const bool visible) override {
         showPrimary = visible;
         repaint();
@@ -311,7 +311,7 @@ private:
     juce::Colour hintColour{ColorPalette::hintPink};
     juce::Colour bandHeaderColor{ColorPalette::spectrumBorder};
 
-    // Right-side M/S peak level meters
+    // Right-side primary/secondary peak level meters
     float meterPrimaryDb = -100.0f;
     float meterSecondaryDb = -100.0f;
 

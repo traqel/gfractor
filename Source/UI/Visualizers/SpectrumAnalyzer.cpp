@@ -422,21 +422,21 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
     }
 
     // Process ghost FIFO (opposite signal for comparison).
-    // THREAD-SAFETY: ghostSpectrum reuses fftProcessor's work buffers (fftDataMid/Side)
+    // THREAD-SAFETY: ghostSpectrum reuses fftProcessor's work buffers (fftDataPrimary/Secondary)
     // and FFT engine. This is safe because:
     //   1. Both paths run exclusively on the UI timer thread.
     //   2. Main hops (above) always finish before this call.
-    //   3. captureInstant defaults to false, so instantMidDb/SideDb are not overwritten.
+    //   3. captureInstant defaults to false, so instantPrimaryDb/SecondaryDb are not overwritten.
     // If ghost processing is ever moved off the UI thread, this invariant must be revisited.
     const bool ghostFftReady = ghostSpectrum.processDrained(fftSize, hopSize,
                                                             [this](const std::vector<float> &srcL,
                                                                    const std::vector<float> &srcR, const int wp,
-                                                                   std::vector<float> &outMid,
-                                                                   std::vector<float> &outSide) {
+                                                                   std::vector<float> &outPrimary,
+                                                                   std::vector<float> &outSecondary) {
                                                                 // captureInstant = false (default): does not
-                                                                // stomp instantMidDb/SideDb used by the tooltip.
+                                                                // stomp instantPrimaryDb/SecondaryDb used by the tooltip.
                                                                 fftProcessor.processBlock(
-                                                                    srcL, srcR, wp, outMid, outSide);
+                                                                    srcL, srcR, wp, outPrimary, outSecondary);
                                                             });
 
     const float w = spectrumArea.getWidth();

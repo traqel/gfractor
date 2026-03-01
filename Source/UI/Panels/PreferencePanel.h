@@ -13,7 +13,7 @@
  * Overlay panel for configuring SpectrumAnalyzer display settings:
  * - dB range (min/max)
  * - Frequency range (min/max)
- * - Spectrum colors (mid, side, refMid, refSide)
+  * - Spectrum colors (primary, secondary, refPrimary, refSecondary)
  */
 class PreferencePanel : public juce::Component {
 public:
