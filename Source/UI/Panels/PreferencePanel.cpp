@@ -95,8 +95,8 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     refPrimarySwatch.colour = settings.getRefPrimaryColour();
     refSecondarySwatch.colour = settings.getRefSecondaryColour();
 
-    primarySwatch.label = "Primary";
-    secondarySwatch.label = "Secondary";
+    primarySwatch.label = "Prim";
+    secondarySwatch.label = "Sec";
     refPrimarySwatch.label = "Ref P";
     refSecondarySwatch.label = "Ref S";
 

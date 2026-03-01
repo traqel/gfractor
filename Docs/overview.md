@@ -35,16 +35,16 @@
 
 | Token | Hex | Usage |
 |---|---|---|
-| `primaryGreen` | `#3DCC6E` | Mid channel — spectrum curve, pill button |
-| `sideAmber` | `#C8A820` | Side channel — spectrum curve, pill button |
+| `primaryGreen` | `#3DCC6E` | Primary channel — spectrum curve, pill button |
+| `sideAmber` | `#C8A820` | Secondary channel — spectrum curve, pill button |
 | `blueAccent` | `#1E6ECC` | Primary accent — knobs, sliders, active pills |
 
 ### Accents (Reference Mode)
 
 | Token | Hex | Usage |
 |---|---|---|
-| `refMidBlue` | `#4499FF` | Reference mid channel curve |
-| `refSidePink` | `#FF66AA` | Reference side channel curve |
+| `refPrimaryBlue` | `#4499FF` | Reference primary channel curve |
+| `refSecondaryPink` | `#FF66AA` | Reference secondary channel curve |
 
 ### Text
 
@@ -127,16 +127,19 @@
 ```
 +------------------------------------------------------+
 |  HeaderBar (40px)                                     |
-|  [g Fractor]  MID . SIDE SPECTRUM ANALYZER     v1.0  |
+|  [g Fractor]  PRIMARY / SECONDARY SPECTRUM ANALYZER     v1.0  |
 +------------------------------------------------------+
 |                                                |      |
 |  SpectrumAnalyzer                              | Mtr  |
 |  (fills remaining space)                       | Pnl  |
-|  - Left margin: 40px (dB labels)               | 180  |
-|  - Top margin: 24px                            | px   |
-|  - Right margin: 22px (M/S meters)             |      |
+|  - Left margin: 40px (dB labels)               |      |
+|  - Top margin: 24px                            |      |
+|  - Right margin: 22px (primary/secondary meters) |      |
 |  - Bottom margin: 26px (freq labels)           |      |
 |                                                |      |
++------------------------------------------------------+
+|  FooterBar (52px)                                     |
+|  [Ref][Ghost][Spec][Sono][Pri][Sec][L+R] ... pills   |
 +------------------------------------------------------+
 |  FooterBar (52px)                                     |
 |  [Ref][Ghost][Spec][Sono][Mid][Side][L+R] ... pills   |
@@ -181,11 +184,11 @@ Rounded-rectangle toggle button used throughout the footer.
 | Button | Active Color | Style |
 |---|---|---|
 | Reference | `blueAccent` | Outline-only |
-| Ghost | `refMidBlue` | Outline-only |
+| Ghost | `refPrimaryBlue` | Outline-only |
 | Spectrum | `blueAccent` | Filled |
 | Sonogram | `blueAccent` | Filled |
-| Mid | `primaryGreen` | Outline-only |
-| Side | `sideAmber` | Outline-only |
+| Primary | `primaryGreen` | Outline-only |
+| Secondary | `sideAmber` | Outline-only |
 | L+R | `blueAccent` | Outline-only |
 | Stereo Meters | `blueAccent` | Outline-only |
 | Freeze | `blueAccent` | Outline-only |
@@ -196,7 +199,7 @@ Rounded-rectangle toggle button used throughout the footer.
 ### SpectrumAnalyzer
 
 - **Display modes**: Spectrum (path curves), Sonogram (waterfall)
-- **Channel modes**: Mid/Side, L+R
+- **Channel modes**: Primary/Secondary, L+R
 - **FFT**: Configurable 2048–16384 points (order 11–14, default 13 = 8192)
 - **Smoothing**: None, 1/3 oct, 1/6 oct, 1/12 oct
 - **Slope tilt**: -9 to +9 dB
@@ -212,12 +215,12 @@ Three instruments stacked vertically:
 
 1. **Goniometer** — Lissajous display with phosphor persistence
 2. **Correlation meter** — L/R phase correlation bar (-1 to +1)
-3. **Width/Octave** — M/S energy ratio across 10 octave bands
+3. **Width/Octave** — Primary/Secondary energy ratio across 10 octave bands
 
 ### SpectrumTooltip
 
 - Crosshair cursor overlay
-- Glow dots at cursor frequency on mid/side curves
+- Glow dots at cursor frequency on primary/secondary curves
 - Tooltip box: frequency, dB, musical note
 - Dot history (20 samples) for range bars
 
@@ -260,7 +263,7 @@ Extends `LookAndFeel_V4` with:
 |---|---|---|
 | `IAudioDataSink` | `Source/DSP/` | Push stereo audio from processor to UI components |
 | `IGhostDataSink` | `Source/DSP/` | Push ghost/reference audio data |
-| `IPeakLevelSource` | `Source/DSP/` | Read peak mid/side dB levels |
+| `IPeakLevelSource` | `Source/DSP/` | Read peak primary/secondary dB levels |
 | `ISpectrumControls` | `Source/UI/` | Control spectrum visibility, modes, freeze, peak |
 | `ISpectrumDisplaySettings` | `Source/UI/` | Configure dB/freq range, colors, FFT, smoothing, slope |
 
@@ -273,18 +276,18 @@ Extends `LookAndFeel_V4` with:
 | `gain` | -60 to +12 dB | 0 dB | Output gain |
 | `dryWet` | 0–100% | 100% | Dry/wet mix |
 | `bypass` | on/off | off | Plugin bypass |
-| `outputMidEnable` | on/off | on | Mid channel output enable |
-| `outputSideEnable` | on/off | on | Side channel output enable |
+| `outputPrimaryEnable` | on/off | on | Primary channel output enable |
+| `outputSecondaryEnable` | on/off | on | Secondary channel output enable |
 
 ---
 
 ## 10. DSP Features
 
-- Mid/Side encoding/decoding from stereo input
+- Primary/Secondary encoding/decoding from stereo input
 - Gain with `SmoothedValue` (zipper-free)
 - Dry/wet mixing via `juce::dsp::DryWetMixer`
 - 4th-order audition bell filter (two cascaded IIR BPFs)
-- L+R mode (stereo pass-through, M/S display only)
+- L+R mode (stereo pass-through, Primary/Secondary display only)
 - Reference mode (analyzes sidechain input)
-- Atomic peak level metering (mid + side)
+- Atomic peak level metering (primary + secondary)
 - Debug-only performance profiling (avg/max process time, CPU load)

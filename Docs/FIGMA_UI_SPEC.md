@@ -55,15 +55,15 @@ A 5px-wide draggable divider separates the Spectrum Analyzer from the Metering P
 ### Accent Colors
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `primaryGreen` | `#3DCC6E` | Mid channel curve, logo "g" |
-| `sideAmber` | `#C8A820` | Side channel curve |
+| `primaryGreen` | `#3DCC6E` | Primary channel curve, logo "g" |
+| `sideAmber` | `#C8A820` | Secondary channel curve |
 | `blueAccent` | `#1E6ECC` | Active pill buttons, slider accents |
 
 ### Reference Mode Colors
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `refMidBlue` | `#4499FF` | Reference mid curve |
-| `refSidePink` | `#FF66AA` | Reference side curve |
+| `refPrimaryBlue` | `#4499FF` | Reference primary curve |
+| `refSecondaryPink` | `#FF66AA` | Reference secondary curve |
 
 ### Text
 | Token | Hex | Usage |
@@ -238,7 +238,7 @@ Gap between pills: `gapS` (4px), gap between groups: `gapL` (12px), right margin
 - **Three instruments** (top to bottom):
   1. **Goniometer** — Lissajous display with phosphor persistence
   2. **Correlation meter** — Horizontal bar, -1 to +1
-  3. **Width per octave** — 10 bands showing M/S energy ratio
+  3. **Width per octave** — 10 bands showing Primary/Secondary energy ratio
 
 ### 5.6 Settings Panel (Overlay)
 
