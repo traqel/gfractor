@@ -119,7 +119,6 @@ public:
      *  T/N mode introduces kFftSize samples of latency via SpectralSeparator. */
     void setOutputMode(const ChannelMode mode) {
         dspProcessor.setOutputMode(mode);
-        setLatencySamples(dspProcessor.getLatencySamples());
     }
 
 

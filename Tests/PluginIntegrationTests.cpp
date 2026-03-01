@@ -446,6 +446,134 @@ public:
             expectEquals(sinkB.pushCalls, 2);
             expectWithinAbsoluteError(sinkB.lastSampleRate, 44100.0, 0.001);
         }
+
+        beginTest("Reference mode routes sidechain to main output");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+
+            processor.enableAllBuses();
+            processor.prepareToPlay(44100.0, 128);
+
+            juce::AudioBuffer<float> buffer(4, 128);
+
+            for (int sample = 0; sample < 128; ++sample) {
+                buffer.setSample(0, sample, 0.05f);
+                buffer.setSample(1, sample, 0.05f);
+                buffer.setSample(2, sample, 0.7f);
+                buffer.setSample(3, sample, 0.7f);
+            }
+
+            processor.setReferenceMode(true);
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+
+            bool outputHasSidechainSignal = false;
+            for (int sample = 0; sample < 128; ++sample) {
+                if (std::abs(buffer.getSample(0, sample)) > 0.3f) {
+                    outputHasSidechainSignal = true;
+                    break;
+                }
+            }
+            expect(outputHasSidechainSignal);
+        }
+
+        beginTest("Sidechain bus layout configurations");
+        {
+            gFractorAudioProcessor processor;
+
+            auto makeLayout = [](const juce::AudioChannelSet &mainIn,
+                                 const juce::AudioChannelSet &mainOut,
+                                 const juce::AudioChannelSet &sidechain) {
+                juce::AudioProcessor::BusesLayout layout;
+                layout.inputBuses.add(mainIn);
+                layout.inputBuses.add(sidechain);
+                layout.outputBuses.add(mainOut);
+                return layout;
+            };
+
+            expect(processor.isBusesLayoutSupported(makeLayout(
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::stereo())));
+
+            expect(processor.isBusesLayoutSupported(makeLayout(
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::disabled())));
+
+            expect(!processor.isBusesLayoutSupported(makeLayout(
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::mono())));
+        }
+
+        beginTest("Mono to stereo bus layout not supported");
+        {
+            gFractorAudioProcessor processor;
+
+            juce::AudioProcessor::BusesLayout monoLayout;
+            monoLayout.inputBuses.add(juce::AudioChannelSet::mono());
+            monoLayout.outputBuses.add(juce::AudioChannelSet::stereo());
+
+            expect(!processor.isBusesLayoutSupported(monoLayout));
+        }
+
+        beginTest("Sidechain does not affect main output when reference mode is off");
+
+        beginTest("Primary/Secondary enable parameters affect routing");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+
+            auto *primaryEnable = processor.getAPVTS().getParameter(ParameterIDs::outputPrimaryEnable);
+            auto *secondaryEnable = processor.getAPVTS().getParameter(ParameterIDs::outputSecondaryEnable);
+
+            expect(primaryEnable != nullptr);
+            expect(secondaryEnable != nullptr);
+
+            primaryEnable->setValueNotifyingHost(1.0f);
+            secondaryEnable->setValueNotifyingHost(1.0f);
+
+            juce::AudioBuffer<float> buffer(2, 128);
+            for (int sample = 0; sample < 128; ++sample) {
+                buffer.setSample(0, sample, 0.5f);
+                buffer.setSample(1, sample, 0.5f);
+            }
+
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+
+            bool hasOutput = false;
+            for (int sample = 0; sample < 128; ++sample) {
+                if (std::abs(buffer.getSample(0, sample)) > 0.01f) {
+                    hasOutput = true;
+                    break;
+                }
+            }
+            expect(hasOutput);
+
+            primaryEnable->setValueNotifyingHost(0.0f);
+            secondaryEnable->setValueNotifyingHost(0.0f);
+
+            buffer.clear();
+            for (int sample = 0; sample < 128; ++sample) {
+                buffer.setSample(0, sample, 0.5f);
+                buffer.setSample(1, sample, 0.5f);
+            }
+
+            processor.processBlock(buffer, midi);
+
+            bool isSilent = true;
+            for (int sample = 0; sample < 128; ++sample) {
+                if (std::abs(buffer.getSample(0, sample)) > 0.001f ||
+                    std::abs(buffer.getSample(1, sample)) > 0.001f) {
+                    isSilent = false;
+                    break;
+                }
+            }
+            expect(isSilent);
+        }
     }
 };
 

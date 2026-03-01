@@ -2,7 +2,6 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
-#include "SpectralSeparator.h"
 #include "../Utility/ChannelMode.h"
 
 /**
@@ -52,9 +51,6 @@ public:
      *  introducing kFftSize samples of latency. */
     void setOutputMode(ChannelMode mode);
 
-    /** Latency introduced by the current output mode (0 unless T/N mode). */
-    int getLatencySamples() const;
-
     /** Transient audition bell filter (UI thread sets, audio thread reads) */
     void setAuditFilter(bool active, float frequencyHz, float q);
 
@@ -79,12 +75,6 @@ private:
     bool primaryEnabled = true;
     bool secondaryEnabled = true;
     ChannelMode outputMode = ChannelMode::MidSide;
-
-    SpectralSeparator separator;
-
-    /** Re-derives the separator's Mode from outputMode + mid/sideEnabled.
-     *  Call whenever any of those three values change. */
-    void updateSeparatorMode();
 
     //==============================================================================
     // DSP components (pre-allocated in prepare(), reused in process())
