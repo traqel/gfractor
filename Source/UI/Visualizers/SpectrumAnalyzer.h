@@ -204,7 +204,7 @@ public:
     void applyTheme();
 
     /** Register HintManager — call once from PluginEditor after construction. */
-    void setHintManager(HintManager& hm) { hints = &hm; }
+    void setHintManager(HintManager &hm) { hints = &hm; }
 
     void setBandHintsVisible(const bool visible) {
         showBandHints = visible;
@@ -395,10 +395,12 @@ public:
     ChannelMode channelMode = ChannelMode::MidSide;
 
     //==============================================================================
-    HintManager* hints = nullptr;
+    HintManager *hints = nullptr;
     HintManager::HintHandle hintHandle;
+
     enum class HoverRegion { None, BandHints, Spectrum };
-    HoverRegion hoverRegion = HoverRegion::None;  // tracks previous region to avoid per-frame hint updates
+
+    HoverRegion hoverRegion = HoverRegion::None; // tracks previous region to avoid per-frame hint updates
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrumAnalyzer)

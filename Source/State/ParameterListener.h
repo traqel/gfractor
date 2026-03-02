@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "ParameterIDs.h"
 #include "../DSP/Interfaces/IDSPProcessor.h"
@@ -44,15 +45,9 @@ public:
      */
     ParameterListener(juce::AudioProcessorValueTreeState &apvts, IDSPProcessor &dsp)
         : apvtsRef(apvts), dspRef(dsp) {
-        // Register as listener for all parameters
-        apvtsRef.addParameterListener(ParameterIDs::gain, this);
-        apvtsRef.addParameterListener(ParameterIDs::dryWet, this);
-        apvtsRef.addParameterListener(ParameterIDs::bypass, this);
-        apvtsRef.addParameterListener(ParameterIDs::outputPrimaryEnable, this);
-        apvtsRef.addParameterListener(ParameterIDs::outputSecondaryEnable, this);
-        apvtsRef.addParameterListener(ParameterIDs::transientLength, this);
-
-        // Initialize DSP with current parameter values
+        for (const auto &paramID: kTrackedParameterIDs) {
+            apvtsRef.addParameterListener(paramID, this);
+        }
         updateAllParameters();
     }
 
@@ -60,12 +55,9 @@ public:
      * Destructor - unregisters all parameter listeners
      */
     ~ParameterListener() override {
-        apvtsRef.removeParameterListener(ParameterIDs::gain, this);
-        apvtsRef.removeParameterListener(ParameterIDs::dryWet, this);
-        apvtsRef.removeParameterListener(ParameterIDs::bypass, this);
-        apvtsRef.removeParameterListener(ParameterIDs::outputPrimaryEnable, this);
-        apvtsRef.removeParameterListener(ParameterIDs::outputSecondaryEnable, this);
-        apvtsRef.removeParameterListener(ParameterIDs::transientLength, this);
+        for (const auto &paramID: kTrackedParameterIDs) {
+            apvtsRef.removeParameterListener(paramID, this);
+        }
     }
 
     /**
@@ -80,7 +72,7 @@ public:
         if (parameterID == ParameterIDs::gain) {
             dspRef.setGain(newValue);
         } else if (parameterID == ParameterIDs::dryWet) {
-            dspRef.setDryWet(newValue / 100.0f); // parameter is 0–100%, DSP expects 0–1
+            dspRef.setDryWet(newValue / 100.0f);
         } else if (parameterID == ParameterIDs::bypass) {
             dspRef.setBypassed(newValue > 0.5f);
         } else if (parameterID == ParameterIDs::outputPrimaryEnable) {
@@ -123,6 +115,15 @@ public:
     }
 
 private:
+    static constexpr std::array kTrackedParameterIDs = {
+        ParameterIDs::gain,
+        ParameterIDs::dryWet,
+        ParameterIDs::bypass,
+        ParameterIDs::outputPrimaryEnable,
+        ParameterIDs::outputSecondaryEnable,
+        ParameterIDs::transientLength,
+    };
+
     juce::AudioProcessorValueTreeState &apvtsRef;
     IDSPProcessor &dspRef;
 
