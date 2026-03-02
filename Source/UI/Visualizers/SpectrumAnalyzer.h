@@ -11,6 +11,7 @@
 #include "GhostSpectrum.h"
 #include "PeakHold.h"
 #include "SpectrumTooltip.h"
+#include "BandConstants.h"
 #include "../ISpectrumControls.h"
 #include "../ISpectrumDisplaySettings.h"
 #include "../Theme/ColorPalette.h"
@@ -329,50 +330,6 @@ private:
     float selectedBandLo = 0.0f; // Low frequency of selected band
     float selectedBandHi = 0.0f; // High frequency of selected band
 
-    // Band definitions for band selection feature
-    struct Band {
-        const char *name;
-        float lo;
-        float hi;
-    };
-
-    struct BandInfo {
-        float lo;
-        float hi;
-        float centerFreq;
-        float q;
-    };
-
-    static constexpr std::array<Band, 7> kBands = {
-        {
-            {"Sub", 20.0f, 80.0f},
-            {"Low", 80.0f, 300.0f},
-            {"Low-Mid", 300.0f, 600.0f},
-            {"Mid", 600.0f, 2000.0f},
-            {"Hi-Mid", 2000.0f, 6000.0f},
-            {"High", 6000.0f, 12000.0f},
-            {"Air", 12000.0f, 20000.0f},
-        }
-    };
-
-public:
-    // Helper functions for band selection (public for testing)
-    static BandInfo getBandInfo(const size_t bandIndex) {
-        const auto &band = kBands[bandIndex];
-        const float centerFreq = (band.lo + band.hi) * 0.5f;
-        const float bandWidth = band.hi - band.lo;
-        return {band.lo, band.hi, centerFreq, centerFreq / bandWidth};
-    }
-
-    static int findBandAtFrequency(const float frequency) {
-        for (size_t i = 0; i < kBands.size(); ++i) {
-            if (frequency >= kBands[i].lo && frequency < kBands[i].hi) {
-                return static_cast<int>(i);
-            }
-        }
-        return -1;
-    }
-
     bool isInBandHintsArea(const juce::Point<float> &position) const {
         constexpr float barY = Layout::SpectrumAnalyzer::barY;
         constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
@@ -380,9 +337,14 @@ public:
                && position.x >= spectrumArea.getX() && position.x <= spectrumArea.getRight();
     }
 
+public:
+    // Band helper functions (delegated to BandConstants)
+    static BandInfo getBandInfo(const size_t bandIndex) { return ::getBandInfo(bandIndex); }
+    static int findBandAtFrequency(const float frequency) { return ::findBandAtFrequency(frequency); }
+
     bool frozen = false;
 
-    // Infinite peak hold
+    // Infinite peak hold (needs to be accessible to some methods)
     PeakHold peakHold;
     int peakHoldThrottleCounter = 0;
     bool pendingPeakHoldMainRebuild = false;
