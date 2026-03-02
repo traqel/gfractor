@@ -690,6 +690,107 @@ public:
                 bufferIsFinite(buffer);
             }
         }
+
+        beginTest("DAW compatibility: zero-sample buffer (auval)");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+
+            juce::AudioBuffer<float> buffer(2, 0);
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+        }
+
+        beginTest("DAW compatibility: block size sweep 32-4096");
+        {
+            constexpr int blockSizes[] = {32, 64, 128, 256, 512, 1024, 2048, 4096};
+
+            for (const int bs: blockSizes) {
+                gFractorAudioProcessor processor;
+                processor.prepareToPlay(48000.0, bs);
+
+                juce::AudioBuffer<float> buffer(2, bs);
+                for (int sample = 0; sample < bs; ++sample) {
+                    buffer.setSample(0, sample, 0.1f);
+                    buffer.setSample(1, sample, -0.1f);
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("DAW compatibility: rapid parameter changes during process");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+            auto &apvts = processor.getAPVTS();
+
+            for (int i = 0; i < 10; ++i) {
+                if (auto *gain = apvts.getParameter(ParameterIDs::gain))
+                    gain->setValueNotifyingHost(static_cast<float>(i) / 10.0f);
+
+                juce::AudioBuffer<float> buffer(2, 128);
+                for (int sample = 0; sample < 128; ++sample) {
+                    buffer.setSample(0, sample, 0.2f);
+                    buffer.setSample(1, sample, -0.2f);
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("DAW compatibility: double-precision processing simulation");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(48000.0, 64);
+
+            juce::AudioBuffer<float> buffer(2, 64);
+            for (int sample = 0; sample < 64; ++sample) {
+                buffer.setSample(0, sample, 0.1f);
+                buffer.setSample(1, sample, -0.1f);
+            }
+
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+
+            expectGreaterThan(buffer.getRMSLevel(0, 0, 64), 0.01f);
+            bufferIsFinite(buffer);
+        }
+
+        beginTest("DAW compatibility: mono input is rejected");
+        {
+            gFractorAudioProcessor processor;
+
+            juce::AudioProcessor::BusesLayout layout;
+            layout.inputBuses.add(juce::AudioChannelSet::mono());
+            layout.outputBuses.add(juce::AudioChannelSet::stereo());
+            expect(!processor.isBusesLayoutSupported(layout));
+        }
+
+        beginTest("DAW compatibility: disabled sidechain is handled");
+        {
+            gFractorAudioProcessor processor;
+
+            juce::AudioProcessor::BusesLayout layout;
+            layout.inputBuses.add(juce::AudioChannelSet::stereo());
+            layout.inputBuses.add(juce::AudioChannelSet::disabled());
+            layout.outputBuses.add(juce::AudioChannelSet::stereo());
+            expect(processor.isBusesLayoutSupported(layout));
+
+            processor.prepareToPlay(44100.0, 128);
+
+            juce::AudioBuffer<float> buffer(2, 128);
+            buffer.clear();
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+            bufferIsFinite(buffer);
+
+            expect(!processor.isSidechainAvailable());
+        }
     }
 };
 

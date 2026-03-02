@@ -134,6 +134,10 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                           juce::MidiBuffer &midiMessages) {
     juce::ignoreUnused(midiMessages);
 
+    // auval can pass zero-size buffers — early exit to avoid issues
+    if (buffer.getNumSamples() == 0)
+        return;
+
     // Performance profiling
     const auto startTime = juce::Time::getHighResolutionTicks();
 
