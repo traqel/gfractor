@@ -35,19 +35,19 @@ public:
     /** Parameter updates (called from PluginProcessor on message thread)
      *  These use SmoothedValue internally, so they're thread-safe.
      */
-    void setGain(float gainDB);
+    void setGain(float gainDB) override;
 
-    void setBypassed(bool shouldBeBypassed);
+    void setBypassed(bool shouldBeBypassed) override;
 
-    void setPrimaryEnabled(bool enabled);
+    void setPrimaryEnabled(bool enabled) override;
 
-    void setSecondaryEnabled(bool enabled);
+    void setSecondaryEnabled(bool enabled) override;
 
     /** Set transient length (fast envelope time constant in ms). Recomputes fastEnvAlpha. */
-    void setTransientLength(float ms);
+    void setTransientLength(float ms) override;
 
     /** Set dry/wet mix proportion (0.0 = fully dry, 1.0 = fully wet). */
-    void setDryWet(float proportion);
+    void setDryWet(float proportion) override;
 
     /** Transient audition bell filter (UI thread sets, audio thread reads) */
     void setAuditFilter(bool active, float frequencyHz, float q);

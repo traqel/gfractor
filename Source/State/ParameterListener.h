@@ -2,7 +2,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "ParameterIDs.h"
-#include "../DSP/Core/gFractorDSP.h"
+#include "../DSP/Interfaces/IDSPProcessor.h"
 
 /**
  * ParameterListener
@@ -40,9 +40,9 @@ public:
     /**
      * Constructor
      * @param apvts Reference to the AudioProcessorValueTreeState
-     * @param dsp Reference to the DSP processor
+     * @param dsp Reference to the DSP processor (IDSPProcessor interface for DIP compliance)
      */
-    ParameterListener(juce::AudioProcessorValueTreeState &apvts, gFractorDSP &dsp)
+    ParameterListener(juce::AudioProcessorValueTreeState &apvts, IDSPProcessor &dsp)
         : apvtsRef(apvts), dspRef(dsp) {
         // Register as listener for all parameters
         apvtsRef.addParameterListener(ParameterIDs::gain, this);
@@ -124,7 +124,7 @@ public:
 
 private:
     juce::AudioProcessorValueTreeState &apvtsRef;
-    gFractorDSP &dspRef;
+    IDSPProcessor &dspRef;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ParameterListener)
 };
