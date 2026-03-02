@@ -5,6 +5,7 @@
 #include "UI/Visualizers/SpectrumAnalyzer.h"
 #include "UI/Controls/HeaderBar.h"
 #include "UI/Controls/FooterBar.h"
+#include "UI/HintManager.h"
 #include "UI/Controls/HintBar.h"
 #include "UI/Panels/StereoMeteringPanel.h"
 #include "UI/Panels/TransientMeteringPanel.h"
@@ -80,6 +81,9 @@ private:
 
     // Footer bar (pill buttons, peak readouts, settings)
     FooterBar footerBar;
+
+    // Hint manager — priority-based coordinator for HintBar text
+    HintManager hintManager;
 
     // Hint bar (context-dependent hints at bottom of screen)
     HintBar hintBar;

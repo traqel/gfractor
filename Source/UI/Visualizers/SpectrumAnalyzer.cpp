@@ -380,12 +380,41 @@ void SpectrumAnalyzer::mouseMove(const juce::MouseEvent &event) {
         tooltip.hide();
         repaint(spectrumArea.toNearestInt());
     }
+
+    // Update hint only on region transitions, not every frame
+    if (hints) {
+        HoverRegion newRegion = HoverRegion::None;
+        if (showBandHints && isInBandHintsArea(event.position))
+            newRegion = HoverRegion::BandHints;
+        else if (spectrumArea.contains(event.position))
+            newRegion = HoverRegion::Spectrum;
+
+        if (newRegion != hoverRegion) {
+            hoverRegion = newRegion;
+            switch (newRegion) {
+                case HoverRegion::BandHints:
+                    hintHandle = hints->setHint("CLICK | DRAG", "Audition band  |  Move between bands");
+                    break;
+                case HoverRegion::Spectrum:
+                    hintHandle = hints->setHint("R CLICK | DRAG", "Audition freq  |  Change Q");
+                    break;
+                case HoverRegion::None:
+                    hintHandle = {};
+                    break;
+            }
+        }
+    }
 }
 
 void SpectrumAnalyzer::mouseExit(const juce::MouseEvent &) {
     if (tooltip.isVisible()) {
         tooltip.hide();
         repaint(spectrumArea.toNearestInt());
+    }
+
+    if (hints) {
+        hoverRegion = HoverRegion::None;
+        hintHandle = {};
     }
 }
 

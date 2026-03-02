@@ -6,21 +6,35 @@ HintBar::HintBar() {
 }
 
 void HintBar::paint(juce::Graphics &g) {
-    auto bounds = getLocalBounds();
-
     g.fillAll(juce::Colour(ColorPalette::panel).withAlpha(0.95f));
 
-    g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.setFont(Typography::makeFont(Typography::smallFontSize));
-
     constexpr int paddingX = 12;
-    const auto textArea = bounds.removeFromLeft(bounds.getWidth() - paddingX * 2).translated(paddingX, 0);
-    g.drawText(currentHint, textArea, juce::Justification::centredLeft, false);
+    const auto textArea = getLocalBounds().reduced(paddingX, 0).toFloat();
+
+    juce::AttributedString str;
+
+    if (currentContent.title.isNotEmpty()) {
+        str.append(currentContent.title + "  ",
+                   Typography::makeBoldFont(Typography::smallFontSize),
+                   juce::Colour(ColorPalette::textBright));
+    }
+
+    if (currentContent.hint.isNotEmpty()) {
+        str.append(currentContent.hint,
+                   Typography::makeFont(Typography::smallFontSize),
+                   juce::Colour(ColorPalette::textMuted));
+    }
+
+    str.setJustification(juce::Justification::centredLeft);
+
+    juce::TextLayout layout;
+    layout.createLayout(str, textArea.getWidth(), textArea.getHeight());
+    layout.draw(g, textArea);
 }
 
-void HintBar::setHint(const juce::String &hint) {
-    if (currentHint != hint) {
-        currentHint = hint;
+void HintBar::setHint(const HintManager::HintContent& content) {
+    if (currentContent.title != content.title || currentContent.hint != content.hint) {
+        currentContent = content;
         repaint();
     }
 }

@@ -182,6 +182,40 @@ void FooterBar::syncAnalyzerState() {
     // No-op: analyzer display mode toggle removed.
 }
 
+void FooterBar::setHintManager(HintManager& hm) {
+    hints = &hm;
+    juce::Component* pills[] = { &referencePill, &ghostPill, &primaryPill,
+                                  &secondaryPill, &freezePill, &infinitePill,
+                                  &metersPill, &transientPill };
+    for (auto* c : pills)
+        c->addMouseListener(this, false);
+    modePill.addMouseListener(this, false);
+}
+
+void FooterBar::mouseEnter(const juce::MouseEvent& e) {
+    if (!hints || e.eventComponent == this) return;
+
+    const auto* c = e.eventComponent;
+    juce::String title, hint;
+
+    if      (c == &referencePill)  { title = "CLICK"; hint = "Reference overlay (sidechain required)"; }
+    else if (c == &ghostPill)      { title = "CLICK"; hint = "Show / hide ghost spectrum"; }
+    else if (c == &modePill)       { title = "CLICK"; hint = "M/S  |  L/R  |  Transient"; }
+    else if (c == &primaryPill)    { title = "CLICK | KEY M"; hint = "Show / hide Primary spectrum"; }
+    else if (c == &secondaryPill)  { title = "CLICK | KEY S"; hint = "Show / hide Secondary spectrum"; }
+    else if (c == &freezePill)     { title = "CLICK | KEY F"; hint = "Freeze / resume spectrum"; }
+    else if (c == &infinitePill)   { title = "CLICK"; hint = "Infinite peak hold"; }
+    else if (c == &metersPill)     { title = "CLICK"; hint = "Stereo metering panel"; }
+
+    if (hint.isNotEmpty())
+        hintHandle = hints->setHint(title, hint);
+}
+
+void FooterBar::mouseExit(const juce::MouseEvent& e) {
+    if (e.eventComponent != this && hints)
+        hintHandle = {};
+}
+
 void FooterBar::setReferenceState(const bool on) {
     referencePill.setToggleState(on, juce::dontSendNotification);
 }

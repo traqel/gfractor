@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../HintManager.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/Typography.h"
 
@@ -16,10 +17,10 @@ public:
 
     void paint(juce::Graphics &g) override;
 
-    void setHint(const juce::String &hint);
+    void setHint(const HintManager::HintContent& content);
 
 private:
-    juce::String currentHint;
+    HintManager::HintContent currentContent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HintBar)
 };

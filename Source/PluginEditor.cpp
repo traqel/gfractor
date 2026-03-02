@@ -17,9 +17,10 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
 
     // Add spectrum analyzer (owned by editor)
     addAndMakeVisible(spectrumAnalyzer);
-    // Add hint bar at the bottom
+    // Add hint bar at the bottom; wire HintManager as its sole text source
     addAndMakeVisible(hintBar);
-    hintBar.setHint("Press F to freeze spectrum | R for reference | M/S for mid/side");
+    hintManager.setCallback([this](const HintManager::HintContent& c) { hintBar.setHint(c); });
+    hintManager.setPersistentHint("KEY", "F: Freeze  |  M / S: Channel  |  R / Ctrl: Reference");
     // Register with processor so it can push audio data
     audioProcessor.registerAudioDataSink(&spectrumAnalyzer);
     audioProcessor.setGhostDataSink(&spectrumAnalyzer);
@@ -182,6 +183,12 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     // Listen for Control key to temporarily toggle reference mode
     setWantsKeyboardFocus(true);
     addKeyListener(this);
+
+    // Wire HintManager into interactive components
+    headerBar->setHintManager(hintManager);
+    footerBar.setHintManager(hintManager);
+    meteringPanel.setHintManager(hintManager);
+    spectrumAnalyzer.setHintManager(hintManager);
 
     // Poll sidechain availability to enable/disable Reference button
     startTimerHz(5);

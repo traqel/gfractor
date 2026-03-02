@@ -24,6 +24,19 @@ StereoMeteringPanel::~StereoMeteringPanel() {
     stopVisualizerTimer();
 }
 
+void StereoMeteringPanel::setHintManager(HintManager& hm) {
+    hints = &hm;
+}
+
+void StereoMeteringPanel::mouseEnter(const juce::MouseEvent& /*e*/) {
+    if (hints)
+        hintHandle = hints->setHint("DRAG", "Divider to resize  |  Goniometer  |  Correlation  |  Width");
+}
+
+void StereoMeteringPanel::mouseExit(const juce::MouseEvent& /*e*/) {
+    hintHandle = {};
+}
+
 //==============================================================================
 void StereoMeteringPanel::processDrainedData(const int numNewSamples) {
     if (numNewSamples == 0) return;

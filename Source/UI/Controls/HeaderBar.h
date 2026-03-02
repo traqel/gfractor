@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PillButton.h"
 #include "../Theme/Symbols.h"
+#include "../HintManager.h"
 
 /**
  * HeaderBar
@@ -21,7 +22,17 @@ public:
 
     void resized() override;
 
+    /** Register HintManager — call once from PluginEditor after construction. */
+    void setHintManager(HintManager& hm);
+
 private:
+    void mouseEnter(const juce::MouseEvent& e) override;
+    void mouseExit(const juce::MouseEvent& e) override;
+
+    HintManager* hints = nullptr;
+    HintManager::HintHandle hintHandle;
+
+
     PillButton settingsPill{
         juce::String::fromUTF8(Symbols::settingsUTF8), juce::Colour(ColorPalette::blueAccent), true, 26.0f
     };

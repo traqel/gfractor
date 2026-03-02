@@ -8,6 +8,7 @@
 
 #include "../Visualizers/AudioVisualizerBase.h"
 #include "../Theme/LayoutConstants.h"
+#include "../HintManager.h"
 #include "../../DSP/IAudioDataSink.h"
 
 /**
@@ -42,6 +43,9 @@ public:
     void paint(juce::Graphics &g) override;
 
     void resized() override;
+
+    /** Register HintManager — call once from PluginEditor after construction. */
+    void setHintManager(HintManager& hm);
 
 protected:
     //==============================================================================
@@ -89,6 +93,13 @@ private:
     //==============================================================================
     // Layout areas (set in resized)
     juce::Rectangle<int> gonioArea, corrArea, widthArea;
+
+    //==============================================================================
+    void mouseEnter(const juce::MouseEvent& e) override;
+    void mouseExit(const juce::MouseEvent& e) override;
+
+    HintManager* hints = nullptr;
+    HintManager::HintHandle hintHandle;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StereoMeteringPanel)

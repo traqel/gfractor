@@ -55,6 +55,26 @@ void HeaderBar::paint(juce::Graphics &g) {
                200, logoH, juce::Justification::centredLeft);
 }
 
+void HeaderBar::setHintManager(HintManager& hm) {
+    hints = &hm;
+    settingsPill.addMouseListener(this, false);
+    helpPill.addMouseListener(this, false);
+}
+
+void HeaderBar::mouseEnter(const juce::MouseEvent& e) {
+    if (!hints || e.eventComponent == this) return;
+
+    if (e.eventComponent == &settingsPill)
+        hintHandle = hints->setHint("CLICK", "Analyzer settings");
+    else if (e.eventComponent == &helpPill)
+        hintHandle = hints->setHint("CLICK", "Keyboard shortcuts");
+}
+
+void HeaderBar::mouseExit(const juce::MouseEvent& e) {
+    if (e.eventComponent != this && hints)
+        hintHandle = {};
+}
+
 void HeaderBar::resized() {
     // Use FlexBox: logo (flex) + settings + help
     juce::FlexBox fb;

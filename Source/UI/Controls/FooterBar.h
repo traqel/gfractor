@@ -9,6 +9,7 @@
 #include "../Theme/Symbols.h"
 #include "../ISpectrumControls.h"
 #include "../../DSP/IPeakLevelSource.h"
+#include "../HintManager.h"
 
 class gFractorAudioProcessor;
 
@@ -42,6 +43,9 @@ public:
 
     /** Sync pill toggle states from the analyzer (call after AnalyzerSettings::load). */
     void syncAnalyzerState();
+
+    /** Register HintManager — call once from PluginEditor after construction. */
+    void setHintManager(HintManager& hm);
 
     PillButton &getReferencePill() { return referencePill; }
     PillButton &getPrimaryPill() { return primaryPill; }
@@ -81,6 +85,13 @@ private:
     // Previous raw peak values for repaint gating
     float primaryMid = -100.0f;
     float secondarySide = -100.0f;
+
+    // Mouse listener overrides — receive forwarded events from pill children
+    void mouseEnter(const juce::MouseEvent& e) override;
+    void mouseExit(const juce::MouseEvent& e) override;
+
+    HintManager* hints = nullptr;
+    HintManager::HintHandle hintHandle;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FooterBar)
 };

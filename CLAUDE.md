@@ -50,6 +50,14 @@ pluginval --strictness-level 5 build-release/*_artefacts/Release/VST3/*.vst3
 auval -v aufx <PlugCode> <ManuCode>
 ```
 
+### HintBar Convention
+Hints are set via `HintManager::setHint(title, hint)`. Rules:
+- **Title** — one of `CLICK`, `DRAG`, `KEY`. Combine with ` | ` for multi-action: `"CLICK | DRAG"`, `"CLICK | KEY F"`
+- **Hint** — description text. Keep it as short as possible (≤ 50 chars ideally)
+- Use `  |  ` (two spaces each side) to separate multiple items in the hint text
+- Use only plain ASCII — no Unicode symbols (`·`, `→`, etc.) as they cause encoding issues
+- Examples: `setHint("CLICK", "Toggle freeze")`, `setHint("KEY", "F: Freeze  |  R: Reference")`
+
 ### JUCE Realtime Safety Rules (Enforced by Hooks)
 Never do these in `processBlock()`: allocate memory (`new`, `delete`, `malloc`, `vector::push_back`), use locks (`mutex`, `lock_guard`), or block/wait. Pre-allocate in `prepareToPlay()` and use lock-free structures (`juce::AbstractFifo`).
 
