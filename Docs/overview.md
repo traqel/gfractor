@@ -5,7 +5,7 @@
 | Property | Value |
 |---|---|
 | **Name** | gFractor |
-| **Type** | Mid/Side Spectrum Analyzer (audio effect plugin) |
+| **Type** | Multi-mode Spectrum Analyzer (audio effect plugin) |
 | **Company** | GrowlAudio |
 | **Formats** | VST3, AU (macOS), Standalone |
 | **Framework** | JUCE (C++17) |
@@ -139,10 +139,10 @@
 |                                                |      |
 +------------------------------------------------------+
 |  FooterBar (52px)                                     |
-|  [Ref][Ghost][Spec][Sono][Pri][Sec][L+R] ... pills   |
+|  [Ref][Ghost][Spec][Sono][Pri][Sec][M/S] ... pills   |
 +------------------------------------------------------+
 |  FooterBar (52px)                                     |
-|  [Ref][Ghost][Spec][Sono][Mid][Side][L+R] ... pills   |
+|  [Ref][Ghost][Spec][Sono][Mid][Side][L+R][T/T] ... pills |
 +------------------------------------------------------+
 ```
 
@@ -187,19 +187,23 @@ Rounded-rectangle toggle button used throughout the footer.
 | Ghost | `refPrimaryBlue` | Outline-only |
 | Spectrum | `blueAccent` | Filled |
 | Sonogram | `blueAccent` | Filled |
-| Primary | `primaryGreen` | Outline-only |
-| Secondary | `sideAmber` | Outline-only |
-| L+R | `blueAccent` | Outline-only |
-| Stereo Meters | `blueAccent` | Outline-only |
+| Primary | `primaryGreen` | Outline-only (label changes: Mid/Left/Trans) |
+| Secondary | `sideAmber` | Outline-only (label changes: Side/Right/Tonal) |
+| Meters | `blueAccent` | Outline-only |
 | Freeze | `blueAccent` | Outline-only |
 | Infinite | `blueAccent` | Outline-only |
 | Help | `textDimmed` | Filled |
 | Settings | `textDimmed` | Filled |
 
+**Channel Mode Dropdown** (below Primary/Secondary):
+- **M/S** — Primary = Mid, Secondary = Side
+- **L/R** — Primary = Left, Secondary = Right
+- **T/T** — Primary = Transient, Secondary = Tonal |
+
 ### SpectrumAnalyzer
 
 - **Display modes**: Spectrum (path curves), Sonogram (waterfall)
-- **Channel modes**: Primary/Secondary, L+R
+- **Channel modes**: M/S (Mid/Side), L/R (Left/Right), T/T (Tonal/Transient)
 - **FFT**: Configurable 2048–16384 points (order 11–14, default 13 = 8192)
 - **Smoothing**: None, 1/3 oct, 1/6 oct, 1/12 oct
 - **Slope tilt**: -9 to +9 dB
@@ -278,16 +282,20 @@ Extends `LookAndFeel_V4` with:
 | `bypass` | on/off | off | Plugin bypass |
 | `outputPrimaryEnable` | on/off | on | Primary channel output enable |
 | `outputSecondaryEnable` | on/off | on | Secondary channel output enable |
+| `transientLength` | 0.1–10.0 ms | 1.0 ms | Transient detection length |
 
 ---
 
 ## 10. DSP Features
 
+- **Channel modes**: 
+  - **M/S** (Mid/Side): Mid = Primary, Side = Secondary
+  - **L/R** (Left/Right): Left = Primary, Right = Secondary (primary/secondary enables filter individual channels)
+  - **T/T** (Tonal/Transient): Transient = Primary, Tonal = Secondary
 - Primary/Secondary encoding/decoding from stereo input
 - Gain with `SmoothedValue` (zipper-free)
 - Dry/wet mixing via `juce::dsp::DryWetMixer`
 - 4th-order audition bell filter (two cascaded IIR BPFs)
-- L+R mode (stereo pass-through, Primary/Secondary display only)
 - Reference mode (analyzes sidechain input)
 - Atomic peak level metering (primary + secondary)
 - Debug-only performance profiling (avg/max process time, CPU load)
