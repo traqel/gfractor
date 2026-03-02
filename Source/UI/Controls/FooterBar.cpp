@@ -112,40 +112,42 @@ void FooterBar::applyTheme() {
 }
 
 void FooterBar::resized() {
-    constexpr int labelH = Layout::FooterBar::labelHeight;
-    const auto area = getLocalBounds().withTrimmedTop(labelH).withTrimmedBottom(labelH);
+    const auto area = getLocalBounds();
 
     juce::FlexBox fb;
     fb.flexDirection = juce::FlexBox::Direction::row;
     fb.alignItems = juce::FlexBox::AlignItems::center;
 
     using Item = juce::FlexItem;
-    using Margin = juce::FlexItem::Margin;
-
+    constexpr auto bw = Layout::PillButton::buttonWidth;
     constexpr auto ph = static_cast<float>(Spacing::pillHeight);
     constexpr auto gs = static_cast<float>(Spacing::gapS);
     constexpr auto gl = static_cast<float>(Spacing::gapL);
 
     // ── [Mode ▾] dropdown — left edge aligns with SpectrumAnalyzer dB axis ──
-    fb.items.add(Item(64, ph, modePill).withMargin(Margin(0, gl, 0, analyzerLeftMargin)));
-
-    // ── [Mid  Side] mute group ────────────────────────────────────────────────
-    fb.items.add(Item(56, ph, primaryPill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(58, ph, secondaryPill).withMargin(Margin(0, gl, 0, 0)));
+    fb.items.add(Item(modePill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(primaryPill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(secondaryPill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item().withWidth(gl).withHeight(ph));
 
     // ── [Reference  Ghost] ───────────────────────────────────────────────────
-    fb.items.add(Item(100, ph, referencePill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(72, ph, ghostPill).withMargin(Margin(0, gl, 0, 0)));
+    fb.items.add(Item(referencePill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(ghostPill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item().withWidth(gl).withHeight(ph));
 
     // ── [Freeze] ───────────────────────────────────────────────────────────────
-    fb.items.add(Item(72, ph, freezePill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(84, ph, infinitePill).withMargin(Margin(0, 0, 0, 0)));
+    fb.items.add(Item(freezePill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(infinitePill).withWidth(bw).withHeight(ph));
 
     // Spacer — pushes Meters + Settings to the right
     fb.items.add(Item().withFlex(1.0f));
 
     // ── Meters ────────────────────────────────────────────────────────────────
-    fb.items.add(Item(72, ph, metersPill).withMargin(Margin(0, gs, 0, 0)));
+    fb.items.add(Item(metersPill).withWidth(bw).withHeight(ph));
 
     // ── Help  Settings ───────────────────────────────────────────────────────
     fb.performLayout(area.toFloat());
@@ -176,36 +178,55 @@ void FooterBar::syncAnalyzerState() {
     // No-op: analyzer display mode toggle removed.
 }
 
-void FooterBar::setHintManager(HintManager& hm) {
+void FooterBar::setHintManager(HintManager &hm) {
     hints = &hm;
-    Component* pills[] = { &referencePill, &ghostPill, &primaryPill,
-                                  &secondaryPill, &freezePill, &infinitePill,
-                                  &metersPill };
-    for (auto* c : pills)
+    Component *pills[] = {
+        &referencePill, &ghostPill, &primaryPill,
+        &secondaryPill, &freezePill, &infinitePill,
+        &metersPill
+    };
+    for (auto *c: pills)
         c->addMouseListener(this, false);
     modePill.addMouseListener(this, false);
 }
 
-void FooterBar::mouseEnter(const juce::MouseEvent& e) {
+void FooterBar::mouseEnter(const juce::MouseEvent &e) {
     if (!hints || e.eventComponent == this) return;
 
-    const auto* c = e.eventComponent;
+    const auto *c = e.eventComponent;
     juce::String title, hint;
 
-    if      (c == &referencePill)  { title = "CLICK"; hint = "Reference overlay (sidechain required)"; }
-    else if (c == &ghostPill)      { title = "CLICK"; hint = "Show / hide ghost spectrum"; }
-    else if (c == &modePill)       { title = "CLICK"; hint = "M/S  |  L/R  |  Transient"; }
-    else if (c == &primaryPill)    { title = "CLICK | KEY M"; hint = "Show / hide Primary spectrum"; }
-    else if (c == &secondaryPill)  { title = "CLICK | KEY S"; hint = "Show / hide Secondary spectrum"; }
-    else if (c == &freezePill)     { title = "CLICK | KEY F"; hint = "Freeze / resume spectrum"; }
-    else if (c == &infinitePill)   { title = "CLICK"; hint = "Infinite peak hold"; }
-    else if (c == &metersPill)     { title = "CLICK"; hint = "Stereo metering panel"; }
+    if (c == &referencePill) {
+        title = "CLICK";
+        hint = "Reference overlay (sidechain required)";
+    } else if (c == &ghostPill) {
+        title = "CLICK";
+        hint = "Show / hide ghost spectrum";
+    } else if (c == &modePill) {
+        title = "CLICK";
+        hint = "M/S  |  L/R  |  Transient";
+    } else if (c == &primaryPill) {
+        title = "CLICK | KEY M";
+        hint = "Show / hide Primary spectrum";
+    } else if (c == &secondaryPill) {
+        title = "CLICK | KEY S";
+        hint = "Show / hide Secondary spectrum";
+    } else if (c == &freezePill) {
+        title = "CLICK | KEY F";
+        hint = "Freeze / resume spectrum";
+    } else if (c == &infinitePill) {
+        title = "CLICK";
+        hint = "Infinite peak hold";
+    } else if (c == &metersPill) {
+        title = "CLICK";
+        hint = "Stereo metering panel";
+    }
 
     if (hint.isNotEmpty())
         hintHandle = hints->setHint(title, hint);
 }
 
-void FooterBar::mouseExit(const juce::MouseEvent& e) {
+void FooterBar::mouseExit(const juce::MouseEvent &e) {
     if (e.eventComponent != this && hints)
         hintHandle = {};
 }

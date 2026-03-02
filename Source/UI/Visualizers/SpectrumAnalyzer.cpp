@@ -17,7 +17,7 @@ SpectrumAnalyzer::SpectrumAnalyzer()
 }
 
 void SpectrumAnalyzer::applyTheme() {
-    backgroundColour = juce::Colour(ColorPalette::spectrumBg);
+    backgroundColour = juce::Colour(ColorPalette::background);
     gridColour = juce::Colour(ColorPalette::grid).withAlpha(0.5f);
     textColour = juce::Colour(ColorPalette::textMuted);
     hintColour = juce::Colour(ColorPalette::hintPink);

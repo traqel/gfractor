@@ -301,7 +301,7 @@ private:
     bool showSecondary = true;
     bool showGhost = false;
     bool sidechainAvailable = false;
-    juce::Colour backgroundColour{ColorPalette::spectrumBg};
+    juce::Colour backgroundColour{ColorPalette::background};
     juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
     juce::Colour textColour{ColorPalette::textBright};
     juce::Colour hintColour{ColorPalette::hintPink};

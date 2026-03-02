@@ -51,13 +51,14 @@ void HeaderBar::resized() {
 
     using Item = juce::FlexItem;
 
-    constexpr auto headerHeight = Layout::HeaderBar::height;
+    constexpr auto bh = Layout::PillButton::buttonHeight;
+    constexpr auto bw = Layout::PillButton::buttonWidth;
 
-    fb.items.add(Item(logo).withFlex(1.0f).withHeight(headerHeight));
-    fb.items.add(Item().withHeight(headerHeight));
-    fb.items.add(Item(settingsPill).withWidth(Layout::PillButton::buttonWidth).withHeight(headerHeight));
-    fb.items.add(Item().withWidth(Spacing::gapM).withHeight(headerHeight));
-    fb.items.add(Item(helpPill).withWidth(Layout::PillButton::buttonWidth).withHeight(headerHeight));
+    fb.items.add(Item(logo).withFlex(1.0f).withHeight(bh));
+    fb.items.add(Item().withHeight(bh));
+    fb.items.add(Item(settingsPill).withWidth(bw).withHeight(bh));
+    fb.items.add(Item().withWidth(Spacing::gapM).withHeight(bh));
+    fb.items.add(Item(helpPill).withWidth(bw).withHeight(bh));
 
     const auto bounds = getLocalBounds();
     fb.performLayout(bounds);

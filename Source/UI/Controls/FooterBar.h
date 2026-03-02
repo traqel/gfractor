@@ -64,7 +64,7 @@ private:
     IPeakLevelSource &peakSourceRef;
 
     // Left group — pill buttons
-    PillButton referencePill{"Reference", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton referencePill{"Ref", juce::Colour(ColorPalette::blueAccent), true};
     PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refPrimaryBlue), true};
     DropdownPill modePill{{"M/S", "L/R", "TRN"}, juce::Colour(ColorPalette::blueAccent)};
     PillButton primaryPill{"Mid", juce::Colour(ColorPalette::primaryGreen), true};
