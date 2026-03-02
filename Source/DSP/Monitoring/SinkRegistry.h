@@ -10,9 +10,11 @@ public:
     SinkRegistry();
 
     void registerAudioDataSink(IAudioDataSink *sink);
+
     void unregisterAudioDataSink(IAudioDataSink *sink);
 
     void setGhostDataSink(IGhostDataSink *sink);
+
     IGhostDataSink *getGhostDataSink() const;
 
     void prepareSinks(double sampleRate);

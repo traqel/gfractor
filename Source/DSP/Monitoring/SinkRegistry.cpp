@@ -29,7 +29,7 @@ IGhostDataSink *SinkRegistry::getGhostDataSink() const {
 
 void SinkRegistry::prepareSinks(double sampleRate) {
     const juce::SpinLock::ScopedLockType lock(sinkLock);
-    for (auto *sink : audioDataSinks)
+    for (auto *sink: audioDataSinks)
         sink->setSampleRate(sampleRate);
 }
 
@@ -39,7 +39,7 @@ void SinkRegistry::pushAudioData(const juce::AudioBuffer<float> &buffer,
     juce::ignoreUnused(hasSidechain, isReferenceMode);
 
     const juce::SpinLock::ScopedLockType lock(sinkLock);
-    for (auto *sink : audioDataSinks)
+    for (auto *sink: audioDataSinks)
         sink->pushStereoData(buffer);
 }
 

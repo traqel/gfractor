@@ -8,36 +8,39 @@ class IChannelModeStrategy {
 public:
     virtual ~IChannelModeStrategy() = default;
 
-    virtual void prepare(const juce::dsp::ProcessSpec& spec) = 0;
-    virtual void process(juce::dsp::ProcessContextReplacing<float>& context,
-                         std::atomic<bool>& primaryEnabled,
-                         std::atomic<bool>& secondaryEnabled,
-                         juce::SmoothedValue<float>& primaryGain,
-                         juce::SmoothedValue<float>& secondaryGain,
+    virtual void prepare(const juce::dsp::ProcessSpec &spec) = 0;
+
+    virtual void process(juce::dsp::ProcessContextReplacing<float> &context,
+                         std::atomic<bool> &primaryEnabled,
+                         std::atomic<bool> &secondaryEnabled,
+                         juce::SmoothedValue<float> &primaryGain,
+                         juce::SmoothedValue<float> &secondaryGain,
                          float fastEnvAlpha,
                          float slowEnvAlpha,
-                         float& fastEnvState,
-                         float& slowEnvState) = 0;
+                         float &fastEnvState,
+                         float &slowEnvState) = 0;
+
     virtual void reset() = 0;
 };
 
 class MidSideStrategy : public IChannelModeStrategy {
 public:
-    void prepare(const juce::dsp::ProcessSpec&) override {}
+    void prepare(const juce::dsp::ProcessSpec &) override {
+    }
 
-    void process(juce::dsp::ProcessContextReplacing<float>& context,
-                 std::atomic<bool>& primaryEnabled,
-                 std::atomic<bool>& secondaryEnabled,
-                 juce::SmoothedValue<float>&,
-                 juce::SmoothedValue<float>&,
+    void process(juce::dsp::ProcessContextReplacing<float> &context,
+                 std::atomic<bool> &primaryEnabled,
+                 std::atomic<bool> &secondaryEnabled,
+                 juce::SmoothedValue<float> &,
+                 juce::SmoothedValue<float> &,
                  float,
                  float,
-                 float&,
-                 float&) override {
-        auto& block = context.getOutputBlock();
+                 float &,
+                 float &) override {
+        auto &block = context.getOutputBlock();
         if (block.getNumChannels() >= 2) {
-            auto* leftData = block.getChannelPointer(0);
-            auto* rightData = block.getChannelPointer(1);
+            auto *leftData = block.getChannelPointer(0);
+            auto *rightData = block.getChannelPointer(1);
             const bool primOn = primaryEnabled.load(std::memory_order_relaxed);
             const bool secOn = secondaryEnabled.load(std::memory_order_relaxed);
 
@@ -54,26 +57,28 @@ public:
         }
     }
 
-    void reset() override {}
+    void reset() override {
+    }
 };
 
 class LRStereoStrategy : public IChannelModeStrategy {
 public:
-    void prepare(const juce::dsp::ProcessSpec&) override {}
+    void prepare(const juce::dsp::ProcessSpec &) override {
+    }
 
-    void process(juce::dsp::ProcessContextReplacing<float>& context,
-                 std::atomic<bool>& primaryEnabled,
-                 std::atomic<bool>& secondaryEnabled,
-                 juce::SmoothedValue<float>&,
-                 juce::SmoothedValue<float>&,
+    void process(juce::dsp::ProcessContextReplacing<float> &context,
+                 std::atomic<bool> &primaryEnabled,
+                 std::atomic<bool> &secondaryEnabled,
+                 juce::SmoothedValue<float> &,
+                 juce::SmoothedValue<float> &,
                  float,
                  float,
-                 float&,
-                 float&) override {
-        auto& block = context.getOutputBlock();
+                 float &,
+                 float &) override {
+        auto &block = context.getOutputBlock();
         if (block.getNumChannels() >= 2) {
-            auto* leftData = block.getChannelPointer(0);
-            auto* rightData = block.getChannelPointer(1);
+            auto *leftData = block.getChannelPointer(0);
+            auto *rightData = block.getChannelPointer(1);
             const bool primOn = primaryEnabled.load(std::memory_order_relaxed);
             const bool secOn = secondaryEnabled.load(std::memory_order_relaxed);
 
@@ -84,26 +89,28 @@ public:
         }
     }
 
-    void reset() override {}
+    void reset() override {
+    }
 };
 
 class TonalTransientStrategy : public IChannelModeStrategy {
 public:
-    void prepare(const juce::dsp::ProcessSpec&) override {}
+    void prepare(const juce::dsp::ProcessSpec &) override {
+    }
 
-    void process(juce::dsp::ProcessContextReplacing<float>& context,
-                 std::atomic<bool>& primaryEnabled,
-                 std::atomic<bool>& secondaryEnabled,
-                 juce::SmoothedValue<float>& primaryGain,
-                 juce::SmoothedValue<float>& secondaryGain,
+    void process(juce::dsp::ProcessContextReplacing<float> &context,
+                 std::atomic<bool> &primaryEnabled,
+                 std::atomic<bool> &secondaryEnabled,
+                 juce::SmoothedValue<float> &primaryGain,
+                 juce::SmoothedValue<float> &secondaryGain,
                  float fastEnvAlphaParam,
                  float slowEnvAlphaParam,
-                 float& envStateFast,
-                 float& envStateSlow) override {
-        auto& block = context.getOutputBlock();
+                 float &envStateFast,
+                 float &envStateSlow) override {
+        auto &block = context.getOutputBlock();
         if (block.getNumChannels() >= 2) {
-            auto* leftData = block.getChannelPointer(0);
-            auto* rightData = block.getChannelPointer(1);
+            auto *leftData = block.getChannelPointer(0);
+            auto *rightData = block.getChannelPointer(1);
 
             primaryGain.setTargetValue(primaryEnabled.load(std::memory_order_relaxed) ? 1.0f : 0.0f);
             secondaryGain.setTargetValue(secondaryEnabled.load(std::memory_order_relaxed) ? 1.0f : 0.0f);
@@ -128,7 +135,8 @@ public:
         }
     }
 
-    void reset() override {}
+    void reset() override {
+    }
 };
 
 class ChannelModeStrategyFactory {

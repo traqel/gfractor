@@ -24,8 +24,11 @@ public:
     //==============================================================================
     // IDSPProcessor implementation
     void prepare(const juce::dsp::ProcessSpec &spec) override;
+
     void process(juce::AudioBuffer<float> &buffer) override;
+
     void reset() override;
+
     void setOutputMode(ChannelMode mode) override;
 
     //==============================================================================
