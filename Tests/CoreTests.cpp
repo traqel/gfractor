@@ -9,7 +9,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_core/juce_core.h>
 
-#include "DSP/Analysis/AudioRingBuffer.h"
+#include "DSP/Processing/AudioRingBuffer.h"
 #include "DSP/Core/gFractorDSP.h"
 #include "DSP/Interfaces/IAudioDataSink.h"
 #include "Utility/ChannelMode.h"

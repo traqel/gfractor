@@ -19,7 +19,7 @@
 #include "../../Utility/ChannelMode.h"
 #include "../../Utility/DisplayRange.h"
 #include "../../DSP/Interfaces/IAudioDataSink.h"
-#include "../../DSP/Analysis/FFTProcessor.h"
+#include "../../DSP/Processing/FFTProcessor.h"
 #include "../../DSP/Interfaces/IGhostDataSink.h"
 
 /**
