@@ -47,13 +47,42 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
     if (block.getNumChannels() >= 2) {
         const auto *leftData = block.getChannelPointer(0);
         const auto *rightData = block.getChannelPointer(1);
-        float peakPrimary = 0.0f, peakSecondary = 0.0f;
-        for (size_t i = 0; i < block.getNumSamples(); ++i) {
-            const float mid = (leftData[i] + rightData[i]) * 0.5f;
-            const float side = (leftData[i] - rightData[i]) * 0.5f;
-            peakPrimary = juce::jmax(peakPrimary, std::abs(mid));
-            peakSecondary = juce::jmax(peakSecondary, std::abs(side));
+        const auto numSamples = block.getNumSamples();
+
+        float peakPrimary = 0.0f;
+        float peakSecondary = 0.0f;
+
+        // SIMD-friendly chunked processing
+        constexpr size_t chunkSize = 8;
+        size_t i = 0;
+
+        for (; i + chunkSize <= numSamples; i += chunkSize) {
+            // Compute mid = |L + R| * 0.5 for chunk
+            for (size_t j = 0; j < chunkSize; ++j) {
+                simdWorkBuffer[j] = std::abs(leftData[i + j] + rightData[i + j]) * 0.5f;
+            }
+            // Find max using SIMD
+            for (size_t j = 0; j < chunkSize; ++j) {
+                peakPrimary = juce::jmax(peakPrimary, simdWorkBuffer[j]);
+            }
+
+            // Compute side = |L - R| * 0.5 for chunk
+            for (size_t j = 0; j < chunkSize; ++j) {
+                simdWorkBuffer[j] = std::abs(leftData[i + j] - rightData[i + j]) * 0.5f;
+            }
+            for (size_t j = 0; j < chunkSize; ++j) {
+                peakSecondary = juce::jmax(peakSecondary, simdWorkBuffer[j]);
+            }
         }
+
+        // Tail processing
+        for (; i < numSamples; ++i) {
+            const float mid = std::abs(leftData[i] + rightData[i]) * 0.5f;
+            const float side = std::abs(leftData[i] - rightData[i]) * 0.5f;
+            peakPrimary = juce::jmax(peakPrimary, mid);
+            peakSecondary = juce::jmax(peakSecondary, side);
+        }
+
         peakPrimaryDb.store(juce::Decibels::gainToDecibels(peakPrimary, -100.0f), std::memory_order_relaxed);
         peakSecondaryDb.store(juce::Decibels::gainToDecibels(peakSecondary, -100.0f), std::memory_order_relaxed);
     }

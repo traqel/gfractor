@@ -96,6 +96,9 @@ private:
     juce::SmoothedValue<float> gainSmoothed;
     float dryWetMix = 1.0f; // 0.0 = dry, 1.0 = wet
 
+    // SIMD work buffer for peak metering (8 floats = 2 SIMD vectors)
+    std::array<float, 8> simdWorkBuffer{};
+
     //==============================================================================
     // Transient audition bell filter — 4th order (two cascaded 2nd-order BPFs)
     std::atomic<bool> auditFilterActive{false};
