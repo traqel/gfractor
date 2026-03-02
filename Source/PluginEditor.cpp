@@ -253,17 +253,18 @@ void gFractorAudioProcessorEditor::paint(juce::Graphics &g) {
 }
 
 void gFractorAudioProcessorEditor::resized() {
+    juce::FlexBox outerFb;
+    outerFb.flexDirection = juce::FlexBox::Direction::column;
+    outerFb.alignItems = juce::FlexBox::AlignItems::stretch;
+
+    using Item = juce::FlexItem;
+
+    // Main: Header + Spectrum + Footer (all in one vertical flexbox)
     juce::FlexBox mainFb;
     mainFb.flexDirection = juce::FlexBox::Direction::column;
     mainFb.alignItems = juce::FlexBox::AlignItems::stretch;
 
-    using Item = juce::FlexItem;
-
-    constexpr auto hh = static_cast<float>(Spacing::headerHeight);
-    constexpr auto fh = static_cast<float>(Spacing::footerHeight);
-    constexpr auto hb = static_cast<float>(Spacing::hintBarHeight);
-
-    mainFb.items.add(Item(*headerBar).withHeight(hh));
+    mainFb.items.add(Item(*headerBar).withHeight(Spacing::headerHeight));
 
     juce::FlexBox contentFb;
     contentFb.flexDirection = juce::FlexBox::Direction::row;
@@ -278,11 +279,13 @@ void gFractorAudioProcessorEditor::resized() {
     }
 
     mainFb.items.add(Item(contentFb).withFlex(1.0f));
+    mainFb.items.add(Item(footerBar).withHeight(Spacing::footerHeight));
 
-    mainFb.items.add(Item(footerBar).withHeight(fh));
-    mainFb.items.add(Item(hintBar).withHeight(hb));
+    const auto horizontalMargin = juce::FlexItem::Margin(0, Spacing::marginM, 0, Spacing::marginM);
+    outerFb.items.add(Item(mainFb).withFlex(1.0f).withMargin(horizontalMargin));
+    outerFb.items.add(Item(hintBar).withHeight(Spacing::hintBarHeight));
 
-    mainFb.performLayout(getLocalBounds().toFloat());
+    outerFb.performLayout(getLocalBounds().toFloat());
 
     panelDivider.setVisible(metersVisible);
 
