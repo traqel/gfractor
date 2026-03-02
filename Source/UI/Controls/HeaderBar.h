@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PillButton.h"
+#include "Logo.h"
 #include "../Theme/Symbols.h"
 #include "../HintManager.h"
 
@@ -32,7 +33,7 @@ private:
     HintManager* hints = nullptr;
     HintManager::HintHandle hintHandle;
 
-
+    Logo logo;
     PillButton settingsPill{
         juce::String::fromUTF8(Symbols::settingsUTF8), juce::Colour(ColorPalette::blueAccent), true, 26.0f
     };

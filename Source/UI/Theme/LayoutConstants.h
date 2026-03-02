@@ -8,6 +8,11 @@
  */
 
 namespace Layout {
+    namespace PillButton {
+        inline constexpr int buttonWidth = 54;
+        inline constexpr float buttonHeight = 28;
+    }
+
     //==========================================================================
     // PreferencePanel
     //==========================================================================
@@ -99,6 +104,8 @@ namespace Layout {
     // HeaderBar
     //==========================================================================
     namespace HeaderBar {
+        inline constexpr float height = 24.0f;
+        inline constexpr float pillWidth = 44.0f;
         inline constexpr float logoFontSize = 24.0f;
     }
 
