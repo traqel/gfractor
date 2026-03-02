@@ -1,10 +1,12 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "../../Utility/ChannelMode.h"
 #include "../Interfaces/IDSPProcessor.h"
+#include "../Processing/ChannelModeStrategies.h"
 
 /**
  * Main DSP processor for the gFractor plugin.
@@ -70,10 +72,17 @@ private:
     std::atomic<bool> primaryEnabled{true};
     std::atomic<bool> secondaryEnabled{true};
     ChannelMode outputMode = ChannelMode::MidSide;
+    std::unique_ptr<IChannelModeStrategy> channelModeStrategy;
 
     // Smoothed gains for click-free enable/disable transitions (audio thread only)
     juce::SmoothedValue<float> primaryGain;
     juce::SmoothedValue<float> secondaryGain;
+
+    // Tonal/Transient audio separation state (moved to strategy)
+    float fastEnvState = 0.0f;
+    float slowEnvState = 0.0f;
+    float fastEnvAlpha = 0.02f;
+    float slowEnvAlpha = 3e-4f;
 
     //==============================================================================
     // DSP components (pre-allocated in prepare(), reused in process())
@@ -105,15 +114,6 @@ private:
     IIRDuplicator bandFilter2;
     float lastBandFreq = -1.0f;
     float lastBandQ = -1.0f;
-
-    //==============================================================================
-    // Tonal/Transient audio separation — dual-EMA transient detector
-    // fastEnvState tracks instantaneous energy; slowEnvState tracks sustained energy.
-    // transientGain = (fast - slow) / fast; tonalGain = 1 - transientGain.
-    float fastEnvState = 0.0f; // fast-tracking envelope (~2ms)
-    float slowEnvState = 0.0f; // slow-tracking envelope (~80ms)
-    float fastEnvAlpha = 0.02f; // EMA smoothing coefficient — recomputed in prepare()
-    float slowEnvAlpha = 3e-4f; // EMA smoothing coefficient — recomputed in prepare()
 
     // Peak level metering (written on audio thread, read on UI thread)
     std::atomic<float> peakPrimaryDb{-100.0f};
