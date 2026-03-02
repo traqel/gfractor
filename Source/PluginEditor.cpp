@@ -17,6 +17,9 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
 
     // Add spectrum analyzer (owned by editor)
     addAndMakeVisible(spectrumAnalyzer);
+    // Add hint bar at the bottom
+    addAndMakeVisible(hintBar);
+    hintBar.setHint("Press F to freeze spectrum | R for reference | M/S for mid/side");
     // Register with processor so it can push audio data
     audioProcessor.registerAudioDataSink(&spectrumAnalyzer);
     audioProcessor.setGhostDataSink(&spectrumAnalyzer);
@@ -153,13 +156,6 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     resizeConstraints.setMinimumSize(minWidth, minHeight);
     resizeConstraints.setMaximumSize(maxWidth, maxHeight);
 
-    // Apply limits to host/window-level resizing as well (not only corner drag).
-    setResizeLimits(minWidth, minHeight, maxWidth, maxHeight);
-
-    // Add resize corner
-    resizeCorner = std::make_unique<juce::ResizableCornerComponent>(this, &resizeConstraints);
-    addAndMakeVisible(resizeCorner.get());
-
     // Restore metering panel state (before setSize so first resized() uses correct values)
     {
         int savedPanelW = meteringPanelW;
@@ -179,8 +175,9 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     const int clampedH = juce::jlimit(minHeight, maxHeight, savedSize.y);
     setSize(clampedW, clampedH);
 
-    // Make editor resizable
+    // Make editor resizable (no built-in corner - we use our own)
     setResizable(true, true);
+    setResizeLimits(minWidth, minHeight, maxWidth, maxHeight);
 
     // Listen for Control key to temporarily toggle reference mode
     setWantsKeyboardFocus(true);
@@ -234,13 +231,9 @@ void gFractorAudioProcessorEditor::paint(juce::Graphics &g) {
 void gFractorAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
 
-    // Position resize corner
-    if (resizeCorner != nullptr) {
-        resizeCorner->setBounds(bounds.getRight() - 16, bounds.getBottom() - 16, 16, 16);
-    }
-
-    // Three-zone layout: header, spectrum, footer
+    // Three-zone layout: header, spectrum, footer, hint bar
     headerBar->setBounds(bounds.removeFromTop(Spacing::headerHeight));
+    hintBar.setBounds(bounds.removeFromBottom(Spacing::hintBarHeight));
     footerBar.setBounds(bounds.removeFromBottom(Spacing::footerHeight));
     auto analyzerBounds = bounds;
     constexpr int dividerW = 5;

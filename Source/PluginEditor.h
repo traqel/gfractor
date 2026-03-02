@@ -5,6 +5,7 @@
 #include "UI/Visualizers/SpectrumAnalyzer.h"
 #include "UI/Controls/HeaderBar.h"
 #include "UI/Controls/FooterBar.h"
+#include "UI/Controls/HintBar.h"
 #include "UI/Panels/StereoMeteringPanel.h"
 #include "UI/Panels/TransientMeteringPanel.h"
 #include "UI/Panels/PreferencePanel.h"
@@ -80,6 +81,9 @@ private:
     // Footer bar (pill buttons, peak readouts, settings)
     FooterBar footerBar;
 
+    // Hint bar (context-dependent hints at bottom of screen)
+    HintBar hintBar;
+
     // Preference panel overlay + click-outside backdrop
     struct PanelBackdrop : Component {
         std::function<void()> onMouseDown;
@@ -145,7 +149,6 @@ private:
     //==============================================================================
     // Resize support
     juce::ComponentBoundsConstrainer resizeConstraints;
-    std::unique_ptr<juce::ResizableCornerComponent> resizeCorner;
 
     // Default and constrained sizes
     static constexpr int minWidth = 1100;
