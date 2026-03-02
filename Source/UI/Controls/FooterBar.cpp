@@ -67,10 +67,6 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     metersPill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(metersPill);
 
-    // Transient metering pill
-    transientPill.setToggleState(false, juce::dontSendNotification);
-    addAndMakeVisible(transientPill);
-
     // Freeze pill
     freezePill.setToggleState(false, juce::dontSendNotification);
     freezePill.onClick = [this]() {
@@ -112,7 +108,6 @@ void FooterBar::applyTheme() {
     freezePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     infinitePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     metersPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
-    transientPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     repaint();
 }
 
@@ -149,9 +144,8 @@ void FooterBar::resized() {
     // Spacer — pushes Meters + Settings to the right
     fb.items.add(Item().withFlex(1.0f));
 
-    // ── Meters  Transient ─────────────────────────────────────────────────────
+    // ── Meters ────────────────────────────────────────────────────────────────
     fb.items.add(Item(72, ph, metersPill).withMargin(Margin(0, gs, 0, 0)));
-    fb.items.add(Item(90, ph, transientPill).withMargin(Margin(0, gs, 0, 0)));
 
     // ── Help  Settings ───────────────────────────────────────────────────────
     fb.performLayout(area.toFloat());
@@ -186,7 +180,7 @@ void FooterBar::setHintManager(HintManager& hm) {
     hints = &hm;
     juce::Component* pills[] = { &referencePill, &ghostPill, &primaryPill,
                                   &secondaryPill, &freezePill, &infinitePill,
-                                  &metersPill, &transientPill };
+                                  &metersPill };
     for (auto* c : pills)
         c->addMouseListener(this, false);
     modePill.addMouseListener(this, false);

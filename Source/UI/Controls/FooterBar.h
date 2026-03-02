@@ -51,7 +51,6 @@ public:
     PillButton &getPrimaryPill() { return primaryPill; }
     PillButton &getSecondaryPill() { return secondaryPill; }
     PillButton &getMetersPill() { return metersPill; }
-    PillButton &getTransientPill() { return transientPill; }
     PillButton &getFreezePill() { return freezePill; }
 
     /** Left margin from SpectrumAnalyzer — used for button alignment. */
@@ -76,7 +75,6 @@ private:
     PillButton infinitePill{"Hold", juce::Colour(ColorPalette::blueAccent), true};
 
     PillButton metersPill{"Stereo", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton transientPill{"Transient", juce::Colour(ColorPalette::blueAccent), true};
 
     // Smoothed peak levels (fed to SpectrumAnalyzer meter bars)
     float peakMidDisplay = -100.0f;

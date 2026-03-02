@@ -8,7 +8,6 @@
 #include "UI/HintManager.h"
 #include "UI/Controls/HintBar.h"
 #include "UI/Panels/StereoMeteringPanel.h"
-#include "UI/Panels/TransientMeteringPanel.h"
 #include "UI/Panels/PreferencePanel.h"
 #include "UI/Panels/HelpPanel.h"
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
@@ -67,11 +66,6 @@ private:
     StereoMeteringPanel meteringPanel;
     bool metersVisible = false;
     int meteringPanelW = 180;
-
-    // Transient metering panel
-    TransientMeteringPanel transientMeteringPanel;
-    bool transientVisible = false;
-    int transientPanelW = 180;
 
     static constexpr int kMinPanelW = 120;
     static constexpr int kMaxPanelW = 320;
@@ -142,7 +136,6 @@ private:
     std::unique_ptr<HelpPanel> helpPanel;
     std::unique_ptr<PanelBackdrop> panelBackdrop;
     PanelDivider panelDivider;
-    PanelDivider transientDivider;
 
     // Performance display (debug builds only, toggled with Ctrl+Shift+P)
     PerformanceDisplay performanceDisplay;

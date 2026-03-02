@@ -39,18 +39,6 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         resized();
     };
 
-    // Add transient metering panel (starts hidden)
-    addChildComponent(transientMeteringPanel);
-    audioProcessor.registerAudioDataSink(&transientMeteringPanel);
-    transientMeteringPanel.setSampleRate(audioProcessor.getSampleRate());
-
-    // Draggable divider for transient panel (starts hidden)
-    addChildComponent(transientDivider);
-    transientDivider.onDrag = [this](const int dx) {
-        transientPanelW = juce::jlimit(kMinPanelW, kMaxPanelW, transientPanelW + dx);
-        resized();
-    };
-
     // Load globally saved analyzer preferences (dB/freq range, colors, slope)
     AnalyzerSettings::load(spectrumAnalyzer);
     spectrumAnalyzer.setBandHintsVisible(AnalyzerSettings::loadBandHints());
@@ -141,13 +129,6 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         resized();
     };
 
-    // Wire transient pill callback
-    footerBar.getTransientPill().onClick = [this]() {
-        transientVisible = footerBar.getTransientPill().getToggleState();
-        transientMeteringPanel.setVisible(transientVisible);
-        resized();
-    };
-
     // Performance display (debug builds only, starts visible, toggle with Ctrl+Shift+P)
     performanceDisplay.setProcessor(&audioProcessor);
     performanceDisplay.setVisible(performanceDisplayVisible);
@@ -208,7 +189,6 @@ gFractorAudioProcessorEditor::~gFractorAudioProcessorEditor() {
     // be cleared before unregistering sinks so the audio thread can't call
     // pushGhostData on a partially-unregistered SpectrumAnalyzer.
     audioProcessor.setGhostDataSink(nullptr);
-    audioProcessor.unregisterAudioDataSink(&transientMeteringPanel);
     audioProcessor.unregisterAudioDataSink(&meteringPanel);
     audioProcessor.unregisterAudioDataSink(&spectrumAnalyzer);
 
@@ -244,14 +224,6 @@ void gFractorAudioProcessorEditor::resized() {
     footerBar.setBounds(bounds.removeFromBottom(Spacing::footerHeight));
     auto analyzerBounds = bounds;
     constexpr int dividerW = 5;
-
-    if (transientVisible) {
-        transientMeteringPanel.setBounds(analyzerBounds.removeFromRight(transientPanelW));
-        transientDivider.setBounds(analyzerBounds.removeFromRight(dividerW));
-        transientDivider.setVisible(true);
-    } else {
-        transientDivider.setVisible(false);
-    }
 
     if (metersVisible) {
         meteringPanel.setBounds(analyzerBounds.removeFromRight(meteringPanelW));
