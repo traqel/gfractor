@@ -16,6 +16,10 @@
 
 #include "UI/Controls/PerformanceDisplay.h"
 
+#if DEBUG
+#include <melatonin_inspector/melatonin_inspector.h>
+#endif
+
 /**
  * Main AudioProcessorEditor class for the gFractor plugin
  *
@@ -167,6 +171,8 @@ private:
     void applyTheme();
 
     void timerCallback() override;
+
+    melatonin::Inspector inspector { *this, false };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(gFractorAudioProcessorEditor)

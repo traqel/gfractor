@@ -40,6 +40,7 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/JUCE/CMakeLists.txt")
 endif()
 
 add_subdirectory(JUCE)
+add_subdirectory (Modules/melatonin_inspector)
 
 # Collect source files
 file(GLOB_RECURSE PLUGIN_SOURCES
@@ -106,6 +107,7 @@ target_link_libraries(${PLUGIN_NAME}
         juce::juce_dsp
         juce::juce_gui_basics
         juce::juce_gui_extra
+        melatonin_inspector
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
