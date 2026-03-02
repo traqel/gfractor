@@ -9,7 +9,7 @@
 #include "../Visualizers/AudioVisualizerBase.h"
 #include "../Theme/LayoutConstants.h"
 #include "../HintManager.h"
-#include "../../DSP/IAudioDataSink.h"
+#include "../../DSP/Interfaces/IAudioDataSink.h"
 
 /**
  * StereoMeteringPanel

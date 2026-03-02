@@ -11,7 +11,7 @@
 
 #include <juce_dsp/juce_dsp.h>
 #include <juce_core/juce_core.h>
-#include "DSP/gFractorDSP.h"
+#include "DSP/Core/gFractorDSP.h"
 #include "Utility/ChannelMode.h"
 
 /**

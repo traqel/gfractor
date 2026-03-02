@@ -19,10 +19,6 @@ gFractorAudioProcessor::gFractorAudioProcessor()
     :
 #endif
       apvts(*this, nullptr, "Parameters", ParameterLayout::createParameterLayout()) {
-    // Pre-reserve sink storage so push_back never reallocates while sinkLock is held
-    // on the audio thread. 8 slots is ample for all foreseeable editor-owned sinks.
-    audioDataSinks.reserve(8);
-
     // Create parameter listener to automatically sync APVTS changes to DSP
     parameterListener = std::make_unique<ParameterListener>(apvts, dspProcessor);
 }
@@ -95,11 +91,7 @@ void gFractorAudioProcessor::prepareToPlay(const double sampleRate, const int sa
     dspProcessor.prepare(spec);
 
     // Update all registered sinks with the new sample rate
-    {
-        const juce::SpinLock::ScopedLockType lock(sinkLock);
-        for (auto *sink: audioDataSinks)
-            sink->setSampleRate(sampleRate);
-    }
+    sinkRegistry.prepareSinks(sampleRate);
 }
 
 void gFractorAudioProcessor::releaseResources() {
@@ -142,7 +134,7 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                           juce::MidiBuffer &midiMessages) {
     juce::ignoreUnused(midiMessages);
 
-    // Performance profiling (debug builds only)
+    // Performance profiling
     const auto startTime = juce::Time::getHighResolutionTicks();
 
     juce::ScopedNoDenormals noDenormals;
@@ -171,21 +163,10 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         }
     }
 
-    // Push audio data to all registered sinks (SpinLock protects against
-    // concurrent register/unregister from message thread during editor lifecycle)
-    {
-        const juce::SpinLock::ScopedLockType lock(sinkLock);
-
-        if (auto *ghost = ghostDataSink.load(); ghost != nullptr && hasSidechain) {
-            if (isRefMode)
-                ghost->pushGhostData(getBusBuffer(buffer, true, 0)); // ghost = main input
-            else
-                ghost->pushGhostData(sidechainBus); // ghost = sidechain
-        }
-
-        for (auto *sink: audioDataSinks)
-            sink->pushStereoData(buffer);
-    }
+    // Push audio data to sinks
+    const auto mainInput = getBusBuffer(buffer, true, 0);
+    sinkRegistry.pushAudioData(mainInput, hasSidechain, isRefMode);
+    sinkRegistry.pushGhostData(mainInput, sidechainBus, hasSidechain, isRefMode);
 
     // Process audio through DSP chain
     // (Parameters are automatically updated via ParameterListener)
@@ -194,22 +175,7 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     // Update performance metrics
     const auto elapsedTicks = juce::Time::getHighResolutionTicks() - startTime;
     const auto elapsedMs = juce::Time::highResolutionTicksToSeconds(elapsedTicks) * 1000.0;
-
-    // Update max time
-    perfMetrics.maxProcessTimeMs = juce::jmax(perfMetrics.maxProcessTimeMs.load(), elapsedMs);
-
-    // Update average with exponential moving average (smoothing factor = 0.99)
-    const auto currentAvg = perfMetrics.averageProcessTimeMs.load();
-    perfMetrics.averageProcessTimeMs = currentAvg * 0.99 + elapsedMs * 0.01;
-
-    // Calculate CPU load percentage
-    const auto blockDurationMs = buffer.getNumSamples() * 1000.0 / getSampleRate();
-    const auto cpuLoad = elapsedMs / blockDurationMs * 100.0;
-    const auto currentCpuAvg = perfMetrics.averageCpuLoad.load();
-    perfMetrics.averageCpuLoad = currentCpuAvg * 0.99 + cpuLoad * 0.01;
-
-    // Increment sample count
-    ++perfMetrics.sampleCount;
+    perfMonitor.recordBlock(elapsedMs, getSampleRate(), buffer.getNumSamples());
 }
 
 //==============================================================================
@@ -238,17 +204,11 @@ void gFractorAudioProcessor::setStateInformation(const void *data, const int siz
 
 //==============================================================================
 void gFractorAudioProcessor::registerAudioDataSink(IAudioDataSink *sink) {
-    if (sink != nullptr) {
-        const juce::SpinLock::ScopedLockType lock(sinkLock);
-        audioDataSinks.push_back(sink);
-    }
+    sinkRegistry.registerAudioDataSink(sink);
 }
 
 void gFractorAudioProcessor::unregisterAudioDataSink(IAudioDataSink *sink) {
-    const juce::SpinLock::ScopedLockType lock(sinkLock);
-    audioDataSinks.erase(
-        std::remove(audioDataSinks.begin(), audioDataSinks.end(), sink),
-        audioDataSinks.end());
+    sinkRegistry.unregisterAudioDataSink(sink);
 }
 
 void gFractorAudioProcessor::setAuditFilter(const bool active, const float frequencyHz, const float q) {

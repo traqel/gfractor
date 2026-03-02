@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Visualizers/AudioVisualizerBase.h"
-#include "../../DSP/IAudioDataSink.h"
+#include "../../DSP/Interfaces/IAudioDataSink.h"
 
 /**
  * TransientMeteringPanel - EMPTY

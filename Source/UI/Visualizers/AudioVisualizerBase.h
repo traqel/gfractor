@@ -5,7 +5,7 @@
 #include <atomic>
 #include <vector>
 
-#include "../../DSP/AudioRingBuffer.h"
+#include "../../DSP/Analysis/AudioRingBuffer.h"
 
 /**
  * Abstract base class for audio visualization components.

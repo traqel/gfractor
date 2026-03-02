@@ -1,8 +1,10 @@
 #pragma once
 
+#include <atomic>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
-#include "../Utility/ChannelMode.h"
+#include "../../Utility/ChannelMode.h"
+#include "../Interfaces/IDSPProcessor.h"
 
 /**
  * Main DSP processor for the gFractor plugin.
@@ -10,26 +12,24 @@
  *
  * This class is called from PluginProcessor::processBlock() on the audio thread.
  * All memory allocations happen in prepare(), not in process().
+ *
+ * Implements IDSPProcessor interface for dependency inversion and testability.
  */
-class gFractorDSP {
+class gFractorDSP : public IDSPProcessor {
 public:
     gFractorDSP() = default;
 
     //==============================================================================
-    /** Called from PluginProcessor::prepareToPlay()
-     *  Pre-allocates all resources needed for audio processing.
-     */
-    void prepare(const juce::dsp::ProcessSpec &spec);
+    // IDSPProcessor implementation
+    void prepare(const juce::dsp::ProcessSpec &spec) override;
+    void process(juce::AudioBuffer<float> &buffer) override;
+    void reset() override;
+    void setOutputMode(ChannelMode mode) override;
 
-    /** Called from PluginProcessor::processBlock()
-     *  Processes audio in a realtime-safe manner (no allocations, no locks).
-     */
-    void process(juce::AudioBuffer<float> &buffer);
-
-    /** Called from PluginProcessor::reset()
-     *  Clears internal state (filters, delays, etc.)
-     */
-    void reset();
+    //==============================================================================
+    // IPeakLevelSource implementation
+    float getPeakPrimaryDb() const override { return peakPrimaryDb.load(std::memory_order_relaxed); }
+    float getPeakSecondaryDb() const override { return peakSecondaryDb.load(std::memory_order_relaxed); }
 
     //==============================================================================
     /** Parameter updates (called from PluginProcessor on message thread)
@@ -49,11 +49,6 @@ public:
     /** Set dry/wet mix proportion (0.0 = fully dry, 1.0 = fully wet). */
     void setDryWet(float proportion);
 
-    /** Set the output mode: 0 = M/S, 1 = L/R, 2 = Tonal/Noise.
-     *  In T/N mode the SpectralSeparator handles channel separation,
-     *  introducing kFftSize samples of latency. */
-    void setOutputMode(ChannelMode mode);
-
     /** Transient audition bell filter (UI thread sets, audio thread reads) */
     void setAuditFilter(bool active, float frequencyHz, float q);
 
@@ -61,9 +56,6 @@ public:
     void setBandFilter(bool active, float frequencyHz, float q);
 
     /** Peak level metering (realtime-safe, atomic reads) */
-    float getPeakPrimaryDb() const { return peakPrimaryDb.load(std::memory_order_relaxed); }
-    float getPeakSecondaryDb() const { return peakSecondaryDb.load(std::memory_order_relaxed); }
-
     void resetPeaks() {
         peakPrimaryDb.store(-100.0f, std::memory_order_relaxed);
         peakSecondaryDb.store(-100.0f, std::memory_order_relaxed);

@@ -1,5 +1,5 @@
 #include "StereoMeteringPanel.h"
-#include "../../DSP/DSPConstants.h"
+#include "../../DSP/Core/DSPConstants.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"

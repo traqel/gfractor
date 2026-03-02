@@ -1,5 +1,5 @@
 #include "FFTProcessor.h"
-#include "DSPConstants.h"
+#include "../Core/DSPConstants.h"
 #include <cmath>
 
 FFTProcessor::FFTProcessor() {

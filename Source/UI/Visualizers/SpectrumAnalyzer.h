@@ -17,9 +17,9 @@
 #include "../Theme/LayoutConstants.h"
 #include "../../Utility/ChannelMode.h"
 #include "../../Utility/DisplayRange.h"
-#include "../../DSP/IAudioDataSink.h"
-#include "../../DSP/FFTProcessor.h"
-#include "../../DSP/IGhostDataSink.h"
+#include "../../DSP/Interfaces/IAudioDataSink.h"
+#include "../../DSP/Analysis/FFTProcessor.h"
+#include "../../DSP/Interfaces/IGhostDataSink.h"
 
 /**
  * Primary/Secondary Spectrum Analyzer Component

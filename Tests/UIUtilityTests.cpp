@@ -16,7 +16,7 @@
 #include "Utility/DisplayRange.h"
 #include "Utility/AnalyzerSettings.h"
 #include "Utility/SpectrumAnalyzerDefaults.h"
-#include "DSP/FFTProcessor.h"
+#include "DSP/Analysis/FFTProcessor.h"
 #include "UI/Visualizers/SpectrumAnalyzer.h"
 #include "UI/Theme/ColorPalette.h"
 #include "UI/Theme/Typography.h"

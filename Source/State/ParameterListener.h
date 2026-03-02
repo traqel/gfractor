@@ -2,7 +2,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "ParameterIDs.h"
-#include "../DSP/gFractorDSP.h"
+#include "../DSP/Core/gFractorDSP.h"
 
 /**
  * ParameterListener

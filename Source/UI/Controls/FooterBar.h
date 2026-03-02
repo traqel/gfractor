@@ -8,7 +8,7 @@
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Symbols.h"
 #include "../ISpectrumControls.h"
-#include "../../DSP/IPeakLevelSource.h"
+#include "../../DSP/Interfaces/IPeakLevelSource.h"
 #include "../HintManager.h"
 
 class gFractorAudioProcessor;

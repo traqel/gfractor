@@ -3,7 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "PluginProcessor.h"
-#include "DSP/IAudioDataSink.h"
+#include "DSP/Interfaces/IAudioDataSink.h"
 #include "State/ParameterIDs.h"
 
 class PluginIntegrationTests : public juce::UnitTest {
