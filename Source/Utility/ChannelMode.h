@@ -1,5 +1,7 @@
 #pragma once
 
+#include <juce_core/juce_core.h>
+
 /**
  * Shared channel mode enum and decoder utility.
  *
@@ -14,6 +16,24 @@ inline ChannelMode channelModeFromInt(const int index) {
         case 2: return ChannelMode::TonalTransient;
         default: return ChannelMode::MidSide;
     }
+}
+
+inline int channelModeToInt(const ChannelMode mode) {
+    if (mode == ChannelMode::LR) return 1;
+    if (mode == ChannelMode::TonalTransient) return 2;
+    return 0;
+}
+
+inline juce::String channelModeToString(const ChannelMode mode) {
+    if (mode == ChannelMode::LR) return "L/R";
+    if (mode == ChannelMode::TonalTransient) return "T/N";
+    return "M/S";
+}
+
+inline juce::String channelModeToLongString(const ChannelMode mode) {
+    if (mode == ChannelMode::LR) return "Left/Right";
+    if (mode == ChannelMode::TonalTransient) return "Tonal/Transient";
+    return "Mid/Side";
 }
 
 struct ChannelDecoder {
