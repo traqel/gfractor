@@ -27,7 +27,7 @@ IGhostDataSink *SinkRegistry::getGhostDataSink() const {
     return ghostDataSink.load();
 }
 
-void SinkRegistry::prepareSinks(double sampleRate) {
+void SinkRegistry::prepareSinks(double sampleRate) const {
     const juce::SpinLock::ScopedLockType lock(sinkLock);
     for (auto *sink: audioDataSinks)
         sink->setSampleRate(sampleRate);
@@ -35,7 +35,7 @@ void SinkRegistry::prepareSinks(double sampleRate) {
 
 void SinkRegistry::pushAudioData(const juce::AudioBuffer<float> &buffer,
                                  bool hasSidechain,
-                                 bool isReferenceMode) {
+                                 bool isReferenceMode) const {
     juce::ignoreUnused(hasSidechain, isReferenceMode);
 
     const juce::SpinLock::ScopedLockType lock(sinkLock);
@@ -46,7 +46,7 @@ void SinkRegistry::pushAudioData(const juce::AudioBuffer<float> &buffer,
 void SinkRegistry::pushGhostData(const juce::AudioBuffer<float> &mainInput,
                                  const juce::AudioBuffer<float> &sidechain,
                                  bool hasSidechain,
-                                 bool isReferenceMode) {
+                                 bool isReferenceMode) const {
     const juce::SpinLock::ScopedLockType lock(sinkLock);
 
     if (auto *ghost = ghostDataSink.load(); ghost != nullptr && hasSidechain) {

@@ -17,16 +17,16 @@ public:
 
     IGhostDataSink *getGhostDataSink() const;
 
-    void prepareSinks(double sampleRate);
+    void prepareSinks(double sampleRate) const;
 
     void pushAudioData(const juce::AudioBuffer<float> &buffer,
                        bool hasSidechain,
-                       bool isReferenceMode);
+                       bool isReferenceMode) const;
 
     void pushGhostData(const juce::AudioBuffer<float> &mainInput,
                        const juce::AudioBuffer<float> &sidechain,
                        bool hasSidechain,
-                       bool isReferenceMode);
+                       bool isReferenceMode) const;
 
 private:
     juce::SpinLock sinkLock;
