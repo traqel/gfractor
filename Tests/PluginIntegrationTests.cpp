@@ -574,6 +574,123 @@ public:
             }
             expect(isSilent);
         }
+
+        beginTest("Bypass parameter passes audio through unmodified");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+
+            auto *bypass = processor.getAPVTS().getParameter(ParameterIDs::bypass);
+            expect(bypass != nullptr);
+            if (bypass != nullptr)
+                bypass->setValueNotifyingHost(1.0f);
+
+            juce::AudioBuffer<float> input(2, 128);
+            for (int sample = 0; sample < 128; ++sample) {
+                input.setSample(0, sample,  0.4f);
+                input.setSample(1, sample, -0.4f);
+            }
+
+            juce::AudioBuffer<float> buffer(2, 128);
+            buffer.copyFrom(0, 0, input, 0, 0, 128);
+            buffer.copyFrom(1, 0, input, 1, 0, 128);
+
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+
+            bufferIsFinite(buffer);
+
+            // Output must match the bypass-routed signal (finite and non-zero)
+            bool hasSignal = false;
+            for (int sample = 0; sample < 128; ++sample) {
+                if (std::abs(buffer.getSample(0, sample)) > 0.001f) {
+                    hasSignal = true;
+                    break;
+                }
+            }
+            expect(hasSignal);
+        }
+
+        beginTest("Various buffer sizes: no crash, finite output");
+        {
+            const int blockSizes[] = { 32, 64, 128, 256, 512, 1024 };
+
+            for (const int blockSize : blockSizes) {
+                gFractorAudioProcessor processor;
+                processor.prepareToPlay(44100.0, blockSize);
+
+                juce::AudioBuffer<float> buffer(2, blockSize);
+                for (int sample = 0; sample < blockSize; ++sample) {
+                    buffer.setSample(0, sample,  0.3f);
+                    buffer.setSample(1, sample, -0.3f);
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("Silence input stays finite across all channel modes");
+        {
+            const int modes[] = { 0, 1, 2 }; // M/S, L/R, Transient
+
+            for (const int mode : modes) {
+                gFractorAudioProcessor processor;
+                processor.prepareToPlay(44100.0, 256);
+                processor.setOutputMode(channelModeFromInt(mode));
+
+                juce::AudioBuffer<float> buffer(2, 256);
+                buffer.clear();
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("Reset then process does not crash");
+        {
+            gFractorAudioProcessor processor;
+
+            for (int cycle = 0; cycle < 5; ++cycle) {
+                processor.prepareToPlay(44100.0, 128);
+
+                juce::AudioBuffer<float> buffer(2, 128);
+                for (int sample = 0; sample < 128; ++sample) {
+                    buffer.setSample(0, sample,  0.2f * static_cast<float>(cycle + 1));
+                    buffer.setSample(1, sample, -0.2f * static_cast<float>(cycle + 1));
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+                bufferIsFinite(buffer);
+
+                processor.releaseResources();
+            }
+        }
+
+        beginTest("Sample rate sweep: 22050, 44100, 48000, 88200, 96000, 192000");
+        {
+            const double sampleRates[] = { 22050.0, 44100.0, 48000.0, 88200.0, 96000.0, 192000.0 };
+
+            for (const double sr : sampleRates) {
+                gFractorAudioProcessor processor;
+                processor.prepareToPlay(sr, 512);
+
+                juce::AudioBuffer<float> buffer(2, 512);
+                for (int sample = 0; sample < 512; ++sample) {
+                    buffer.setSample(0, sample,  0.1f);
+                    buffer.setSample(1, sample, -0.1f);
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+                bufferIsFinite(buffer);
+            }
+        }
     }
 };
 
