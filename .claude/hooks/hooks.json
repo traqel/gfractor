@@ -47,6 +47,18 @@
       "command": ".claude/scripts/hooks/prevent-audio-thread-allocation.sh",
       "action": "block",
       "timeout": 5000
+    },
+    {
+      "name": "warn-on-ui-thread-safety",
+      "description": "Warn if UI component methods are called from audio thread (non-message thread)",
+      "event": "PostToolUse",
+      "matcher": {
+        "tool": "Edit",
+        "path": "**/*Processor.cpp"
+      },
+      "command": ".claude/scripts/hooks/warn-on-ui-thread-safety.sh",
+      "action": "warn",
+      "timeout": 5000
     }
   ]
 }

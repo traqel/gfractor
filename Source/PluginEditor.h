@@ -12,6 +12,7 @@
 #include "UI/Panels/HelpPanel.h"
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
 #include "UI/Theme/ColorPalette.h"
+#include "UI/UIController.h"
 
 #include "UI/Controls/PerformanceDisplay.h"
 
@@ -50,6 +51,10 @@ private:
     //==============================================================================
     // Reference to the processor
     gFractorAudioProcessor &audioProcessor;
+
+    //==============================================================================
+    // UI Controller - handles timer callbacks and keyboard shortcuts (GRASP: Controller)
+    UIController uiController;
 
     //==============================================================================
     // Custom LookAndFeel — declared before all Component members so it outlives

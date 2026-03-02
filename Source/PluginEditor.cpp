@@ -171,6 +171,43 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     meteringPanel.setHintManager(hintManager);
     spectrumAnalyzer.setHintManager(hintManager);
 
+    // Wire up UIController for timer and key handling (GRASP: Controller pattern)
+    uiController.setSpectrumControls(&spectrumAnalyzer);
+    uiController.setSidechainAvailableGetter([this]() { return audioProcessor.isSidechainAvailable(); });
+    uiController.setReferenceModeSetter([this](bool on) { setReferenceMode(on); });
+    uiController.setSidechainCallback([this](bool available) {
+        footerBar.setReferenceEnabled(available);
+        spectrumAnalyzer.setSidechainAvailable(available);
+        footerBar.setReferenceState(false);
+        setReferenceMode(false);
+        controlHeld = false;
+    });
+    uiController.setPillStateGetter([this]() {
+        UIController::PillState state;
+        state.freeze = spectrumAnalyzer.isFrozen();
+        state.primary = footerBar.getPrimaryPill().getToggleState();
+        state.secondary = footerBar.getSecondaryPill().getToggleState();
+        state.reference = footerBar.getReferencePill().getToggleState();
+        state.meters = footerBar.getMetersPill().getToggleState();
+        return state;
+    });
+    uiController.setFreezeCallback([this](bool frozen) {
+        spectrumAnalyzer.setFrozen(frozen);
+        footerBar.getFreezePill().setToggleState(frozen, juce::dontSendNotification);
+    });
+    uiController.setPrimaryCallback([this]() { footerBar.getPrimaryPill().triggerClick(); });
+    uiController.setSecondaryCallback([this]() { footerBar.getSecondaryPill().triggerClick(); });
+    uiController.setReferenceCallback([this](bool on) {
+        footerBar.setReferenceState(on);
+        setReferenceMode(on);
+    });
+    uiController.setMetersCallback([this](bool visible) {
+        metersVisible = visible;
+        meteringPanel.setVisible(visible);
+        resized();
+    });
+    uiController.setPerformanceCallback([this]() { togglePerformanceDisplay(); });
+
     // Poll sidechain availability to enable/disable Reference button
     startTimerHz(5);
 }
@@ -266,7 +303,7 @@ void gFractorAudioProcessorEditor::resized() {
 
 //==============================================================================
 bool gFractorAudioProcessorEditor::keyPressed(const juce::KeyPress &key,
-                                              Component * /*originatingComponent*/) {
+                                               Component * /*originatingComponent*/) {
     if (key == juce::KeyPress::escapeKey) {
         if (preferencePanel != nullptr) {
             preferencePanel->cancel();
@@ -279,49 +316,12 @@ bool gFractorAudioProcessorEditor::keyPressed(const juce::KeyPress &key,
         }
     }
 
-    if (key == juce::KeyPress('f')) {
-        const bool nowFrozen = !spectrumAnalyzer.isFrozen();
-        spectrumAnalyzer.setFrozen(nowFrozen);
-        footerBar.getFreezePill().setToggleState(nowFrozen, juce::dontSendNotification);
-        return true;
-    }
-
-    if (key == juce::KeyPress('m')) {
-        footerBar.getPrimaryPill().triggerClick();
-        return true;
-    }
-
-    if (key == juce::KeyPress('s')) {
-        footerBar.getSecondaryPill().triggerClick();
-        return true;
-    }
-
-    if (key == juce::KeyPress('r')) {
-        footerBar.getReferencePill().triggerClick();
-        return true;
-    }
-
-    if (key == juce::KeyPress('p')) {
-        togglePerformanceDisplay();
-        return true;
-    }
-
-    return false;
+    return uiController.keyPressed(key);
 }
 
 bool gFractorAudioProcessorEditor::keyStateChanged(const bool isKeyDown,
                                                    Component * /*originatingComponent*/) {
-    const bool ctrlNow = juce::ModifierKeys::currentModifiers.isCtrlDown();
-
-    // Toggle reference mode on Control press (not release), only if sidechain present
-    if (ctrlNow && !controlHeld && audioProcessor.isSidechainAvailable()) {
-        const bool newState = !footerBar.getReferencePill().getToggleState();
-        footerBar.setReferenceState(newState);
-        setReferenceMode(newState);
-    }
-
-    controlHeld = ctrlNow;
-    return isKeyDown && ctrlNow;
+    return uiController.keyStateChanged(isKeyDown, controlHeld);
 }
 
 void gFractorAudioProcessorEditor::setReferenceMode(const bool on) {
@@ -330,17 +330,7 @@ void gFractorAudioProcessorEditor::setReferenceMode(const bool on) {
 }
 
 void gFractorAudioProcessorEditor::timerCallback() {
-    const bool available = audioProcessor.isSidechainAvailable();
-
-    // When sidechain is removed, force back to master mode
-    if (!available) {
-        footerBar.setReferenceState(false);
-        setReferenceMode(false);
-        controlHeld = false;
-    }
-
-    footerBar.setReferenceEnabled(available);
-    spectrumAnalyzer.setSidechainAvailable(available);
+    uiController.timerCallback();
 }
 
 void gFractorAudioProcessorEditor::togglePerformanceDisplay() {
