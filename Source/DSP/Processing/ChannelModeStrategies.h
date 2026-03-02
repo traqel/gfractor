@@ -89,19 +89,15 @@ public:
 
 class TonalTransientStrategy : public IChannelModeStrategy {
 public:
-    void prepare(const juce::dsp::ProcessSpec& spec) override {
-        const auto sr = static_cast<float>(spec.sampleRate);
-        fastEnvAlpha = 1.0f - std::exp(-1.0f / (sr * 0.002f));
-        slowEnvAlpha = 1.0f - std::exp(-1.0f / (sr * 0.08f));
-    }
+    void prepare(const juce::dsp::ProcessSpec&) override {}
 
     void process(juce::dsp::ProcessContextReplacing<float>& context,
                  std::atomic<bool>& primaryEnabled,
                  std::atomic<bool>& secondaryEnabled,
                  juce::SmoothedValue<float>& primaryGain,
                  juce::SmoothedValue<float>& secondaryGain,
-                 float,
-                 float,
+                 float fastEnvAlphaParam,
+                 float slowEnvAlphaParam,
                  float& envStateFast,
                  float& envStateSlow) override {
         auto& block = context.getOutputBlock();
@@ -115,8 +111,8 @@ public:
             for (size_t i = 0; i < block.getNumSamples(); ++i) {
                 const float absMono = std::abs(leftData[i] + rightData[i]) * 0.5f;
 
-                envStateFast += (absMono - envStateFast) * fastEnvAlpha;
-                envStateSlow += (absMono - envStateSlow) * slowEnvAlpha;
+                envStateFast += (absMono - envStateFast) * fastEnvAlphaParam;
+                envStateSlow += (absMono - envStateSlow) * slowEnvAlphaParam;
 
                 const float transientGain = envStateFast > 1e-9f
                                                 ? juce::jlimit(0.0f, 1.0f, (envStateFast - envStateSlow) / envStateFast)
@@ -132,12 +128,7 @@ public:
         }
     }
 
-    void reset() override {
-    }
-
-private:
-    float fastEnvAlpha = 0.02f;
-    float slowEnvAlpha = 3e-4f;
+    void reset() override {}
 };
 
 class ChannelModeStrategyFactory {
