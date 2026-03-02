@@ -6,6 +6,7 @@
 
 #include "../Utility/ChannelMode.h"
 #include "../Utility/SpectrumAnalyzerDefaults.h"
+#include "SmoothingStrategies.h"
 
 /**
  * FFTProcessor
@@ -89,15 +90,12 @@ private:
     std::vector<float> fftDataPrimary;
     std::vector<float> fftDataSecondary;
 
-    // Smoothing ranges for 1/3-octave
-    struct SmoothingRange {
-        int lo;
-        int hi;
-    };
-
     std::vector<SmoothingRange> smoothingRanges;
     mutable std::vector<float> smoothingTemp;
     mutable std::vector<float> smoothingPrefix;
+
+    // Strategy pattern for smoothing algorithms
+    std::unique_ptr<ISmoothingStrategy> smoothingStrategy;
 
     // Precomputed slope gain table (one entry per bin)
     std::vector<float> slopeGains;

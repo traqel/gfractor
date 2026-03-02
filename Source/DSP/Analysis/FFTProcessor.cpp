@@ -38,17 +38,34 @@ void FFTProcessor::setFftOrder(const int order, const float newMinDb) {
 
     precomputeSmoothingRanges();
     precomputeSlopeGains();
+    setSmoothing(smoothingMode);
 }
 
 void FFTProcessor::setSampleRate(const double sr) {
     sampleRate = sr;
-    precomputeSmoothingRanges();
+    smoothingStrategy->computeRanges(numBins, sampleRate, fftSize, smoothingRanges);
     precomputeSlopeGains();
 }
 
 void FFTProcessor::setSmoothing(const SmoothingMode mode) {
     smoothingMode = mode;
-    precomputeSmoothingRanges();
+
+    switch (mode) {
+        case SmoothingMode::None:
+            smoothingStrategy = std::make_unique<NoSmoothingStrategy>();
+            break;
+        case SmoothingMode::ThirdOctave:
+            smoothingStrategy = std::make_unique<OctaveSmoothingStrategy>(DSP::FFT::Smoothing::thirdOctave);
+            break;
+        case SmoothingMode::SixthOctave:
+            smoothingStrategy = std::make_unique<OctaveSmoothingStrategy>(DSP::FFT::Smoothing::sixthOctave);
+            break;
+        case SmoothingMode::TwelfthOctave:
+            smoothingStrategy = std::make_unique<OctaveSmoothingStrategy>(DSP::FFT::Smoothing::twelfthOctave);
+            break;
+    }
+
+    smoothingStrategy->computeRanges(numBins, sampleRate, fftSize, smoothingRanges);
 }
 
 void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vector<float> &srcR,
