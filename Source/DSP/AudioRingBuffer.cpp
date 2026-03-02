@@ -17,7 +17,7 @@ void AudioRingBuffer::push(const juce::AudioBuffer<float> &buffer) {
         return;
 
     const float *left = buffer.getReadPointer(0);
-    const float *right = (numChannels >= 2) ? buffer.getReadPointer(1) : left;
+    const float *right = numChannels >= 2 ? buffer.getReadPointer(1) : left;
 
     push(left, right, numSamples);
 }

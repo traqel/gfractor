@@ -45,7 +45,7 @@ juce::String SpectrumTooltip::freqToNote(const float f) {
     const int rounded = static_cast<int>(std::round(midi));
     const int cents = static_cast<int>(std::round((midi - static_cast<float>(rounded)) * 100.0f));
     const int octave = rounded / 12 - 1;
-    const int idx = ((rounded % 12) + 12) % 12;
+    const int idx = (rounded % 12 + 12) % 12;
 
     juce::String s = juce::String(names[idx]) + juce::String(octave);
     if (cents != 0)
@@ -100,7 +100,7 @@ void SpectrumTooltip::paintTooltip(juce::Graphics &g, const juce::Rectangle<floa
     }
 
     // Format readout strings
-    const juce::String freqStr = (freq >= 1000.0f)
+    const juce::String freqStr = freq >= 1000.0f
                                      ? juce::String(freq / 1000.0f, 2) + " kHz"
                                      : juce::String(static_cast<int>(freq)) + " Hz";
     const juce::String dbStr = juce::String(db, 1) + " dB";

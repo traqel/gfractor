@@ -431,7 +431,7 @@ private:
 
         // Fill with broadband noise-like signal (alternating values)
         for (int sample = 0; sample < 512; ++sample) {
-            const float val = (sample % 2 == 0) ? 0.5f : -0.5f;
+            const float val = sample % 2 == 0 ? 0.5f : -0.5f;
             buffer.setSample(0, sample, val);
             buffer.setSample(1, sample, val);
         }
@@ -442,7 +442,7 @@ private:
 
             juce::AudioBuffer<float> testBuffer(2, 512);
             for (int sample = 0; sample < 512; ++sample) {
-                const float val = (sample % 2 == 0) ? 0.5f : -0.5f;
+                const float val = sample % 2 == 0 ? 0.5f : -0.5f;
                 testBuffer.setSample(0, sample, val);
                 testBuffer.setSample(1, sample, val);
             }
@@ -460,7 +460,7 @@ private:
 
             juce::AudioBuffer<float> testBuffer(2, 512);
             for (int sample = 0; sample < 512; ++sample) {
-                const float val = (sample % 2 == 0) ? 0.5f : -0.5f;
+                const float val = sample % 2 == 0 ? 0.5f : -0.5f;
                 testBuffer.setSample(0, sample, val);
                 testBuffer.setSample(1, sample, val);
             }
@@ -468,7 +468,7 @@ private:
             // Process multiple blocks to let filter settle
             for (int i = 0; i < 10; ++i) {
                 for (int sample = 0; sample < 512; ++sample) {
-                    const float val = (sample % 2 == 0) ? 0.5f : -0.5f;
+                    const float val = sample % 2 == 0 ? 0.5f : -0.5f;
                     testBuffer.setSample(0, sample, val);
                     testBuffer.setSample(1, sample, val);
                 }
@@ -659,14 +659,13 @@ private:
     void testZeroSampleRate() {
         beginTest("Zero Sample Rate");
 
-        gFractorDSP dsp;
-
         // Edge case: zero sample rate (shouldn't crash)
-        constexpr juce::dsp::ProcessSpec zeroSpec{0.0, 512, 2};
 
         // This may cause issues in DSP, test that it doesn't crash
         // Actual behavior depends on JUCE's DSP module handling
         try {
+            constexpr juce::dsp::ProcessSpec zeroSpec{0.0, 512, 2};
+            gFractorDSP dsp;
             dsp.prepare(zeroSpec);
             juce::AudioBuffer<float> buffer(2, 512);
             fillBufferWithValue(buffer, 0.5f);
@@ -787,8 +786,8 @@ private:
         {
             dsp.reset();
             for (int s = 0; s < 512; ++s) {
-                buffer.setSample(0, s, (s % 2 == 0) ? 0.5f : std::nanf(""));
-                buffer.setSample(1, s, (s % 3 == 0) ? std::numeric_limits<float>::infinity() : 0.3f);
+                buffer.setSample(0, s, s % 2 == 0 ? 0.5f : std::nanf(""));
+                buffer.setSample(1, s, s % 3 == 0 ? std::numeric_limits<float>::infinity() : 0.3f);
             }
 
             dsp.process(buffer);
@@ -826,7 +825,7 @@ private:
         for (int block = 0; block < 50; ++block) {
             fillBufferWithValue(buffer, 0.5f);
 
-            dsp.setOutputMode((block % 2 == 0) ? channelModeFromInt(0) : channelModeFromInt(1));
+            dsp.setOutputMode(block % 2 == 0 ? channelModeFromInt(0) : channelModeFromInt(1));
             dsp.setPrimaryEnabled(block % 3 == 0);
             dsp.setSecondaryEnabled(block % 4 == 0);
 
@@ -992,7 +991,7 @@ private:
                 }
             }
 
-            return std::pair<float, bool>{maxAbs, allFinite};
+            return std::pair{maxAbs, allFinite};
         };
 
         const auto [max441, finite441] = runAtSampleRate(44100.0, 512);

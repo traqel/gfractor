@@ -88,8 +88,8 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
             const float mag = fftDataPrimary[static_cast<size_t>(bin)];
             auto &tonal = tonalAccum[static_cast<size_t>(bin)];
             tonal = tonal * kTonalDecay + mag * (1.0f - kTonalDecay);
-            fftDataPrimary[static_cast<size_t>(bin)]   = juce::jmax(0.0f, mag - tonal); // transient
-            fftDataSecondary[static_cast<size_t>(bin)] = tonal;                         // tonal
+            fftDataPrimary[static_cast<size_t>(bin)] = juce::jmax(0.0f, mag - tonal); // transient
+            fftDataSecondary[static_cast<size_t>(bin)] = tonal; // tonal
         }
     }
 
@@ -104,8 +104,12 @@ void FFTProcessor::processBlock(const std::vector<float> &srcL, const std::vecto
         auto &smPrimary = outPrimaryDb[static_cast<size_t>(bin)];
         auto &smSecondary = outSecondaryDb[static_cast<size_t>(bin)];
 
-        smPrimary = (primaryDbVal > smPrimary) ? primaryDbVal : smPrimary * temporalDecay + primaryDbVal * (1.0f - temporalDecay);
-        smSecondary = (secondaryDbVal > smSecondary) ? secondaryDbVal : smSecondary * temporalDecay + secondaryDbVal * (1.0f - temporalDecay);
+        smPrimary = primaryDbVal > smPrimary
+                        ? primaryDbVal
+                        : smPrimary * temporalDecay + primaryDbVal * (1.0f - temporalDecay);
+        smSecondary = secondaryDbVal > smSecondary
+                          ? secondaryDbVal
+                          : smSecondary * temporalDecay + secondaryDbVal * (1.0f - temporalDecay);
     }
 
     if (smoothingMode != SmoothingMode::None) {

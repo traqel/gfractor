@@ -64,7 +64,7 @@ public:
 
     private:
         friend class HintManager;
-        HintHandle(HintManager* m, int i) : manager(m), id(i) {}
+        HintHandle(HintManager* m, const int i) : manager(m), id(i) {}
         HintManager* manager = nullptr;
         int id = -1;
     };
@@ -75,7 +75,7 @@ public:
     // CALL ON MESSAGE THREAD ONLY.
     [[nodiscard]] HintHandle setHint(const juce::String& title,
                                      const juce::String& hint,
-                                     Priority p = Hover) {
+                                     const Priority p = Hover) {
         jassert(juce::MessageManager::getInstance()->isThisTheMessageThread());
         const int newId = nextId++;
         entries.push_back({ newId, p, { title, hint } });
@@ -100,7 +100,7 @@ public:
         juce::MessageManager::callAsync([this, title, hint, durationMs, alive] {
             if (!alive->load()) return;
             auto handle = std::make_shared<HintHandle>(setHint(title, hint, Urgent));
-            const auto aliveRef = alive;
+            const auto& aliveRef = alive;
             juce::Timer::callAfterDelay(durationMs, [h = std::move(handle), aliveRef]() mutable {
                 if (!aliveRef->load()) return;
                 h.reset();

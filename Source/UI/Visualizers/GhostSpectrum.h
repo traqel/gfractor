@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "../../DSP/AudioRingBuffer.h"
-#include "../../Utility/ChannelMode.h"
 
 /**
  * Ghost spectrum — secondary FFT pipeline for visual comparison.

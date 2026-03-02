@@ -14,7 +14,7 @@
  */
 class AudioRingBuffer {
 public:
-    AudioRingBuffer(int fifoCapacity, int rollingSize);
+    AudioRingBuffer(int fifoCapacity, int rollingBufferSize);
 
     /** Push stereo data from the audio thread (lock-free). */
     void push(const juce::AudioBuffer<float> &buffer);

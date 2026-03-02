@@ -95,7 +95,7 @@ These require new DSP implementation but are directly inspired by the book conce
 
 ### 4.1 Mid/Side Per-Band Dynamics (Frequency-Specific M/S Control)
 **Book concept:** Frequency-specific sidechain — unmasking by ducking only the frequency band where the masking occurs, not the full signal.
-**Feature:** Add per-octave-band gain trim controls overlaid on the Width/Octave panel — effectively a 10-band M/S EQ. Each band has independent Mid gain and Side gain sliders (±12 dB). No dynamics, just static per-band M/S EQ. This is a small step from the existing architecture and a huge workflow win.
+**Feature:** Add per-octave-band gain trim controls overlaid on the Width/Octave panel — effectively a 10-band M/S EQ. Each band has independent Mid-gain and Side gain sliders (±12 dB). No dynamics, just static per-band M/S EQ. This is a small step from the existing architecture and a huge workflow win.
 
 ### 4.2 Tonal/Noise Split Display
 **Book concept:** Separating pitched/tonal components from noise components of a signal allows frequency-shaping each independently.

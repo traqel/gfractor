@@ -52,7 +52,7 @@ private:
     void testDisplayRangeFrequencyToX() {
         beginTest("DisplayRange::frequencyToX");
 
-        DisplayRange range;
+        const DisplayRange range;
         constexpr float width = 1000.0f;
 
         // Min frequency should map to x=0
@@ -82,7 +82,7 @@ private:
     void testDisplayRangeXToFrequency() {
         beginTest("DisplayRange::xToFrequency");
 
-        DisplayRange range;
+        const DisplayRange range;
         constexpr float width = 1000.0f;
 
         // x=0 should map to min frequency
@@ -101,13 +101,14 @@ private:
     void testDisplayRangeFrequencyRoundTrip() {
         beginTest("DisplayRange Frequency Round-Trip");
 
-        DisplayRange range;
-        constexpr float width = 800.0f;
-
         // Round-trip: freq -> x -> freq should give back original
-        const float testFreqs[] = {20.0f, 50.0f, 100.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 5000.0f, 10000.0f, 20000.0f};
+        constexpr float testFreqs[] = {
+            20.0f, 50.0f, 100.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 5000.0f, 10000.0f, 20000.0f
+        };
 
         for (const float freq: testFreqs) {
+            constexpr float width = 800.0f;
+            const DisplayRange range;
             const float x = range.frequencyToX(freq, width);
             const float roundTrip = range.xToFrequency(x, width);
             expectWithinAbsoluteError(roundTrip, freq, freq * 0.01f, // 1% tolerance
@@ -119,7 +120,7 @@ private:
     void testDisplayRangeDbToY() {
         beginTest("DisplayRange::dbToY");
 
-        DisplayRange range;
+        const DisplayRange range;
         constexpr float height = 500.0f;
 
         // minDb should map to y=height (bottom)
@@ -145,7 +146,7 @@ private:
     void testDisplayRangeYToDb() {
         beginTest("DisplayRange::yToDb");
 
-        DisplayRange range;
+        const DisplayRange range;
         constexpr float height = 500.0f;
 
         // y=height should map to minDb
@@ -164,13 +165,12 @@ private:
     void testDisplayRangeDbRoundTrip() {
         beginTest("DisplayRange dB Round-Trip");
 
-        DisplayRange range;
-        constexpr float height = 400.0f;
-
         // Round-trip: dB -> y -> dB
-        const float testDbs[] = {-70.0f, -60.0f, -40.0f, -20.0f, -10.0f, -3.0f, 0.0f, 3.0f};
+        constexpr float testDbs[] = {-70.0f, -60.0f, -40.0f, -20.0f, -10.0f, -3.0f, 0.0f, 3.0f};
 
         for (const float db: testDbs) {
+            constexpr float height = 400.0f;
+            const DisplayRange range;
             const float y = range.dbToY(db, height);
             const float roundTrip = range.yToDb(y, height);
             expectWithinAbsoluteError(roundTrip, db, 0.1f,
@@ -182,7 +182,7 @@ private:
     void testDisplayRangeEdgeCases() {
         beginTest("DisplayRange Edge Cases");
 
-        DisplayRange range;
+        const DisplayRange range;
 
         // Zero frequency should return 0 (guarded)
         expectEquals(range.frequencyToX(0.0f, 1000.0f), 0.0f);
@@ -255,7 +255,7 @@ private:
 
         const int fftSize = fft.getFftSize();
         const int numBins = fft.getNumBins();
-        const double sampleRate = 44100.0;
+        constexpr double sampleRate = 44100.0;
 
         // Bin center frequency = binIndex * sampleRate / fftSize
         // Bin 1 should be ~5.38 Hz
@@ -267,7 +267,8 @@ private:
         expectWithinAbsoluteError(bin100Freq, 538.0f, 1.0f);
 
         // Nyquist bin (numBins - 1) should be sampleRate / 2
-        const float nyquistBin = static_cast<float>(numBins - 1) * static_cast<float>(sampleRate) / static_cast<float>(fftSize);
+        const float nyquistBin = static_cast<float>(numBins - 1) * static_cast<float>(sampleRate) / static_cast<float>(
+                                     fftSize);
         expectWithinAbsoluteError(nyquistBin, static_cast<float>(sampleRate) / 2.0f, 10.0f);
 
         // Verify numBins calculation
@@ -345,8 +346,8 @@ private:
 
         // Identical signals should have correlation = 1.0
         {
-            std::vector<float> L = {0.5f, 0.3f, -0.2f, 0.8f};
-            std::vector<float> R = {0.5f, 0.3f, -0.2f, 0.8f};
+            const std::vector L = {0.5f, 0.3f, -0.2f, 0.8f};
+            const std::vector R = {0.5f, 0.3f, -0.2f, 0.8f};
 
             const float corr = computeCorrelation(L, R);
             expectWithinAbsoluteError(corr, 1.0f, 0.001f);
@@ -354,8 +355,8 @@ private:
 
         // Opposite signals should have correlation = -1.0
         {
-            std::vector<float> L = {0.5f, 0.3f, -0.2f, 0.8f};
-            std::vector<float> R = {-0.5f, -0.3f, 0.2f, -0.8f};
+            const std::vector L = {0.5f, 0.3f, -0.2f, 0.8f};
+            const std::vector R = {-0.5f, -0.3f, 0.2f, -0.8f};
 
             const float corr = computeCorrelation(L, R);
             expectWithinAbsoluteError(corr, -1.0f, 0.001f);
@@ -363,8 +364,8 @@ private:
 
         // Uncorrelated signals should have correlation near 0
         {
-            std::vector<float> L = {1.0f, 0.0f, 1.0f, 0.0f};
-            std::vector<float> R = {0.0f, 1.0f, 0.0f, 1.0f};
+            const std::vector L = {1.0f, 0.0f, 1.0f, 0.0f};
+            const std::vector R = {0.0f, 1.0f, 0.0f, 1.0f};
 
             const float corr = computeCorrelation(L, R);
             expectWithinAbsoluteError(corr, 0.0f, 0.1f);
@@ -372,8 +373,8 @@ private:
 
         // Partially correlated
         {
-            std::vector<float> L = {1.0f, 0.5f, 0.0f, -0.5f};
-            std::vector<float> R = {0.8f, 0.4f, 0.1f, -0.3f};
+            const std::vector L = {1.0f, 0.5f, 0.0f, -0.5f};
+            const std::vector R = {0.8f, 0.4f, 0.1f, -0.3f};
 
             const float corr = computeCorrelation(L, R);
             expectGreaterThan(corr, 0.9f); // Strong positive correlation
@@ -381,8 +382,8 @@ private:
 
         // Silence should return 0 (denominator near zero)
         {
-            std::vector<float> L(100, 0.0f);
-            std::vector<float> R(100, 0.0f);
+            const std::vector L(100, 0.0f);
+            const std::vector R(100, 0.0f);
 
             const float corr = computeCorrelation(L, R);
             expectWithinAbsoluteError(corr, 0.0f, 0.001f);
@@ -431,47 +432,47 @@ private:
         // Hi-Mid: 2000-6000Hz, High: 6000-12000Hz, Air: 12000-20000Hz
 
         // Test Sub band boundaries
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20.0f), 0);  // Start of Sub
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(50.0f), 0);  // Middle of Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20.0f), 0); // Start of Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(50.0f), 0); // Middle of Sub
         expectEquals(SpectrumAnalyzer::findBandAtFrequency(79.99f), 0); // End of Sub
 
         // Test Low band
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(80.0f), 1);   // Start of Low
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(80.0f), 1); // Start of Low
         expectEquals(SpectrumAnalyzer::findBandAtFrequency(200.0f), 1); // Middle of Low
         expectEquals(SpectrumAnalyzer::findBandAtFrequency(299.99f), 1); // End of Low
 
         // Test Low-Mid band
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(300.0f), 2);  // Start of Low-Mid
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(450.0f), 2);   // Middle of Low-Mid
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(599.99f), 2);  // End of Low-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(300.0f), 2); // Start of Low-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(450.0f), 2); // Middle of Low-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(599.99f), 2); // End of Low-Mid
 
         // Test Mid band
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(600.0f), 3);   // Start of Mid
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(1000.0f), 3);  // Middle of Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(600.0f), 3); // Start of Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(1000.0f), 3); // Middle of Mid
         expectEquals(SpectrumAnalyzer::findBandAtFrequency(1999.99f), 3); // End of Mid
 
         // Test Hi-Mid band
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(2000.0f), 4);  // Start of Hi-Mid
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(4000.0f), 4);  // Middle of Hi-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(2000.0f), 4); // Start of Hi-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(4000.0f), 4); // Middle of Hi-Mid
         expectEquals(SpectrumAnalyzer::findBandAtFrequency(5999.99f), 4); // End of Hi-Mid
 
         // Test High band
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(6000.0f), 5);   // Start of High
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(9000.0f), 5);   // Middle of High
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(6000.0f), 5); // Start of High
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(9000.0f), 5); // Middle of High
         expectEquals(SpectrumAnalyzer::findBandAtFrequency(11999.99f), 5); // End of High
 
         // Test Air band
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(12000.0f), 6);  // Start of Air
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(16000.0f), 6);   // Middle of Air
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(19999.99f), 6);  // End of Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(12000.0f), 6); // Start of Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(16000.0f), 6); // Middle of Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(19999.99f), 6); // End of Air
         // Exactly at max returns -1 (upper bound is exclusive to avoid overlap)
         expectEquals(SpectrumAnalyzer::findBandAtFrequency(20000.0f), -1);
 
         // Test out of range frequencies (should return -1)
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(19.99f), -1);   // Below Sub
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20001.0f), -1);  // Above Air
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(0.0f), -1);      // Zero
-        expectEquals(SpectrumAnalyzer::findBandAtFrequency(-100.0f), -1);   // Negative
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(19.99f), -1); // Below Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20001.0f), -1); // Above Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(0.0f), -1); // Zero
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(-100.0f), -1); // Negative
     }
 
     //==============================================================================
@@ -485,7 +486,7 @@ private:
             const auto info = SpectrumAnalyzer::getBandInfo(0);
             expectEquals(info.lo, 20.0f);
             expectEquals(info.hi, 80.0f);
-            expectWithinAbsoluteError(info.centerFreq, 50.0f, 0.1f);  // (20+80)/2 = 50
+            expectWithinAbsoluteError(info.centerFreq, 50.0f, 0.1f); // (20+80)/2 = 50
             expectWithinAbsoluteError(info.q, 50.0f / 60.0f, 0.01f); // center/width = 50/60
         }
 
@@ -494,7 +495,7 @@ private:
             const auto info = SpectrumAnalyzer::getBandInfo(1);
             expectEquals(info.lo, 80.0f);
             expectEquals(info.hi, 300.0f);
-            expectWithinAbsoluteError(info.centerFreq, 190.0f, 0.1f);  // (80+300)/2 = 190
+            expectWithinAbsoluteError(info.centerFreq, 190.0f, 0.1f); // (80+300)/2 = 190
             expectWithinAbsoluteError(info.q, 190.0f / 220.0f, 0.01f); // center/width = 190/220
         }
 
@@ -507,7 +508,7 @@ private:
             expectWithinAbsoluteError(info.q, 450.0f / 300.0f, 0.01f);
         }
 
-        // Mid band (600-2000Hz)
+        // Mid-band (600-2000Hz)
         {
             const auto info = SpectrumAnalyzer::getBandInfo(3);
             expectEquals(info.lo, 600.0f);
@@ -670,7 +671,7 @@ private:
         options.filenameSuffix = ".settings";
         options.osxLibrarySubFolder = "Application Support";
 
-        juce::PropertiesFile props(options);
+        const juce::PropertiesFile props(options);
         return props.getFile();
     }
 };

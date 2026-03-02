@@ -38,7 +38,7 @@ bool PeakHold::accumulate(const std::vector<float> &primaryDb, const std::vector
         const auto b = static_cast<size_t>(bin);
         const float nextMid = std::max(peakPrimaryDb[b], primaryDb[b]);
         const float nextSide = std::max(peakSecondaryDb[b], secondaryDb[b]);
-        changed = changed || (nextMid > peakPrimaryDb[b]) || (nextSide > peakSecondaryDb[b]);
+        changed = changed || nextMid > peakPrimaryDb[b] || nextSide > peakSecondaryDb[b];
         peakPrimaryDb[b] = nextMid;
         peakSecondaryDb[b] = nextSide;
     }
@@ -52,7 +52,7 @@ bool PeakHold::accumulateGhost(const std::vector<float> &primaryDb, const std::v
         const auto b = static_cast<size_t>(bin);
         const float nextPrimary = std::max(peakGhostPrimaryDb[b], primaryDb[b]);
         const float nextSecondary = std::max(peakGhostSecondaryDb[b], secondaryDb[b]);
-        changed = changed || (nextPrimary > peakGhostPrimaryDb[b]) || (nextSecondary > peakGhostSecondaryDb[b]);
+        changed = changed || nextPrimary > peakGhostPrimaryDb[b] || nextSecondary > peakGhostSecondaryDb[b];
         peakGhostPrimaryDb[b] = nextPrimary;
         peakGhostSecondaryDb[b] = nextSecondary;
     }
@@ -102,10 +102,10 @@ void PeakHold::paint(const juce::Graphics &g, const juce::Rectangle<float> &spec
     const int ih = static_cast<int>(spectrumArea.getHeight());
 
     // Rebuild images when paths changed or when colors / area changed.
-    const bool areaChanged    = (spectrumArea != lastSpectrumArea);
-    const bool coloursChanged = (effMidCol != lastEffPrimaryCol || effSideCol != lastEffSecondaryCol
-                              || effGhostMidCol != lastEffGhostPrimaryCol
-                              || effGhostSideCol != lastEffGhostSecondaryCol);
+    const bool areaChanged    = spectrumArea != lastSpectrumArea;
+    const bool coloursChanged = effMidCol != lastEffPrimaryCol || effSideCol != lastEffSecondaryCol
+                                || effGhostMidCol != lastEffGhostPrimaryCol
+                                || effGhostSideCol != lastEffGhostSecondaryCol;
     if (areaChanged || coloursChanged) {
         pathsDirty       = true;
         ghostPathsDirty  = true;

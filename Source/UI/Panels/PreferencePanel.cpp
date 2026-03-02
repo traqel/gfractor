@@ -38,7 +38,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     minDbSlider.setValue(settings.getMinDb(), juce::dontSendNotification);
     minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minDbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    minDbSlider.onValueChange = [this]() {
+    minDbSlider.onValueChange = [this] {
         settingsRef.setDbRange(static_cast<float>(minDbSlider.getValue()),
                                static_cast<float>(maxDbSlider.getValue()));
     };
@@ -48,7 +48,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     maxDbSlider.setValue(settings.getMaxDb(), juce::dontSendNotification);
     maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxDbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    maxDbSlider.onValueChange = [this]() {
+    maxDbSlider.onValueChange = [this] {
         settingsRef.setDbRange(static_cast<float>(minDbSlider.getValue()),
                                static_cast<float>(maxDbSlider.getValue()));
     };
@@ -68,7 +68,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minFreqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     minFreqSlider.setTextValueSuffix(" Hz");
-    minFreqSlider.onValueChange = [this]() {
+    minFreqSlider.onValueChange = [this] {
         settingsRef.setFreqRange(static_cast<float>(minFreqSlider.getValue()),
                                  static_cast<float>(maxFreqSlider.getValue()));
     };
@@ -79,7 +79,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxFreqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     maxFreqSlider.setTextValueSuffix(" Hz");
-    maxFreqSlider.onValueChange = [this]() {
+    maxFreqSlider.onValueChange = [this] {
         settingsRef.setFreqRange(static_cast<float>(minFreqSlider.getValue()),
                                  static_cast<float>(maxFreqSlider.getValue()));
     };
@@ -125,7 +125,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     fftOrderCombo.addItem("16384", 5);
     fftOrderCombo.setSelectedId(fftOrderToId(settings.getFftOrder()),
                                 juce::dontSendNotification);
-    fftOrderCombo.onChange = [this]() {
+    fftOrderCombo.onChange = [this] {
         settingsRef.setFftOrder(idToFftOrder(fftOrderCombo.getSelectedId()));
     };
 
@@ -140,7 +140,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     overlapCombo.addItem("8x (87.5%)", 3);
     overlapCombo.setSelectedId(overlapFactorToId(settings.getOverlapFactor()),
                                juce::dontSendNotification);
-    overlapCombo.onChange = [this]() {
+    overlapCombo.onChange = [this] {
         settingsRef.setOverlapFactor(idToOverlapFactor(overlapCombo.getSelectedId()));
     };
 
@@ -156,7 +156,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     smoothingCombo.addItem("1/12 Oct", 4);
     smoothingCombo.setSelectedId(smoothingModeToId(settings.getSmoothing()),
                                  juce::dontSendNotification);
-    smoothingCombo.onChange = [this]() {
+    smoothingCombo.onChange = [this] {
         settingsRef.setSmoothing(idToSmoothingMode(smoothingCombo.getSelectedId()));
     };
 
@@ -172,7 +172,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     decaySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
     decaySlider.setSliderStyle(juce::Slider::LinearHorizontal);
     decaySlider.setNumDecimalPlacesToDisplay(3);
-    decaySlider.onValueChange = [this]() {
+    decaySlider.onValueChange = [this] {
         settingsRef.setCurveDecay(static_cast<float>(decaySlider.getValue()));
     };
 
@@ -187,7 +187,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
     slopeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     slopeSlider.setTextValueSuffix(" dB");
-    slopeSlider.onValueChange = [this]() {
+    slopeSlider.onValueChange = [this] {
         settingsRef.setSlope(static_cast<float>(slopeSlider.getValue()));
     };
 
@@ -215,7 +215,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     themeCombo.addItem("Light", 2);
     themeCombo.addItem("Balanced", 3);
     themeCombo.setSelectedId(themeToId(ColorPalette::getTheme()), juce::dontSendNotification);
-    themeCombo.onChange = [this]() {
+    themeCombo.onChange = [this] {
         ColorPalette::setTheme(idToTheme(themeCombo.getSelectedId()));
         if (onThemeChanged)
             onThemeChanged();
@@ -227,7 +227,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
 
     // --- Band hints toggle ---
     bandHintsToggle.setToggleState(bandHintsOn, juce::dontSendNotification);
-    bandHintsToggle.onClick = [this]() {
+    bandHintsToggle.onClick = [this] {
         if (onBandHintsChanged)
             onBandHintsChanged(bandHintsToggle.getToggleState());
     };
@@ -239,7 +239,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
 
     // --- Save button ---
     addAndMakeVisible(saveButton);
-    saveButton.onClick = [this]() {
+    saveButton.onClick = [this] {
         AnalyzerSettings::save(settingsRef);
         AnalyzerSettings::saveTheme(ColorPalette::getTheme());
         AnalyzerSettings::saveBandHints(bandHintsToggle.getToggleState());
@@ -248,11 +248,11 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
 
     // --- Cancel button ---
     addAndMakeVisible(cancelButton);
-    cancelButton.onClick = [this]() { cancel(); };
+    cancelButton.onClick = [this] { cancel(); };
 
     // --- Reset to defaults button ---
     addAndMakeVisible(resetButton);
-    resetButton.onClick = [this]() { resetToDefaults(); };
+    resetButton.onClick = [this] { resetToDefaults(); };
 
     const auto panelFont = Typography::makeFont(Typography::mainFontSize);
     const auto applyLabelFont = [&](juce::Label &label) {

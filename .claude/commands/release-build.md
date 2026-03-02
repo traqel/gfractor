@@ -358,7 +358,7 @@ The release build process follows a strict sequence to ensure quality and proper
 17. **Final Verification**
     - Download artifacts from distribution server
     - Verify checksums match
-    - Test install on clean machine (macOS and Windows)
+    - Test installation on clean machine (macOS and Windows)
     - Confirm plugins load in DAWs
 
 ## Output

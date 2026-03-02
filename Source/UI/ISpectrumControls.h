@@ -11,11 +11,11 @@ struct ISpectrumControls {
 
     virtual void setFrozen(bool freeze) = 0;
 
-    virtual bool isFrozen() const = 0;
+    [[nodiscard]] virtual bool isFrozen() const = 0;
 
     virtual void setInfinitePeak(bool enabled) = 0;
 
-    virtual bool isInfinitePeakEnabled() const = 0;
+    [[nodiscard]] virtual bool isInfinitePeakEnabled() const = 0;
 
     virtual void setChannelMode(int mode) = 0;
 

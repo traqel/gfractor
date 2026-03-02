@@ -20,9 +20,9 @@ class PreferencePanel : public juce::Component {
 public:
     PreferencePanel(ISpectrumDisplaySettings &settings,
                     juce::AudioProcessorValueTreeState &apvts,
-                    std::function<void()> onThemeChanged = {},
+                    std::function<void()> themeChangedCallback = {},
                     bool bandHintsOn = true,
-                    std::function<void(bool)> onBandHintsChanged = {});
+                    std::function<void(bool)> bandHintsChangedCallback = {});
 
     void paint(juce::Graphics &g) override;
 

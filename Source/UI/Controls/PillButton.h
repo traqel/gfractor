@@ -45,7 +45,7 @@ protected:
         const auto bounds = getLocalBounds().toFloat().reduced(0.5f);
         const bool on = getToggleState();
 
-        const auto drawButtonLabel = [&](juce::Colour textColour) {
+        const auto drawButtonLabel = [&](const juce::Colour textColour) {
             const auto font = Typography::makeBoldFont(buttonFontSize);
             const auto text = getButtonText();
 

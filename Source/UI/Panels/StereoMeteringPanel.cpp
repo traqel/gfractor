@@ -161,7 +161,7 @@ void StereoMeteringPanel::computeWidthPerOctave() {
 
     const float binHz = static_cast<float>(sampleRate) / static_cast<float>(kFftSize);
     using namespace DSP::Correlation;
-    const int numBins = kFftSize / 2 + 1;
+    constexpr int numBins = kFftSize / 2 + 1;
 
     for (size_t b = 0; b < static_cast<size_t>(kNumBands); ++b) {
         const float fc = kBandCenters[b];
@@ -247,10 +247,10 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.drawText("M", gonioDrawArea.withHeight(18).translated(0, -6),
                juce::Justification::centred);
-    g.drawText("L", juce::Rectangle<int>(gonioDrawArea.getX() - 6,
+    g.drawText("L", juce::Rectangle(gonioDrawArea.getX() - 6,
                                          static_cast<int>(cy) - 9, 18, 18),
                juce::Justification::centred);
-    g.drawText("R", juce::Rectangle<int>(gonioDrawArea.getRight() - 12,
+    g.drawText("R", juce::Rectangle(gonioDrawArea.getRight() - 12,
                                          static_cast<int>(cy) - 9, 18, 18),
                juce::Justification::centred);
     g.drawText("S", gonioDrawArea.withTrimmedTop(gonioDrawArea.getHeight() - 18),
@@ -305,7 +305,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
 
         // 1 px signal-level line
         g.setColour(fillCol);
-        g.fillRect(juce::Rectangle<float>(sigX - 0.5f, barTop, 1.0f, barH));
+        g.fillRect(juce::Rectangle(sigX - 0.5f, barTop, 1.0f, barH));
     }
 
     // Centre tick
@@ -352,8 +352,8 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
         "31", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"
     };
 
-    const juce::Colour lo = juce::Colour(ColorPalette::primaryGreen);
-    const juce::Colour hi = juce::Colour(ColorPalette::secondaryAmber);
+    const auto lo = juce::Colour(ColorPalette::primaryGreen);
+    const auto hi = juce::Colour(ColorPalette::secondaryAmber);
 
     g.setFont(Typography::makeFont(Typography::mainFontSize));
 
@@ -364,7 +364,7 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
         const juce::Colour barCol = lo.interpolatedWith(hi, w);
 
         // Bar background
-        const juce::Rectangle<float> trackRect(x + 1.0f,
+        const juce::Rectangle trackRect(x + 1.0f,
                                                static_cast<float>(barArea.getY()),
                                                barW - 2.0f,
                                                static_cast<float>(barH));
@@ -372,10 +372,10 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
         drawLevelBar(g, trackRect, w, barCol, juce::Colour(ColorPalette::spectrumBg));
 
         // Frequency label
-        if ((b % 2) == 0) {
+        if (b % 2 == 0) {
             g.setColour(juce::Colour(ColorPalette::textMuted));
             g.drawText(kFreqLabels[b],
-                       juce::Rectangle<float>(x, static_cast<float>(freqRow.getY()),
+                       juce::Rectangle(x, static_cast<float>(freqRow.getY()),
                                               barW * 2.0f, static_cast<float>(freqH)),
                        juce::Justification::centred);
         }

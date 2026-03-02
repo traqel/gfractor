@@ -10,8 +10,8 @@
 #endif
 
 namespace Typography {
-    inline constexpr const char *fontFamily = "JetBrains Mono";
-    inline constexpr const char *embeddedRegularFont = "JetBrainsMono-Regular.ttf";
+    inline constexpr auto fontFamily = "JetBrains Mono";
+    inline constexpr auto embeddedRegularFont = "JetBrainsMono-Regular.ttf";
     inline constexpr float mainFontSize = 14.0f;
     inline constexpr float smallFontSize = 12.0f;
 

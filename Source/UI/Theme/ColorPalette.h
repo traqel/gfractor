@@ -33,7 +33,7 @@ namespace ColorPalette {
         std::uint32_t hintPink;
     };
 
-    inline constexpr ThemeSpec darkTheme {
+    inline constexpr ThemeSpec darkTheme{
         0xff0D0F0D,
         0xff111411,
         0xff0A0C0A,
@@ -56,7 +56,7 @@ namespace ColorPalette {
         0xb3ffb6c1
     };
 
-    inline constexpr ThemeSpec lightTheme {
+    inline constexpr ThemeSpec lightTheme{
         0xffF2F5F2,
         0xffFFFFFF,
         0xffE7ECE7,
@@ -79,7 +79,7 @@ namespace ColorPalette {
         0xb3d47896
     };
 
-    inline constexpr ThemeSpec balancedTheme {
+    inline constexpr ThemeSpec balancedTheme{
         0xff1A1D22,
         0xff20252C,
         0xff161A1F,
@@ -102,7 +102,7 @@ namespace ColorPalette {
         0xb3ffb3c7
     };
 
-    inline constexpr const ThemeSpec& getThemeSpec(const Theme theme) {
+    constexpr const ThemeSpec &getThemeSpec(const Theme theme) {
         switch (theme) {
             case Theme::Dark: return darkTheme;
             case Theme::Light: return lightTheme;
@@ -123,7 +123,7 @@ namespace ColorPalette {
     // callbacks. Never call setTheme() from the audio thread.
     // -------------------------------------------------------------------------
 
-    inline Theme currentTheme = Theme::Balanced;
+    inline auto currentTheme = Theme::Balanced;
 
     inline std::uint32_t background = balancedTheme.background;
     inline std::uint32_t panel = balancedTheme.panel;
@@ -154,7 +154,7 @@ namespace ColorPalette {
 
     inline void setTheme(const Theme theme) {
         currentTheme = theme;
-        const auto& spec = getThemeSpec(theme);
+        const auto &spec = getThemeSpec(theme);
 
         background = spec.background;
         panel = spec.panel;
@@ -188,13 +188,12 @@ namespace ColorPalette {
         return currentTheme;
     }
 
-    inline const char* getThemeName(const Theme theme) {
+    inline const char *getThemeName(const Theme theme) {
         switch (theme) {
             case Theme::Dark: return "Dark";
             case Theme::Light: return "Light";
             case Theme::Balanced: return "Balanced";
         }
         assert(false && "unhandled Theme enum value — update getThemeName when adding themes");
-        return "Dark";
     }
 } // namespace ColorPalette

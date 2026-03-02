@@ -56,22 +56,22 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
 
     // Create header bar with settings and help callbacks
     headerBar = std::make_unique<HeaderBar>(
-        [this]() {
+        [this] {
             // Settings callback — toggle preference panel overlay
             if (preferencePanel == nullptr) {
                 helpPanel.reset(); // close help panel if open
                 preferencePanel = std::make_unique<PreferencePanel>(
                     spectrumAnalyzer,
                     audioProcessor.getAPVTS(),
-                    [this]() { applyTheme(); },
+                    [this] { applyTheme(); },
                     spectrumAnalyzer.getBandHintsVisible(),
                     [this](const bool v) { spectrumAnalyzer.setBandHintsVisible(v); });
-                preferencePanel->onClose = [this]() {
+                preferencePanel->onClose = [this] {
                     preferencePanel.reset();
                     panelBackdrop.reset();
                 };
                 panelBackdrop = std::make_unique<PanelBackdrop>();
-                panelBackdrop->onMouseDown = [this]() {
+                panelBackdrop->onMouseDown = [this] {
                     if (preferencePanel != nullptr) preferencePanel->cancel();
                     else if (helpPanel != nullptr) {
                         helpPanel.reset();
@@ -85,7 +85,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
                 preferencePanel->cancel();
             }
         },
-        [this]() {
+        [this] {
             // Help callback
             if (helpPanel != nullptr) {
                 helpPanel.reset();
@@ -97,12 +97,12 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
                 preferencePanel->cancel();
             }
             helpPanel = std::make_unique<HelpPanel>();
-            helpPanel->onClose = [this]() {
+            helpPanel->onClose = [this] {
                 helpPanel.reset();
                 panelBackdrop.reset();
             };
             panelBackdrop = std::make_unique<PanelBackdrop>();
-            panelBackdrop->onMouseDown = [this]() {
+            panelBackdrop->onMouseDown = [this] {
                 if (helpPanel != nullptr) {
                     helpPanel.reset();
                     panelBackdrop.reset();
@@ -118,12 +118,12 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     addAndMakeVisible(footerBar);
 
     // Wire reference pill callback
-    footerBar.getReferencePill().onClick = [this]() {
+    footerBar.getReferencePill().onClick = [this] {
         setReferenceMode(footerBar.getReferencePill().getToggleState());
     };
 
     // Wire meters pill callback
-    footerBar.getMetersPill().onClick = [this]() {
+    footerBar.getMetersPill().onClick = [this] {
         metersVisible = footerBar.getMetersPill().getToggleState();
         meteringPanel.setVisible(metersVisible);
         resized();
@@ -223,9 +223,9 @@ void gFractorAudioProcessorEditor::resized() {
     hintBar.setBounds(bounds.removeFromBottom(Spacing::hintBarHeight));
     footerBar.setBounds(bounds.removeFromBottom(Spacing::footerHeight));
     auto analyzerBounds = bounds;
-    constexpr int dividerW = 5;
 
     if (metersVisible) {
+        constexpr int dividerW = 5;
         meteringPanel.setBounds(analyzerBounds.removeFromRight(meteringPanelW));
         panelDivider.setBounds(analyzerBounds.removeFromRight(dividerW));
         panelDivider.setVisible(true);

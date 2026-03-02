@@ -18,7 +18,7 @@ struct DisplayRange {
     [[nodiscard]]
     float xToFrequency(const float x, const float width) const noexcept {
         return juce::jlimit(minFreq, maxFreq,
-                            minFreq * std::pow(2.0f, (x / width) * logRange));
+                            minFreq * std::pow(2.0f, x / width * logRange));
     }
 
     [[nodiscard]]

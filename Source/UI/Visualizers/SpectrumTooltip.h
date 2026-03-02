@@ -15,7 +15,7 @@
  */
 class SpectrumTooltip {
 public:
-    void updateFromMouse(float mouseX, float mouseY, const DisplayRange &range,
+    void updateFromMouse(float mx, float my, const DisplayRange &range,
                          const juce::Rectangle<float> &spectrumArea);
 
     void hide();
@@ -50,7 +50,7 @@ public:
                         const juce::Colour &refPrimaryColour, const juce::Colour &refSecondaryColour) const;
 
 private:
-    static juce::String freqToNote(float freq);
+    static juce::String freqToNote(float f);
 
     bool visible = false;
     float mouseX = 0.0f;

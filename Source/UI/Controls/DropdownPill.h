@@ -15,8 +15,9 @@
  */
 class DropdownPill : public juce::Component {
 public:
-    DropdownPill(juce::StringArray options_, juce::Colour activeColour_)
-        : options(std::move(options_)), activeCol(activeColour_) {}
+    DropdownPill(juce::StringArray options_, const juce::Colour activeColour_)
+        : options(std::move(options_)), activeCol(activeColour_) {
+    }
 
     void setSelectedIndex(const int index) {
         selectedIndex = index;
@@ -63,7 +64,7 @@ public:
                    static_cast<float>(dividerX), static_cast<float>(h - dividerInset), 1.0f);
 
         // Label (left of divider)
-        const juce::String label = (selectedIndex >= 0 && selectedIndex < options.size())
+        const juce::String label = selectedIndex >= 0 && selectedIndex < options.size()
                                        ? options[selectedIndex].toUpperCase()
                                        : "";
         g.setColour(textCol);
@@ -88,8 +89,8 @@ public:
 
         menu.showMenuAsync(
             juce::PopupMenu::Options()
-                .withTargetComponent(this)
-                .withMinimumWidth(getWidth()),
+            .withTargetComponent(this)
+            .withMinimumWidth(getWidth()),
             [this](const int result) {
                 if (result <= 0)
                     return;

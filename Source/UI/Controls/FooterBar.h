@@ -42,7 +42,7 @@ public:
     void applyTheme();
 
     /** Sync pill toggle states from the analyzer (call after AnalyzerSettings::load). */
-    void syncAnalyzerState();
+    static void syncAnalyzerState();
 
     /** Register HintManager — call once from PluginEditor after construction. */
     void setHintManager(HintManager& hm);

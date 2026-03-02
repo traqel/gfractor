@@ -5,8 +5,7 @@ TransientMeteringPanel::TransientMeteringPanel()
     : AudioVisualizerBase(8192, 120) {
 }
 
-TransientMeteringPanel::~TransientMeteringPanel() {
-}
+TransientMeteringPanel::~TransientMeteringPanel() = default;
 
 void TransientMeteringPanel::resized() {
 }

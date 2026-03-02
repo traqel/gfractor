@@ -4,8 +4,6 @@
 #include <functional>
 #include <vector>
 
-#include "../../Utility/ChannelMode.h"
-
 /**
  * Infinite peak hold accumulator + glow paint.
  *
@@ -17,7 +15,7 @@ public:
     using BuildPathFn = std::function<void(juce::Path &path, const std::vector<float> &dbData,
                                            float width, float height, bool closePath)>;
 
-    void setEnabled(bool enabled);
+    void setEnabled(bool enable);
 
     [[nodiscard]]
     bool isEnabled() const { return enabled; }
@@ -58,7 +56,7 @@ private:
     mutable juce::Image peakGhostSecondaryImage;
 
     // Set by buildPaths/buildGhostPaths; cleared after image rebuild in paint().
-    mutable bool pathsDirty      = true;
+    mutable bool pathsDirty = true;
     mutable bool ghostPathsDirty = true;
 
     // Last-seen parameters used to detect when images must be rebuilt.
@@ -68,6 +66,6 @@ private:
     mutable juce::Colour lastEffGhostPrimaryCol;
     mutable juce::Colour lastEffGhostSecondaryCol;
 
-    static void renderGlowImage(juce::Image& img, const juce::Path& path,
-                         juce::Colour col, int w, int h) ;
+    static void renderGlowImage(juce::Image &img, const juce::Path &path,
+                                juce::Colour col, int w, int h);
 };

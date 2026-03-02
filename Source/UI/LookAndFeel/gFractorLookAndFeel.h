@@ -106,10 +106,10 @@ public:
         }
         else
         {
-            const auto isTwoVal   = (style == juce::Slider::SliderStyle::TwoValueVertical
-                                  || style == juce::Slider::SliderStyle::TwoValueHorizontal);
-            const auto isThreeVal = (style == juce::Slider::SliderStyle::ThreeValueVertical
-                                  || style == juce::Slider::SliderStyle::ThreeValueHorizontal);
+            const auto isTwoVal   = style == juce::Slider::SliderStyle::TwoValueVertical
+                                    || style == juce::Slider::SliderStyle::TwoValueHorizontal;
+            const auto isThreeVal = style == juce::Slider::SliderStyle::ThreeValueVertical
+                                    || style == juce::Slider::SliderStyle::ThreeValueHorizontal;
 
             const auto trackWidth = juce::jmin (6.0f, slider.isHorizontal()
                                                            ? static_cast<float> (height) * 0.25f
@@ -156,9 +156,9 @@ public:
             {
                 const auto kx = slider.isHorizontal()
                                     ? sliderPos
-                                    : (static_cast<float> (x) + static_cast<float> (width) * 0.5f);
+                                    : static_cast<float> (x) + static_cast<float> (width) * 0.5f;
                 const auto ky = slider.isHorizontal()
-                                    ? (static_cast<float> (y) + static_cast<float> (height) * 0.5f)
+                                    ? static_cast<float> (y) + static_cast<float> (height) * 0.5f
                                     : sliderPos;
 
                 minPoint = startPoint;
@@ -294,7 +294,7 @@ public:
 
         auto monoFont = font;
         monoFont.setTypefaceName (Typography::resolveMonospaceTypefaceName());
-        return juce::LookAndFeel_V4::getTypefaceForFont (monoFont);
+        return LookAndFeel_V4::getTypefaceForFont (monoFont);
     }
 
 private:

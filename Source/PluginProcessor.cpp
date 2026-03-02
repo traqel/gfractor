@@ -200,13 +200,13 @@ void gFractorAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
     // Update average with exponential moving average (smoothing factor = 0.99)
     const auto currentAvg = perfMetrics.averageProcessTimeMs.load();
-    perfMetrics.averageProcessTimeMs = (currentAvg * 0.99) + (elapsedMs * 0.01);
+    perfMetrics.averageProcessTimeMs = currentAvg * 0.99 + elapsedMs * 0.01;
 
     // Calculate CPU load percentage
-    const auto blockDurationMs = (buffer.getNumSamples() * 1000.0) / getSampleRate();
-    const auto cpuLoad = (elapsedMs / blockDurationMs) * 100.0;
+    const auto blockDurationMs = buffer.getNumSamples() * 1000.0 / getSampleRate();
+    const auto cpuLoad = elapsedMs / blockDurationMs * 100.0;
     const auto currentCpuAvg = perfMetrics.averageCpuLoad.load();
-    perfMetrics.averageCpuLoad = (currentCpuAvg * 0.99) + (cpuLoad * 0.01);
+    perfMetrics.averageCpuLoad = currentCpuAvg * 0.99 + cpuLoad * 0.01;
 
     // Increment sample count
     ++perfMetrics.sampleCount;

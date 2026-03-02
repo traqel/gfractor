@@ -44,21 +44,21 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
 
     // Primary pill — APVTS-bound
     primaryPill.attachToParameter(processorRef.getAPVTS(), "outputPrimaryEnable");
-    primaryPill.onClick = [this]() {
+    primaryPill.onClick = [this] {
         controlsRef.setPrimaryVisible(primaryPill.getToggleState());
     };
     addAndMakeVisible(primaryPill);
 
     // Secondary pill — APVTS-bound
     secondaryPill.attachToParameter(processorRef.getAPVTS(), "outputSecondaryEnable");
-    secondaryPill.onClick = [this]() {
+    secondaryPill.onClick = [this] {
         controlsRef.setSecondaryVisible(secondaryPill.getToggleState());
     };
     addAndMakeVisible(secondaryPill);
 
     // Ghost pill — show/hide secondary channel spectrogram
     ghostPill.setToggleState(true, juce::dontSendNotification);
-    ghostPill.onClick = [this]() {
+    ghostPill.onClick = [this] {
         controlsRef.setGhostVisible(ghostPill.getToggleState());
     };
     addAndMakeVisible(ghostPill);
@@ -69,7 +69,7 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
 
     // Freeze pill
     freezePill.setToggleState(false, juce::dontSendNotification);
-    freezePill.onClick = [this]() {
+    freezePill.onClick = [this] {
         const bool frozen = freezePill.getToggleState();
         controlsRef.setFrozen(frozen);
         // Show ▶ when frozen (click to resume), ⏸ when running (click to freeze)
@@ -81,7 +81,7 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
 
     // Infinite peak pill
     infinitePill.setToggleState(false, juce::dontSendNotification);
-    infinitePill.onClick = [this]() {
+    infinitePill.onClick = [this] {
         controlsRef.setInfinitePeak(infinitePill.getToggleState());
     };
     addAndMakeVisible(infinitePill);
@@ -156,11 +156,11 @@ void FooterBar::timerCallback() {
     const float newMid = peakSourceRef.getPeakPrimaryDb();
     const float newSide = peakSourceRef.getPeakSecondaryDb();
 
-    peakMidDisplay = (newMid > peakMidDisplay)
+    peakMidDisplay = newMid > peakMidDisplay
                          ? newMid
                          : peakMidDisplay * 0.93f + newMid * 0.07f;
 
-    peakSideDisplay = (newSide > peakSideDisplay)
+    peakSideDisplay = newSide > peakSideDisplay
                           ? newSide
                           : peakSideDisplay * 0.93f + newSide * 0.07f;
 
@@ -178,7 +178,7 @@ void FooterBar::syncAnalyzerState() {
 
 void FooterBar::setHintManager(HintManager& hm) {
     hints = &hm;
-    juce::Component* pills[] = { &referencePill, &ghostPill, &primaryPill,
+    Component* pills[] = { &referencePill, &ghostPill, &primaryPill,
                                   &secondaryPill, &freezePill, &infinitePill,
                                   &metersPill };
     for (auto* c : pills)

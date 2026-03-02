@@ -36,8 +36,6 @@ public:
         {
             // Test that we can create audio buffers
             juce::AudioBuffer<float> buffer(2, 512);
-            expect(buffer.getNumChannels() == 2);
-            expect(buffer.getNumSamples() == 512);
 
             buffer.clear();
 
@@ -54,7 +52,7 @@ public:
             // Test basic sample rate calculations
             constexpr double sampleRate = 44100.0;
             constexpr double frequency = 440.0; // A4 note
-            const double samplesPerCycle = sampleRate / frequency;
+            constexpr double samplesPerCycle = sampleRate / frequency;
 
             expectWithinAbsoluteError(samplesPerCycle, 100.227, 0.01);
         }

@@ -8,7 +8,8 @@
 
 class PluginIntegrationTests : public juce::UnitTest {
 public:
-    PluginIntegrationTests() : UnitTest("Plugin Integration Tests", "Integration") {}
+    PluginIntegrationTests() : UnitTest("Plugin Integration Tests", "Integration") {
+    }
 
     void runTest() override {
         auto bufferIsFinite = [this](const juce::AudioBuffer<float> &buffer) {
@@ -70,7 +71,7 @@ public:
             gFractorAudioProcessor processor;
 
             const uint8_t garbage[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x11, 0x22, 0x33};
-            processor.setStateInformation(garbage, static_cast<int>(sizeof(garbage)));
+            processor.setStateInformation(garbage, sizeof(garbage));
 
             juce::MemoryBlock validState;
             processor.getStateInformation(validState);
@@ -195,7 +196,7 @@ public:
                     {400, 200},
                 };
 
-                const float scaleFactors[] = {1.0f, 1.25f, 1.5f, 2.0f};
+                constexpr float scaleFactors[] = {1.0f, 1.25f, 1.5f, 2.0f};
 
                 for (const auto scale: scaleFactors) {
                     editor->setScaleFactor(scale);
@@ -242,10 +243,9 @@ public:
                     {400, 200},
                 };
 
-                const float scales[] = {1.0f, 1.25f, 1.5f, 2.0f};
-
                 for (int i = 0; i < 8; ++i) {
-                    if ((i % 2) == 0)
+                    constexpr float scales[] = {1.0f, 1.25f, 1.5f, 2.0f};
+                    if (i % 2 == 0)
                         processor.enableAllBuses();
                     else
                         processor.disableNonMainBuses();
@@ -269,14 +269,14 @@ public:
                             block.setSample(ch, sample, 0.62f);
                     }
 
-                    processor.setReferenceMode((i % 2) == 0);
+                    processor.setReferenceMode(i % 2 == 0);
                     juce::MidiBuffer midi;
                     processor.processBlock(block, midi);
                     bufferIsFinite(block);
 
                     expect(editor->getWidth() > 0);
                     expect(editor->getHeight() > 0);
-                    expect(processor.isSidechainAvailable() == (channels > 2));
+                    expect(processor.isSidechainAvailable() == channels > 2);
                 }
             }
 
@@ -293,20 +293,19 @@ public:
             expect(editor != nullptr);
 
             if (editor != nullptr) {
-                const struct Size {
-                    int w;
-                    int h;
-                } sizes[] = {
-                    {1200, 600},
-                    {1199, 599},
-                    {1000, 580},
-                    {800, 500},
-                    {640, 360},
-                    {520, 280},
-                    {400, 200},
-                };
-
                 for (int i = 0; i < 300; ++i) {
+                    const struct Size {
+                        int w;
+                        int h;
+                    } sizes[] = {
+                        {1200, 600},
+                        {1199, 599},
+                        {1000, 580},
+                        {800, 500},
+                        {640, 360},
+                        {520, 280},
+                        {400, 200},
+                    };
                     const auto &sz = sizes[static_cast<size_t>(i % 7)];
                     editor->setSize(sz.w, sz.h);
 
@@ -587,7 +586,7 @@ public:
 
             juce::AudioBuffer<float> input(2, 128);
             for (int sample = 0; sample < 128; ++sample) {
-                input.setSample(0, sample,  0.4f);
+                input.setSample(0, sample, 0.4f);
                 input.setSample(1, sample, -0.4f);
             }
 
@@ -613,15 +612,15 @@ public:
 
         beginTest("Various buffer sizes: no crash, finite output");
         {
-            const int blockSizes[] = { 32, 64, 128, 256, 512, 1024 };
+            const int blockSizes[] = {32, 64, 128, 256, 512, 1024};
 
-            for (const int blockSize : blockSizes) {
+            for (const int blockSize: blockSizes) {
                 gFractorAudioProcessor processor;
                 processor.prepareToPlay(44100.0, blockSize);
 
                 juce::AudioBuffer<float> buffer(2, blockSize);
                 for (int sample = 0; sample < blockSize; ++sample) {
-                    buffer.setSample(0, sample,  0.3f);
+                    buffer.setSample(0, sample, 0.3f);
                     buffer.setSample(1, sample, -0.3f);
                 }
 
@@ -634,9 +633,9 @@ public:
 
         beginTest("Silence input stays finite across all channel modes");
         {
-            const int modes[] = { 0, 1, 2 }; // M/S, L/R, Transient
+            constexpr int modes[] = {0, 1, 2}; // M/S, L/R, Transient
 
-            for (const int mode : modes) {
+            for (const int mode: modes) {
                 gFractorAudioProcessor processor;
                 processor.prepareToPlay(44100.0, 256);
                 processor.setOutputMode(channelModeFromInt(mode));
@@ -660,7 +659,7 @@ public:
 
                 juce::AudioBuffer<float> buffer(2, 128);
                 for (int sample = 0; sample < 128; ++sample) {
-                    buffer.setSample(0, sample,  0.2f * static_cast<float>(cycle + 1));
+                    buffer.setSample(0, sample, 0.2f * static_cast<float>(cycle + 1));
                     buffer.setSample(1, sample, -0.2f * static_cast<float>(cycle + 1));
                 }
 
@@ -674,15 +673,15 @@ public:
 
         beginTest("Sample rate sweep: 22050, 44100, 48000, 88200, 96000, 192000");
         {
-            const double sampleRates[] = { 22050.0, 44100.0, 48000.0, 88200.0, 96000.0, 192000.0 };
+            constexpr double sampleRates[] = {22050.0, 44100.0, 48000.0, 88200.0, 96000.0, 192000.0};
 
-            for (const double sr : sampleRates) {
+            for (const double sr: sampleRates) {
                 gFractorAudioProcessor processor;
                 processor.prepareToPlay(sr, 512);
 
                 juce::AudioBuffer<float> buffer(2, 512);
                 for (int sample = 0; sample < 512; ++sample) {
-                    buffer.setSample(0, sample,  0.1f);
+                    buffer.setSample(0, sample, 0.1f);
                     buffer.setSample(1, sample, -0.1f);
                 }
 

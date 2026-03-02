@@ -150,7 +150,7 @@ public:
 
     int getFftOrder() const override { return fftOrder; }
 
-    void setOverlapFactor(int factor) override {
+    void setOverlapFactor(const int factor) override {
         overlapFactor = juce::jlimit(minOverlapFactor, maxOverlapFactor, factor);
         hopSize = juce::jmax(1, fftSize / overlapFactor);
         hopCounter = 0;
@@ -162,7 +162,7 @@ public:
 
     SmoothingMode getSmoothing() const override { return smoothingMode; }
 
-    void setCurveDecay(float decay) override {
+    void setCurveDecay(const float decay) override {
         curveDecay = juce::jlimit(0.0f, 1.0f, decay);
         fftProcessor.setTemporalDecay(curveDecay);
     }
@@ -357,14 +357,14 @@ private:
 
 public:
     // Helper functions for band selection (public for testing)
-    static BandInfo getBandInfo(size_t bandIndex) {
+    static BandInfo getBandInfo(const size_t bandIndex) {
         const auto &band = kBands[bandIndex];
         const float centerFreq = (band.lo + band.hi) * 0.5f;
         const float bandWidth = band.hi - band.lo;
         return {band.lo, band.hi, centerFreq, centerFreq / bandWidth};
     }
 
-    static int findBandAtFrequency(float frequency) {
+    static int findBandAtFrequency(const float frequency) {
         for (size_t i = 0; i < kBands.size(); ++i) {
             if (frequency >= kBands[i].lo && frequency < kBands[i].hi) {
                 return static_cast<int>(i);

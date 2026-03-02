@@ -18,7 +18,7 @@ public:
         AudioVisualizerBase::pushStereoData(buffer);
     }
 
-    void setSampleRate(double sr) override {
+    void setSampleRate(const double sr) override {
         AudioVisualizerBase::setSampleRate(sr);
     }
 

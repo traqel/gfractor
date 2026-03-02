@@ -26,7 +26,7 @@ public:
     FFTProcessor();
 
     /** Reconfigure FFT order (10..14). Resizes all internal buffers. */
-    void setFftOrder(int order, float minDb);
+    void setFftOrder(int order, float newMinDb);
 
     /** Set the sample rate (needed for smoothing range precomputation and slope). */
     void setSampleRate(double sr);

@@ -1,5 +1,6 @@
 #include "HintBar.h"
-#include "../Theme/LayoutConstants.h"
+
+#include "Theme/Typography.h"
 
 HintBar::HintBar() {
     setInterceptsMouseClicks(false, false);

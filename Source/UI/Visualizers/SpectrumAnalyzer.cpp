@@ -383,7 +383,7 @@ void SpectrumAnalyzer::mouseMove(const juce::MouseEvent &event) {
 
     // Update hint only on region transitions, not every frame
     if (hints) {
-        HoverRegion newRegion = HoverRegion::None;
+        auto newRegion = HoverRegion::None;
         if (showBandHints && isInBandHintsArea(event.position))
             newRegion = HoverRegion::BandHints;
         else if (spectrumArea.contains(event.position))
@@ -473,7 +473,7 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
     const float w = spectrumArea.getWidth();
     const float h = spectrumArea.getHeight();
-    const bool canRebuildPeakHold = (++peakHoldThrottleCounter >= peakHoldRebuildIntervalFrames);
+    const bool canRebuildPeakHold = ++peakHoldThrottleCounter >= peakHoldRebuildIntervalFrames;
     if (canRebuildPeakHold)
         peakHoldThrottleCounter = 0;
 

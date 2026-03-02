@@ -23,9 +23,9 @@ namespace DSP {
 
         // Smoothing ratios (2^(1/(2*n)) for n-th octave)
         namespace Smoothing {
-            inline constexpr float thirdOctave = 1.12246205f;   // 2^(1/6)
-            inline constexpr float sixthOctave = 1.05946309f;    // 2^(1/12)
-            inline constexpr float twelfthOctave = 1.02930224f;  // 2^(1/24)
+            inline constexpr float thirdOctave = 1.12246205f; // 2^(1/6)
+            inline constexpr float sixthOctave = 1.05946309f; // 2^(1/12)
+            inline constexpr float twelfthOctave = 1.02930224f; // 2^(1/24)
         }
     }
 
@@ -63,8 +63,8 @@ namespace DSP {
     //==========================================================================
     namespace Correlation {
         // Mathematical constants
-        inline constexpr float kSqrtHalf = 0.70710678118f;  // 1/sqrt(2)
-        inline constexpr float kSqrtTwo = 1.41421356237f;   // sqrt(2)
-        inline constexpr float kEps = 1.0e-10f;             // Small epsilon to avoid division by zero
+        inline constexpr float kSqrtHalf = 0.70710678118f; // 1/sqrt(2)
+        inline constexpr float kSqrtTwo = 1.41421356237f; // sqrt(2)
+        inline constexpr float kEps = 1.0e-10f; // Small epsilon to avoid division by zero
     }
 }

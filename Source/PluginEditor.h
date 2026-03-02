@@ -88,12 +88,12 @@ private:
         void mouseDown(const juce::MouseEvent &) override { if (onMouseDown) onMouseDown(); }
     };
 
-    struct PanelDivider : juce::Component {
+    struct PanelDivider : Component {
         std::function<void(int)> onDrag;
         PanelDivider() { setMouseCursor(juce::MouseCursor::LeftRightResizeCursor); }
 
         void paint(juce::Graphics &g) override {
-            const auto col = (isHovered || isDragging)
+            const auto col = isHovered || isDragging
                                  ? juce::Colour(ColorPalette::primaryGreen).withAlpha(0.45f)
                                  : juce::Colour(ColorPalette::border);
             g.setColour(col);
