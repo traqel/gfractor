@@ -19,7 +19,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     addAndMakeVisible(spectrumAnalyzer);
     // Add hint bar at the bottom; wire HintManager as its sole text source
     addAndMakeVisible(hintBar);
-    hintManager.setCallback([this](const HintManager::HintContent& c) { hintBar.setHint(c); });
+    hintManager.setCallback([this](const HintManager::HintContent &c) { hintBar.setHint(c); });
     hintManager.setPersistentHint("KEY", "F: Freeze  |  M / S: Channel  |  R / Ctrl: Reference");
     // Register with processor so it can push audio data
     audioProcessor.registerAudioDataSink(&spectrumAnalyzer);
@@ -253,24 +253,38 @@ void gFractorAudioProcessorEditor::paint(juce::Graphics &g) {
 }
 
 void gFractorAudioProcessorEditor::resized() {
-    auto bounds = getLocalBounds();
+    juce::FlexBox mainFb;
+    mainFb.flexDirection = juce::FlexBox::Direction::column;
+    mainFb.alignItems = juce::FlexBox::AlignItems::stretch;
 
-    // Three-zone layout: header, spectrum, footer, hint bar
-    headerBar->setBounds(bounds.removeFromTop(Spacing::headerHeight));
-    hintBar.setBounds(bounds.removeFromBottom(Spacing::hintBarHeight));
-    footerBar.setBounds(bounds.removeFromBottom(Spacing::footerHeight));
-    auto analyzerBounds = bounds;
+    using Item = juce::FlexItem;
+
+    constexpr auto hh = static_cast<float>(Spacing::headerHeight);
+    constexpr auto fh = static_cast<float>(Spacing::footerHeight);
+    constexpr auto hb = static_cast<float>(Spacing::hintBarHeight);
+
+    mainFb.items.add(Item(*headerBar).withHeight(hh));
+
+    juce::FlexBox contentFb;
+    contentFb.flexDirection = juce::FlexBox::Direction::row;
+    contentFb.alignItems = juce::FlexBox::AlignItems::stretch;
+
+    contentFb.items.add(Item(spectrumAnalyzer).withFlex(1.0f));
 
     if (metersVisible) {
-        constexpr int dividerW = 5;
-        meteringPanel.setBounds(analyzerBounds.removeFromRight(meteringPanelW));
-        panelDivider.setBounds(analyzerBounds.removeFromRight(dividerW));
-        panelDivider.setVisible(true);
-    } else {
-        panelDivider.setVisible(false);
+        constexpr float dividerW = 5.0f;
+        contentFb.items.add(Item(panelDivider).withWidth(dividerW));
+        contentFb.items.add(Item(meteringPanel).withWidth(static_cast<float>(meteringPanelW)));
     }
 
-    spectrumAnalyzer.setBounds(analyzerBounds);
+    mainFb.items.add(Item(contentFb).withFlex(1.0f));
+
+    mainFb.items.add(Item(footerBar).withHeight(fh));
+    mainFb.items.add(Item(hintBar).withHeight(hb));
+
+    mainFb.performLayout(getLocalBounds().toFloat());
+
+    panelDivider.setVisible(metersVisible);
 
     // Backdrop fills the whole editor (click-outside detection)
     if (panelBackdrop != nullptr)
@@ -278,16 +292,16 @@ void gFractorAudioProcessorEditor::resized() {
 
     // Preference panel overlay (top-right of spectrum area)
     if (preferencePanel != nullptr) {
-        preferencePanel->setBounds(bounds.getRight() - PreferencePanel::panelWidth - Spacing::marginS,
-                                   bounds.getY() + Spacing::marginS,
+        preferencePanel->setBounds(getWidth() - PreferencePanel::panelWidth - Spacing::marginS,
+                                   Spacing::marginS,
                                    PreferencePanel::panelWidth,
                                    PreferencePanel::panelHeight);
     }
 
     // Help panel overlay (same anchor as preference panel)
     if (helpPanel != nullptr) {
-        helpPanel->setBounds(bounds.getRight() - HelpPanel::panelWidth - Spacing::marginS,
-                             bounds.getY() + Spacing::marginS,
+        helpPanel->setBounds(getWidth() - HelpPanel::panelWidth - Spacing::marginS,
+                             Spacing::marginS,
                              HelpPanel::panelWidth,
                              HelpPanel::panelHeight);
     }
@@ -303,7 +317,7 @@ void gFractorAudioProcessorEditor::resized() {
 
 //==============================================================================
 bool gFractorAudioProcessorEditor::keyPressed(const juce::KeyPress &key,
-                                               Component * /*originatingComponent*/) {
+                                              Component * /*originatingComponent*/) {
     if (key == juce::KeyPress::escapeKey) {
         if (preferencePanel != nullptr) {
             preferencePanel->cancel();
