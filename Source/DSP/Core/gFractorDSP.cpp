@@ -33,7 +33,9 @@ void gFractorDSP::prepare(const juce::dsp::ProcessSpec &spec) {
 }
 
 void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
-    jassert(isPrepared); // Ensure prepare() was called
+    // Guard against calling process before prepare (handles both Debug jassert and Release)
+    if (!isPrepared)
+        return;
 
     // If bypassed, skip all processing
     if (bypassed)
