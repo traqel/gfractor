@@ -861,7 +861,7 @@ public:
             };
 
             MinimalProc proc;
-            expectEquals(proc.getParameters().size(), 5,
+            expectEquals(proc.getParameters().size(), 6,
                          "Parameter count changed — this may break saved sessions");
         }
 

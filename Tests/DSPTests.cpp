@@ -358,11 +358,12 @@ private:
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
 
-        // In LR mode, primary/secondary filtering should be bypassed
+        // In LR mode: L enables Left (primary), R enables Right (secondary)
+        // With primary disabled, Left channel is filtered
         {
             dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
-            dsp.setPrimaryEnabled(false); // These should have no effect in LR mode
-            dsp.setSecondaryEnabled(false);
+            dsp.setPrimaryEnabled(false); // Disable Left
+            dsp.setSecondaryEnabled(true);  // Enable Right
 
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.4f);
@@ -371,15 +372,34 @@ private:
 
             dsp.process(buffer);
 
-            // In LR mode, disabling primary/secondary should NOT filter the signal
-            expectWithinAbsoluteError(buffer.getSample(0, 256), 0.4f, 0.01f);
+            // Left should be filtered (disabled), Right passes through
+            expectWithinAbsoluteError(buffer.getSample(0, 256), 0.0f, 0.01f);
             expectWithinAbsoluteError(buffer.getSample(1, 256), 0.6f, 0.01f);
+        }
+
+        // With secondary disabled, Right channel is filtered
+        {
+            dsp.reset();
+            dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
+            dsp.setPrimaryEnabled(true);  // Enable Left
+            dsp.setSecondaryEnabled(false); // Disable Right
+
+            for (int sample = 0; sample < 512; ++sample) {
+                buffer.setSample(0, sample, 0.4f);
+                buffer.setSample(1, sample, 0.6f);
+            }
+
+            dsp.process(buffer);
+
+            // Left passes through, Right should be filtered (disabled)
+            expectWithinAbsoluteError(buffer.getSample(0, 256), 0.4f, 0.01f);
+            expectWithinAbsoluteError(buffer.getSample(1, 256), 0.0f, 0.01f);
         }
 
         // In M/S mode with both disabled, signal should be filtered
         {
             dsp.reset();
-        dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
+            dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
             dsp.setPrimaryEnabled(false);
             dsp.setSecondaryEnabled(false);
 
@@ -603,7 +623,7 @@ private:
         // Note: Dry/wet mixer behavior varies with mono, so use wider tolerance
         const float output = buffer.getSample(0, 256);
         expectGreaterThan(output, 0.3f); // Some gain should be applied
-        expectLessThan(output, 1.5f);    // Should not clip wildly
+        expectLessThan(output, 1.5f); // Should not clip wildly
 
         // Test that multiple mono blocks don't crash
         for (int i = 0; i < 10; ++i) {
@@ -1036,14 +1056,14 @@ private:
         dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
 
         // Create broadband test signal (alternating samples have energy across spectrum)
-        auto fillBroadbandSignal = [](juce::AudioBuffer<float>& buffer) {
+        auto fillBroadbandSignal = [](juce::AudioBuffer<float> &buffer) {
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
                 for (int s = 0; s < buffer.getNumSamples(); ++s) {
                     // Mix of frequencies to simulate broadband signal
                     const float t = static_cast<float>(s) / 44100.0f;
                     const float v = 0.5f * std::sin(2.0f * juce::MathConstants<float>::pi * 100.0f * t)
-                                 + 0.3f * std::sin(2.0f * juce::MathConstants<float>::pi * 1000.0f * t)
-                                 + 0.2f * std::sin(2.0f * juce::MathConstants<float>::pi * 5000.0f * t);
+                                    + 0.3f * std::sin(2.0f * juce::MathConstants<float>::pi * 1000.0f * t)
+                                    + 0.2f * std::sin(2.0f * juce::MathConstants<float>::pi * 5000.0f * t);
                     buffer.setSample(ch, s, v);
                 }
             }
@@ -1161,7 +1181,8 @@ private:
             juce::AudioBuffer<float> buffer(2, 512);
             fillBroadbandSignal(buffer);
 
-            for (int i = 0; i < 30; ++i) { // More blocks for narrow filter to settle
+            for (int i = 0; i < 30; ++i) {
+                // More blocks for narrow filter to settle
                 fillBroadbandSignal(buffer);
                 dsp.process(buffer);
             }
