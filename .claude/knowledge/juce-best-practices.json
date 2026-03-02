@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "skill": "juce-best-practices",
+  "description": "JUCE development best practices - realtime safety, threading, memory management",
+  "entries": [
+    {
+      "id": "realtime-safety",
+      "title": "Realtime Safety Rules",
+      "category": "threading",
+      "tags": ["processBlock", "audio thread", "realtime", "safety"],
+      "rules": [
+        {
+          "id": "no-allocations",
+          "description": "Never allocate memory in processBlock",
+          "forbidden": ["new", "delete", "malloc", "free", "std::vector::push_back", "std::vector::emplace_back"],
+          "solution": "Pre-allocate in prepareToPlay()"
+        },
+        {
+          "id": "no-locks",
+          "description": "Never use locks in processBlock",
+          "forbidden": ["std::mutex", "std::lock_guard", "std::unique_lock", "jassert"],
+          "solution": "Use lock-free data structures (juce::AbstractFifo)"
+        },
+        {
+          "id": "no-blocking",
+          "description": "Never block or wait in processBlock",
+          "forbidden": ["sleep", "wait", "std::this_thread::sleep"],
+          "solution": "Use non-blocking patterns"
+        }
+      ]
+    },
+    {
+      "id": "parameter-smoothing",
+      "title": "Parameter Smoothing",
+      "category": "parameters",
+      "tags": ["parameters", "smoothing", "automation", "zipper noise"],
+      "description": "Always smooth parameter changes to prevent zipper noise",
+      "solutions": [
+        "Use juce::SmoothedValue",
+        "Use juce::dsp::ProcessSpec for sample rate handling",
+        "Calculate coefficients in prepareToPlay"
+      ]
+    },
+    {
+      "id": "denormals",
+      "title": "Denormal Number Handling",
+      "category": "numerical",
+      "tags": ["denormals", "NaN", "inf", "DSP", "performance"],
+      "description": "Denormals can cause severe CPU spikes",
+      "solutions": [
+        "Flush to zero (FTZ)",
+        "Add small DC offset",
+        "Use juce::FloatVectorOperations::disableDenormalisedNumberSupport()"
+      ]
+    },
+    {
+      "id": "apvts-pattern",
+      "title": "APVTS Best Practices",
+      "category": "parameters",
+      "tags": ["APVTS", "parameters", "state", "presets"],
+      "patterns": [
+        "Create parameters once in constructor",
+        "Use unique string IDs",
+        "Never change parameter IDs after release",
+        "Implement getStateInformation/setStateInformation"
+      ]
+    }
+  ]
+}

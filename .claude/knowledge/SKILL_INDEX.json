@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-01-14",
+  "skills": [
+    {
+      "name": "juce-best-practices",
+      "description": "JUCE development best practices - realtime safety, threading, memory management",
+      "files": {
+        "markdown": ".claude/skills/juce-best-practices/SKILL.md",
+        "knowledge": ".claude/knowledge/juce-best-practices.json"
+      },
+      "topics": ["realtime safety", "threading", "memory management", "modern C++", "APVTS"]
+    },
+    {
+      "name": "dsp-cookbook",
+      "description": "Production-ready DSP algorithms - filters, compressors, delays, modulation",
+      "files": {
+        "markdown": ".claude/skills/dsp-cookbook/SKILL.md"
+      },
+      "topics": ["filters", "compressors", "delays", "modulation", "saturation", "FFT"]
+    },
+    {
+      "name": "cross-platform-builds",
+      "description": "Building JUCE plugins for macOS, Windows, Linux with CMake, code signing",
+      "files": {
+        "markdown": ".claude/skills/cross-platform-builds/SKILL.md"
+      },
+      "topics": ["CMake", "code signing", "notarization", "CI/CD", "installers"]
+    },
+    {
+      "name": "plugin-architecture-patterns",
+      "description": "Clean architecture for audio plugins - separation of concerns, state management",
+      "files": {
+        "markdown": ".claude/skills/plugin-architecture-patterns/SKILL.md"
+      },
+      "topics": ["clean architecture", "APVTS", "presets", "MIDI", "modulation"]
+    },
+    {
+      "name": "daw-compatibility-guide",
+      "description": "DAW-specific quirks and workarounds - Logic, Live, Pro Tools, etc.",
+      "files": {
+        "markdown": ".claude/skills/daw-compatibility-guide/SKILL.md"
+      },
+      "topics": ["DAW compatibility", "AU", "VST3", "AAX", "automation"]
+    }
+  ],
+  "notes": "Knowledge bases (JSON) provide searchable, machine-readable data. Markdown files provide comprehensive documentation with examples."
+}

@@ -598,6 +598,17 @@ Streamlined process:
 - **cross-platform-builds** skill - Platform-specific build details
 - `/release-build` command - Automated release workflow
 
+## Related Documentation
+
+This checklist provides manual release steps. For automation, see:
+
+- **[/release-build]** - Automated release build command
+- **[BUILD_GUIDE.md](./BUILD_GUIDE.md)** - Detailed build procedures
+- **[TESTING_STRATEGY.md](./TESTING_STRATEGY.md)** - Testing procedures
+- **[/skill cross-platform-builds]** - Build configuration theory
+
+---
+
 ## Expert Help
 
 Delegate release tasks to specialists:

@@ -12,7 +12,11 @@ This is a **Claude Code plugin configuration** called "JUCE Dev Team" — it pro
 - `.claude/commands/` — Slash commands (`new-juce-plugin`, `build-all-formats`, `release-build`, `run-pluginval`, `run-daw-tests`, `analyze-performance`, `setup-offline-docs`)
 - `.claude/skills/` — Knowledge modules (`juce-best-practices`, `dsp-cookbook`, `cross-platform-builds`, `plugin-architecture-patterns`, `daw-compatibility-guide`)
 - `.claude/hooks/hooks.json` — Quality gate hooks (realtime safety checks, auto-test on DSP changes, parameter ID stability warnings)
+- `.claude/scripts/hooks/` — Hook validation scripts
+- `.claude/includes/` — Shared command snippets
+- `.claude/knowledge/` — Searchable JSON knowledge bases
 - `.claude/static-docs/` — Reference docs (`BUILD_GUIDE.md`, `TESTING_STRATEGY.md`, `RELEASE_CHECKLIST.md`, `GETTING_STARTED.md`)
+- `.claude/ROADMAP.md` — Versioned feature roadmap
 
 ## Key Concepts
 
@@ -67,4 +71,4 @@ Never do these in `processBlock()`: allocate memory (`new`, `delete`, `malloc`, 
 - Commands follow the Claude Code slash command format
 - Skills are knowledge modules referenced via `/skill-name`
 - Hooks in `hooks.json` use glob matchers on file paths and tool names
-- `RECOMMENDATIONS.md` tracks planned enhancements and implementation priority phases
+- `ROADMAP.md` tracks completed features, in-progress items, and planned enhancements
