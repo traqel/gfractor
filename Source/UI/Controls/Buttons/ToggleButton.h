@@ -1,0 +1,74 @@
+#pragma once
+
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "../../Theme/ColorPalette.h"
+#include "../../Theme/Typography.h"
+
+/**
+ * ToggleButton
+ *
+ * A simple toggle button with three states: On, Off, Disabled.
+ * - On: filled with active color
+ * - Off: flat background (pillInactiveBg)
+ * - Disabled: dimmed appearance
+ */
+class ToggleButton : public juce::Button {
+public:
+    ToggleButton(const juce::String &name,
+                 const juce::Colour activeColour,
+                 const float fontSize = Typography::mainFontSize)
+        : Button(name),
+          activeCol(activeColour),
+          buttonFontSize(fontSize) {
+        setClickingTogglesState(true);
+    }
+
+    void setActiveColour(const juce::Colour c) {
+        activeCol = c;
+        repaint();
+    }
+
+    void attachToParameter(juce::AudioProcessorValueTreeState &apvts,
+                           const juce::String &paramID) {
+        attachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+            apvts, paramID, *this);
+    }
+
+protected:
+    void paintButton(juce::Graphics &g,
+                     const bool shouldDrawButtonAsHighlighted,
+                     bool /*shouldDrawButtonAsDown*/) override {
+        const auto on = getToggleState();
+        const auto bounds = getLocalBounds().toFloat().reduced(0.5f);
+
+        if (shouldDrawButtonAsHighlighted) {
+            auto fillCol = juce::Colour(ColorPalette::pillInactiveBg);
+            fillCol = fillCol.brighter(0.1f);
+            g.setColour(fillCol);
+            g.fillRoundedRectangle(bounds, Radius::cornerRadius);
+        }
+
+        juce::Colour textColour;
+        if (!isEnabled()) {
+            textColour = juce::Colour(ColorPalette::textMuted).withAlpha(0.3f);
+        } else if (on) {
+            textColour = activeCol;
+        } else if (shouldDrawButtonAsHighlighted) {
+            textColour = juce::Colour(ColorPalette::textDimmed);
+        } else {
+            textColour = juce::Colour(ColorPalette::textMuted);
+        }
+
+        g.setColour(textColour);
+        g.setFont(Typography::makeBoldFont(buttonFontSize));
+        g.drawText(getButtonText(), bounds, juce::Justification::centred);
+    }
+
+private:
+    juce::Colour activeCol;
+    float buttonFontSize;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ToggleButton)
+};

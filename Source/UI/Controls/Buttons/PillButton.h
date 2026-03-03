@@ -2,9 +2,9 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../Theme/ColorPalette.h"
-#include "../Theme/Typography.h"
-#include "Theme/Spacing.h"
+#include "../../Theme/ColorPalette.h"
+#include "../../Theme/Typography.h"
+#include "../../Theme/Spacing.h"
 
 /**
  * PillButton
@@ -18,11 +18,9 @@ class PillButton : public juce::Button {
 public:
     PillButton(const juce::String &name,
                const juce::Colour activeColour,
-               const bool outlineOnly = false,
                const float fontSize = Typography::mainFontSize)
         : Button(name),
           activeCol(activeColour),
-          outlineOnlyWhenActive(outlineOnly),
           buttonFontSize(fontSize) {
         setClickingTogglesState(true);
     }
@@ -43,7 +41,6 @@ protected:
                      const bool shouldDrawButtonAsHighlighted,
                      bool /*shouldDrawButtonAsDown*/) override {
         const auto bounds = getLocalBounds().toFloat().reduced(0.5f);
-        const bool on = getToggleState();
 
         const auto drawButtonLabel = [&](const juce::Colour textColour) {
             const auto font = Typography::makeBoldFont(buttonFontSize);
@@ -61,38 +58,26 @@ protected:
             textLayout.draw(g, getLocalBounds().toFloat());
         };
 
-        if (!isEnabled()) {
-            g.setColour(juce::Colour(ColorPalette::pillInactiveBg));
-            g.fillRoundedRectangle(bounds, Radius::cornerRadius);
-            drawButtonLabel(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
-            return;
-        }
-
-        if (on && !outlineOnlyWhenActive) {
-            // Filled pill
-            auto fillCol = activeCol;
+        auto fillCol = juce::Colour(ColorPalette::pillInactiveBg);
+        if (isEnabled()) {
+            // Highlight button
             if (shouldDrawButtonAsHighlighted)
                 fillCol = fillCol.brighter(0.1f);
             g.setColour(fillCol);
             g.fillRoundedRectangle(bounds, Radius::cornerRadius);
+
+            // Text
+            g.setColour(activeCol);
+            drawButtonLabel(juce::Colour(activeCol));
         } else {
-            // Outline pill
-            auto fillCol = juce::Colour(ColorPalette::pillInactiveBg);
-            if (shouldDrawButtonAsHighlighted)
-                fillCol = fillCol.brighter(0.1f);
+            // Text
             g.setColour(fillCol);
-            g.fillRoundedRectangle(bounds, Radius::cornerRadius);
+            drawButtonLabel(activeCol.withAlpha(0.3f));
         }
-
-        // Text
-        const auto textColour = on ? juce::Colour(ColorPalette::textBright)
-                                   : juce::Colour(ColorPalette::textMuted);
-        drawButtonLabel(textColour);
     }
 
 private:
     juce::Colour activeCol;
-    bool outlineOnlyWhenActive;
     float buttonFontSize;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
 

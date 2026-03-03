@@ -100,7 +100,7 @@ void FooterBar::paint(juce::Graphics &g) {
 void FooterBar::applyTheme() {
     referencePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     ghostPill.setActiveColour(juce::Colour(ColorPalette::refPrimaryBlue));
-    modePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    modePill.setActiveColour(juce::Colour(ColorPalette::background));
     primaryPill.setActiveColour(juce::Colour(ColorPalette::primaryGreen));
     secondaryPill.setActiveColour(juce::Colour(ColorPalette::secondaryAmber));
     freezePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));

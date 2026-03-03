@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "PillButton.h"
+#include "Buttons/PillButton.h"
 #include "Logo.h"
 #include "../Theme/ButtonCaptions.h"
 #include "../HintManager.h"
@@ -35,12 +35,8 @@ private:
     HintManager::HintHandle hintHandle;
 
     Logo logo;
-    PillButton settingsPill{
-        ButtonCaptions::settings, juce::Colour(ColorPalette::blueAccent), true
-    };
-    PillButton helpPill{
-        ButtonCaptions::help, juce::Colour(ColorPalette::blueAccent), true
-    };
+    PillButton settingsPill{ButtonCaptions::settings, juce::Colour(ColorPalette::textDimmed)};
+    PillButton helpPill{ButtonCaptions::help, juce::Colour(ColorPalette::textDimmed)};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderBar)
 };

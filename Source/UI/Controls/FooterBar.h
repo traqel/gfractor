@@ -2,14 +2,14 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "PillButton.h"
-#include "DropdownPill.h"
+#include "Buttons/DropdownPill.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/ButtonCaptions.h"
 #include "../ISpectrumControls.h"
 #include "../../DSP/Interfaces/IPeakLevelSource.h"
 #include "../HintManager.h"
+#include "Buttons/ToggleButton.h"
 
 class gFractorAudioProcessor;
 
@@ -45,13 +45,13 @@ public:
     static void syncAnalyzerState();
 
     /** Register HintManager — call once from PluginEditor after construction. */
-    void setHintManager(HintManager& hm);
+    void setHintManager(HintManager &hm);
 
-    PillButton &getReferencePill() { return referencePill; }
-    PillButton &getPrimaryPill() { return primaryPill; }
-    PillButton &getSecondaryPill() { return secondaryPill; }
-    PillButton &getMetersPill() { return metersPill; }
-    PillButton &getFreezePill() { return freezePill; }
+    ToggleButton &getReferencePill() { return referencePill; }
+    ToggleButton &getPrimaryPill() { return primaryPill; }
+    ToggleButton &getSecondaryPill() { return secondaryPill; }
+    ToggleButton &getMetersPill() { return metersPill; }
+    ToggleButton &getFreezePill() { return freezePill; }
 
     /** Left margin from SpectrumAnalyzer — used for button alignment. */
     static constexpr int analyzerLeftMargin = Layout::SpectrumAnalyzer::leftMargin;
@@ -64,17 +64,14 @@ private:
     IPeakLevelSource &peakSourceRef;
 
     // Left group — pill buttons
-    PillButton referencePill{ButtonCaptions::reference, juce::Colour(ColorPalette::blueAccent), true};
-    PillButton ghostPill{ButtonCaptions::ghost, juce::Colour(ColorPalette::refPrimaryBlue), true};
     DropdownPill modePill{ButtonCaptions::channelModeOptions, juce::Colour(ColorPalette::blueAccent)};
-    PillButton primaryPill{ButtonCaptions::primary, juce::Colour(ColorPalette::primaryGreen), true};
-    PillButton secondaryPill{ButtonCaptions::secondary, juce::Colour(ColorPalette::secondaryAmber), true};
-    PillButton freezePill{
-        ButtonCaptions::pause, juce::Colour(ColorPalette::blueAccent), true
-    };
-    PillButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent), true};
-
-    PillButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::blueAccent), true};
+    ToggleButton primaryPill{ButtonCaptions::primary, juce::Colour(ColorPalette::primaryGreen)};
+    ToggleButton secondaryPill{ButtonCaptions::secondary, juce::Colour(ColorPalette::secondaryAmber)};
+    ToggleButton referencePill{ButtonCaptions::reference, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton ghostPill{ButtonCaptions::ghost, juce::Colour(ColorPalette::refPrimaryBlue)};
+    ToggleButton freezePill{ButtonCaptions::pause, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent),};
+    ToggleButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::blueAccent)};
 
     // Smoothed peak levels (fed to SpectrumAnalyzer meter bars)
     float peakMidDisplay = -100.0f;
@@ -85,10 +82,11 @@ private:
     float secondarySide = -100.0f;
 
     // Mouse listener overrides — receive forwarded events from pill children
-    void mouseEnter(const juce::MouseEvent& e) override;
-    void mouseExit(const juce::MouseEvent& e) override;
+    void mouseEnter(const juce::MouseEvent &e) override;
 
-    HintManager* hints = nullptr;
+    void mouseExit(const juce::MouseEvent &e) override;
+
+    HintManager *hints = nullptr;
     HintManager::HintHandle hintHandle;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FooterBar)

@@ -1,10 +1,10 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "../Theme/ColorPalette.h"
-#include "../Theme/LayoutConstants.h"
-#include "../Theme/Typography.h"
-#include "Theme/Spacing.h"
+#include "../../Theme/ColorPalette.h"
+#include "../../Theme/LayoutConstants.h"
+#include "../../Theme/Typography.h"
+#include "../../Theme/Spacing.h"
 
 /**
  * DropdownPill

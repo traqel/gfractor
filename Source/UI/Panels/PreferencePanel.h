@@ -6,7 +6,8 @@
 #include "../ISpectrumDisplaySettings.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
-#include "Controls/PillButton.h"
+#include "../Controls/Buttons/PillButton.h"
+#include "Controls/Buttons/ToggleButton.h"
 
 /**
  * PreferencePanel
@@ -103,12 +104,12 @@ private:
     juce::ComboBox themeCombo;
     juce::Label themeLabel;
 
-    PillButton bandHintsToggle{"Band Hints", juce::Colour(ColorPalette::blueAccent), true};
+    ToggleButton bandHintsToggle{"Band Hints", juce::Colour(ColorPalette::blueAccent), true};
     juce::Label bandHintsLabel;
 
-    PillButton saveButton{"Save", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton cancelButton{"Cancel", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton resetButton{"Reset", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton saveButton{"Save", juce::Colour(ColorPalette::textDimmed)};
+    PillButton cancelButton{"Cancel", juce::Colour(ColorPalette::textDimmed)};
+    PillButton resetButton{"Reset", juce::Colour(ColorPalette::textDimmed)};
 
     static int fftOrderToId(int order);
 
