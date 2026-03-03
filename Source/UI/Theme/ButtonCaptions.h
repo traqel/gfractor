@@ -8,8 +8,7 @@
  * All button captions and labels used throughout the UI.
  */
 namespace ButtonCaptions {
-    inline constexpr auto play = "Resume";
-    inline constexpr auto pause = "Freeze";
+    inline constexpr auto freeze = "Freeze";
     inline constexpr auto settings = "Settings";
     inline constexpr auto help = "Help";
     inline constexpr auto reference = "Ref";

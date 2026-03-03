@@ -69,7 +69,7 @@ private:
     ToggleButton secondaryPill{ButtonCaptions::secondary, juce::Colour(ColorPalette::secondaryAmber)};
     ToggleButton referencePill{ButtonCaptions::reference, juce::Colour(ColorPalette::blueAccent)};
     ToggleButton ghostPill{ButtonCaptions::ghost, juce::Colour(ColorPalette::refPrimaryBlue)};
-    ToggleButton freezePill{ButtonCaptions::pause, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton freezePill{ButtonCaptions::freeze, juce::Colour(ColorPalette::blueAccent)};
     ToggleButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent),};
     ToggleButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::blueAccent)};
 
