@@ -6,8 +6,8 @@
 /**
  * PluginState
  *
- * Centralized state management with version tracking and migration support.
- * Handles serialization/deserialization of plugin state with backward compatibility.
+ * Centralized state management with version tracking.
+ * Handles serialization/deserialization of plugin state.
  *
  * State Format:
  * <PluginState version="1">
@@ -15,9 +15,6 @@
  *     ... APVTS state ...
  *   </Parameters>
  * </PluginState>
- *
- * Version History:
- * - v1 (current): Initial state format with APVTS parameters
  */
 class PluginState {
 public:

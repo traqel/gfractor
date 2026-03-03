@@ -9,6 +9,7 @@ file(GLOB_RECURSE TEST_SOURCES
 
 # Keep plugin integration tests in their own executable.
 list(REMOVE_ITEM TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/PluginIntegrationTests.cpp")
+list(REMOVE_ITEM TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/VST3IntegrationTests.cpp")
 
 # Collect plugin source files (needed for testing DSP code)
 file(GLOB_RECURSE DSP_SOURCES
@@ -140,6 +141,62 @@ endif()
 add_test(NAME gFractorPluginIntegrationTests COMMAND gFractorPluginIntegrationTests)
 
 set_tests_properties(gFractorPluginIntegrationTests PROPERTIES
+    TIMEOUT 300
+    FAIL_REGULAR_EXPRESSION "FAILED"
+)
+
+#==============================================================================
+# VST3 integration tests
+#==============================================================================
+add_executable(gFractorVST3IntegrationTests
+    "${CMAKE_CURRENT_SOURCE_DIR}/VST3IntegrationTests.cpp"
+)
+
+target_include_directories(gFractorVST3IntegrationTests
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/Source
+        ${CMAKE_SOURCE_DIR}/Source/DSP
+        ${CMAKE_SOURCE_DIR}/Source/Utility
+        ${CMAKE_SOURCE_DIR}/Source/State
+        ${CMAKE_SOURCE_DIR}/Source/UI
+)
+
+target_link_libraries(gFractorVST3IntegrationTests
+    PRIVATE
+        gFractor
+        juce::juce_audio_utils
+        juce::juce_audio_processors
+        juce::juce_dsp
+        juce::juce_core
+        juce::juce_gui_basics
+        juce::juce_data_structures
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_warning_flags
+)
+
+target_compile_definitions(gFractorVST3IntegrationTests
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_DISPLAY_SPLASH_SCREEN=0
+        JUCE_REPORT_APP_USAGE=0
+)
+
+if(APPLE)
+    set_target_properties(gFractorVST3IntegrationTests PROPERTIES
+        XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "10.13"
+    )
+endif()
+
+if(MSVC)
+    target_compile_options(gFractorVST3IntegrationTests PRIVATE /W4)
+else()
+    target_compile_options(gFractorVST3IntegrationTests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_test(NAME gFractorVST3IntegrationTests COMMAND gFractorVST3IntegrationTests)
+
+set_tests_properties(gFractorVST3IntegrationTests PROPERTIES
     TIMEOUT 300
     FAIL_REGULAR_EXPRESSION "FAILED"
 )
