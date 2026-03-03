@@ -215,7 +215,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
 gFractorAudioProcessorEditor::~gFractorAudioProcessorEditor() {
     // Hide the editor view FIRST — prevents CoreAnimation from firing any
     // further drawRect callbacks during member destruction.  Without this,
-    // a pending CATransaction commit (common in Bitwig) can paint the
+    // a pending CATransaction commit can paint the
     // partially-destroyed component tree and crash.
     Component::setVisible(false);
 

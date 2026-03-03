@@ -9,15 +9,19 @@ class UIController {
 public:
     UIController();
 
-    void setSpectrumControls(ISpectrumControls* controls);
+    void setSpectrumControls(ISpectrumControls *controls);
+
     void setSidechainAvailableGetter(std::function<bool()> getter);
+
     void setReferenceModeSetter(std::function<void(bool)> setter);
+
     void setSidechainCallback(std::function<void(bool)> callback);
 
     void timerCallback();
 
-    bool keyPressed(const juce::KeyPress& key);
-    bool keyStateChanged(bool isKeyDown, bool& controlHeld);
+    bool keyPressed(const juce::KeyPress &key) const;
+
+    bool keyStateChanged(bool isKeyDown, bool &controlHeld);
 
     struct PillState {
         bool freeze = false;
@@ -30,14 +34,19 @@ public:
     void setPillStateGetter(std::function<PillState()> getter);
 
     void setFreezeCallback(std::function<void(bool)> callback);
+
     void setPrimaryCallback(std::function<void()> callback);
+
     void setSecondaryCallback(std::function<void()> callback);
+
     void setReferenceCallback(std::function<void(bool)> callback);
+
     void setMetersCallback(std::function<void(bool)> callback);
+
     void setPerformanceCallback(std::function<void()> callback);
 
 private:
-    ISpectrumControls* spectrumControls = nullptr;
+    ISpectrumControls *spectrumControls = nullptr;
     std::function<bool()> getSidechainAvailable;
     std::function<void(bool)> setReferenceMode;
     std::function<void(bool)> onSidechainChanged;

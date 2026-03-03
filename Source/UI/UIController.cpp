@@ -3,7 +3,7 @@
 
 UIController::UIController() = default;
 
-void UIController::setSpectrumControls(ISpectrumControls* controls) {
+void UIController::setSpectrumControls(ISpectrumControls *controls) {
     spectrumControls = controls;
 }
 
@@ -60,7 +60,7 @@ void UIController::timerCallback() {
     }
 }
 
-bool UIController::keyPressed(const juce::KeyPress& key) {
+bool UIController::keyPressed(const juce::KeyPress &key) const {
     if (key == juce::KeyPress('f')) {
         if (onFreeze && spectrumControls) {
             const bool nowFrozen = !spectrumControls->isFrozen();
@@ -98,7 +98,7 @@ bool UIController::keyPressed(const juce::KeyPress& key) {
     return false;
 }
 
-bool UIController::keyStateChanged(const bool isKeyDown, bool& controlHeldRef) {
+bool UIController::keyStateChanged(const bool isKeyDown, bool &controlHeldRef) {
     if (!getSidechainAvailable || !onReference)
         return false;
 
