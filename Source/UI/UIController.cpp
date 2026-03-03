@@ -53,7 +53,8 @@ void UIController::timerCallback() {
 
     const bool available = getSidechainAvailable();
 
-    if (available != lastSidechainAvailable) {
+    if (available != lastSidechainAvailable || !lastSidechainAvailableInitialized) {
+        lastSidechainAvailableInitialized = true;
         lastSidechainAvailable = available;
         if (onSidechainChanged)
             onSidechainChanged(available);

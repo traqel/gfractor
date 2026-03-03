@@ -14,7 +14,6 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     // Set custom LookAndFeel
     setLookAndFeel(&gFractorLnf);
     applyTheme();
-
     // Add spectrum analyzer (owned by editor)
     addAndMakeVisible(spectrumAnalyzer);
     // Add hint bar at the bottom; wire HintManager as its sole text source
@@ -174,8 +173,8 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     // Wire up UIController for timer and key handling (GRASP: Controller pattern)
     uiController.setSpectrumControls(&spectrumAnalyzer);
     uiController.setSidechainAvailableGetter([this]() { return audioProcessor.isSidechainAvailable(); });
-    uiController.setReferenceModeSetter([this](bool on) { setReferenceMode(on); });
-    uiController.setSidechainCallback([this](bool available) {
+    uiController.setReferenceModeSetter([this](const bool on) { setReferenceMode(on); });
+    uiController.setSidechainCallback([this](const bool available) {
         footerBar.setReferenceEnabled(available);
         spectrumAnalyzer.setSidechainAvailable(available);
         footerBar.setReferenceState(false);
@@ -197,11 +196,11 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     });
     uiController.setPrimaryCallback([this]() { footerBar.getPrimaryPill().triggerClick(); });
     uiController.setSecondaryCallback([this]() { footerBar.getSecondaryPill().triggerClick(); });
-    uiController.setReferenceCallback([this](bool on) {
+    uiController.setReferenceCallback([this](const bool on) {
         footerBar.setReferenceState(on);
         setReferenceMode(on);
     });
-    uiController.setMetersCallback([this](bool visible) {
+    uiController.setMetersCallback([this](const bool visible) {
         metersVisible = visible;
         meteringPanel.setVisible(visible);
         resized();

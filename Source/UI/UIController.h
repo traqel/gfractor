@@ -51,6 +51,7 @@ private:
     std::function<void(bool)> setReferenceMode;
     std::function<void(bool)> onSidechainChanged;
     bool lastSidechainAvailable = false;
+    bool lastSidechainAvailableInitialized = false;
     bool controlHeld = false;
     std::function<PillState()> getPillState;
     std::function<void(bool)> onFreeze;
