@@ -286,8 +286,6 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
 //==============================================================================
 void PreferencePanel::paint(juce::Graphics &g) {
     g.fillAll(juce::Colour(ColorPalette::panel));
-    g.setColour(juce::Colour(ColorPalette::panelBorder));
-    g.drawRect(getLocalBounds(), 1);
 
     // Section header
     g.setColour(juce::Colour(ColorPalette::panelHeading));

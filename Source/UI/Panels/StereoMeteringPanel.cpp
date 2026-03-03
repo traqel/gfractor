@@ -54,7 +54,7 @@ void StereoMeteringPanel::processDrainedData(const int numNewSamples) {
 void StereoMeteringPanel::updateGoniometerImage() const {
     if (!gonioImage.isValid()) return;
 
-    const juce::Colour gonioBg(ColorPalette::spectrumBg);
+    const juce::Colour gonioBg(ColorPalette::background);
     if (gonioImageBgArgb != gonioBg.getARGB()) {
         const juce::Graphics clearGc(gonioImage);
         clearGc.fillAll(gonioBg);
@@ -205,7 +205,7 @@ void StereoMeteringPanel::resized() {
     // Recreate goniometer image at new size, fill with black
     gonioImage = juce::Image(juce::Image::ARGB, drawSide, drawSide, true);
     {
-        const juce::Colour gonioBg(ColorPalette::spectrumBg);
+        const juce::Colour gonioBg(ColorPalette::background);
         const juce::Graphics gc(gonioImage);
         gc.fillAll(gonioBg);
         gonioImageBgArgb = gonioBg.getARGB();
@@ -220,7 +220,7 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     g.drawText(UILabels::Metering::goniometer, gonioArea.withHeight(20), juce::Justification::centred);
 
     // Background
-    g.setColour(juce::Colour(ColorPalette::spectrumBg));
+    g.setColour(juce::Colour(ColorPalette::background));
     g.fillRect(gonioDrawArea);
 
     // Draw the persistent phosphor image
@@ -273,7 +273,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     const auto barBounds = area.reduced(pad, 2);
 
     // Background
-    g.setColour(juce::Colour(ColorPalette::spectrumBg));
+    g.setColour(juce::Colour(ColorPalette::background));
     g.fillRect(barBounds);
 
     const auto barW = static_cast<float>(barBounds.getWidth());
@@ -370,7 +370,7 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
                                                barW - 2.0f,
                                                static_cast<float>(barH));
 
-        drawLevelBar(g, trackRect, w, barCol, juce::Colour(ColorPalette::spectrumBg));
+        drawLevelBar(g, trackRect, w, barCol, juce::Colour(ColorPalette::background));
 
         // Frequency label
         if (b % 2 == 0) {
