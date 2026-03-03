@@ -31,6 +31,7 @@ namespace ColorPalette {
         std::uint32_t panelHeading;
         std::uint32_t swatchBorder;
         std::uint32_t hintPink;
+        std::uint32_t textAxis;
     };
 
     inline constexpr ThemeSpec darkTheme{
@@ -41,7 +42,7 @@ namespace ColorPalette {
         0xff2A2D2B,
         0xff1E221E,
         0xff3DCC6E,
-        0xffC8A820,
+        0xFFFFFF00,
         0xff1E6ECC,
         0xff4499ff,
         0xffff66aa,
@@ -49,11 +50,12 @@ namespace ColorPalette {
         0xffe0e0e0,
         0xff556055,
         0xff666666,
-        0xff1A1F1A,
+        0xff0D0F0D,
         0x7f808080,
         0xccffffff,
         0xb3ffffff,
-        0xb3ffb6c1
+        0xb3ffb6c1,
+        0xFFFFFF00
     };
 
     inline constexpr ThemeSpec lightTheme{
@@ -72,11 +74,12 @@ namespace ColorPalette {
         0xff223022,
         0xff5A675A,
         0xff788578,
-        0xffE6ECE6,
+        0xffF2F5F2,
         0x7f526452,
         0xcc101410,
         0xb3202a20,
-        0xb3d47896
+        0xb3d47896,
+        0xff9F7B00
     };
 
     inline constexpr ThemeSpec balancedTheme{
@@ -95,11 +98,12 @@ namespace ColorPalette {
         0xffD2DAE4,
         0xff8893A0,
         0xff93A0AF,
-        0xff2A313A,
+        0xff1A1D22,
         0x7fAAB6C4,
         0xccF4F7FA,
         0xb3F4F7FA,
-        0xb3ffb3c7
+        0xb3ffb3c7,
+        0xFFFFFF00
     };
 
     constexpr const ThemeSpec &getThemeSpec(const Theme theme) {
@@ -131,6 +135,7 @@ namespace ColorPalette {
     inline std::uint32_t grid = balancedTheme.grid;
     inline std::uint32_t border = balancedTheme.border;
     inline std::uint32_t spectrumBorder = balancedTheme.spectrumBorder;
+    inline std::uint32_t axisTextColor = balancedTheme.textAxis;
 
     inline std::uint32_t primaryGreen = balancedTheme.primaryGreen;
     inline std::uint32_t secondaryAmber = balancedTheme.secondaryAmber;
@@ -162,7 +167,7 @@ namespace ColorPalette {
         grid = spec.grid;
         border = spec.border;
         spectrumBorder = spec.spectrumBorder;
-
+        axisTextColor = spec.textAxis;
         primaryGreen = spec.primaryGreen;
         secondaryAmber = spec.secondaryAmber;
         blueAccent = spec.blueAccent;

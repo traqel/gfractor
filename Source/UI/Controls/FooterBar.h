@@ -6,7 +6,7 @@
 #include "DropdownPill.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
-#include "../Theme/Symbols.h"
+#include "../Theme/ButtonCaptions.h"
 #include "../ISpectrumControls.h"
 #include "../../DSP/Interfaces/IPeakLevelSource.h"
 #include "../HintManager.h"
@@ -64,17 +64,17 @@ private:
     IPeakLevelSource &peakSourceRef;
 
     // Left group — pill buttons
-    PillButton referencePill{"Ref", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refPrimaryBlue), true};
-    DropdownPill modePill{{"M/S", "L/R", "TRN"}, juce::Colour(ColorPalette::blueAccent)};
-    PillButton primaryPill{"Mid", juce::Colour(ColorPalette::primaryGreen), true};
-    PillButton secondaryPill{"Side", juce::Colour(ColorPalette::secondaryAmber), true};
+    PillButton referencePill{ButtonCaptions::reference, juce::Colour(ColorPalette::blueAccent), true};
+    PillButton ghostPill{ButtonCaptions::ghost, juce::Colour(ColorPalette::refPrimaryBlue), true};
+    DropdownPill modePill{ButtonCaptions::channelModeOptions, juce::Colour(ColorPalette::blueAccent)};
+    PillButton primaryPill{ButtonCaptions::primary, juce::Colour(ColorPalette::primaryGreen), true};
+    PillButton secondaryPill{ButtonCaptions::secondary, juce::Colour(ColorPalette::secondaryAmber), true};
     PillButton freezePill{
-        juce::String::fromUTF8(Symbols::pauseUTF8), juce::Colour(ColorPalette::blueAccent), true
+        ButtonCaptions::pause, juce::Colour(ColorPalette::blueAccent), true
     };
-    PillButton infinitePill{"Hold", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent), true};
 
-    PillButton metersPill{"Stereo", juce::Colour(ColorPalette::blueAccent), true};
+    PillButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::blueAccent), true};
 
     // Smoothed peak levels (fed to SpectrumAnalyzer meter bars)
     float peakMidDisplay = -100.0f;

@@ -3,7 +3,7 @@
 #include "../../Utility/ChannelMode.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
-#include "../Theme/Symbols.h"
+#include "../Theme/ButtonCaptions.h"
 
 FooterBar::FooterBar(gFractorAudioProcessor &processor,
                      ISpectrumControls &controls,
@@ -20,22 +20,22 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     modePill.onChange = [this](const int index) {
         switch (index) {
             case 0:
-                primaryPill.setButtonText("Mid");
-                secondaryPill.setButtonText("Side");
+                primaryPill.setButtonText(ButtonCaptions::primary);
+                secondaryPill.setButtonText(ButtonCaptions::secondary);
                 break;
 
             case 1:
-                primaryPill.setButtonText("Left");
-                secondaryPill.setButtonText("Right");
+                primaryPill.setButtonText(ButtonCaptions::primaryLeft);
+                secondaryPill.setButtonText(ButtonCaptions::secondaryRight);
                 break;
 
             case 2:
-                primaryPill.setButtonText("Trans");
-                secondaryPill.setButtonText("Tonal");
+                primaryPill.setButtonText(ButtonCaptions::primaryTrans);
+                secondaryPill.setButtonText(ButtonCaptions::secondaryTonal);
                 break;
             default:
-                primaryPill.setButtonText("Left");
-                secondaryPill.setButtonText("Right");
+                primaryPill.setButtonText(ButtonCaptions::primaryLeft);
+                secondaryPill.setButtonText(ButtonCaptions::secondaryRight);
         }
         controlsRef.setChannelMode(index);
         processorRef.setOutputMode(channelModeFromInt(index));
@@ -73,9 +73,7 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
         const bool frozen = freezePill.getToggleState();
         controlsRef.setFrozen(frozen);
         // Show ▶ when frozen (click to resume), ⏸ when running (click to freeze)
-        freezePill.setButtonText(frozen
-                                     ? juce::String::fromUTF8(Symbols::playUTF8)
-                                     : juce::String::fromUTF8(Symbols::pauseUTF8));
+        freezePill.setButtonText(frozen ? ButtonCaptions::play : ButtonCaptions::pause);
     };
     addAndMakeVisible(freezePill);
 

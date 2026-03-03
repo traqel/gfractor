@@ -64,4 +64,8 @@ namespace Typography {
     inline juce::Font makeBoldFont(const float size) {
         return makeFont(size).boldened();
     }
+
+    inline juce::Font makeLightFont(const float size) {
+        return makeFont(size).withTypefaceStyle("Light");
+    }
 }

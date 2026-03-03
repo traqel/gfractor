@@ -11,7 +11,7 @@
  *
  * Rounded-rectangle pill-shaped toggle button.
  * When active: filled with the active color.
- * When inactive: 1px outline only.
+ * When inactive: flat background with no border.
  * Supports APVTS attachment or standalone callback usage.
  */
 class PillButton : public juce::Button {
@@ -64,8 +64,6 @@ protected:
         if (!isEnabled()) {
             g.setColour(juce::Colour(ColorPalette::pillInactiveBg));
             g.fillRoundedRectangle(bounds, Radius::cornerRadius);
-            g.setColour(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
-            g.drawRoundedRectangle(bounds, Radius::cornerRadius, 1.0f);
             drawButtonLabel(juce::Colour(ColorPalette::textMuted).withAlpha(0.3f));
             return;
         }
@@ -79,13 +77,11 @@ protected:
             g.fillRoundedRectangle(bounds, Radius::cornerRadius);
         } else {
             // Outline pill
-            auto outlineCol = on ? activeCol : juce::Colour(ColorPalette::textMuted);
+            auto fillCol = juce::Colour(ColorPalette::pillInactiveBg);
             if (shouldDrawButtonAsHighlighted)
-                outlineCol = outlineCol.brighter(0.15f);
-            g.setColour(juce::Colour(ColorPalette::pillInactiveBg));
+                fillCol = fillCol.brighter(0.1f);
+            g.setColour(fillCol);
             g.fillRoundedRectangle(bounds, Radius::cornerRadius);
-            g.setColour(outlineCol);
-            g.drawRoundedRectangle(bounds, Radius::cornerRadius, 1.0f);
         }
 
         // Text

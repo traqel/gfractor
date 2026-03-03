@@ -3,6 +3,7 @@
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/Typography.h"
+#include "../Theme/UILabels.h"
 
 //==============================================================================
 HelpPanel::HelpPanel() {
@@ -21,7 +22,7 @@ void HelpPanel::paint(juce::Graphics &g) {
     // ── Title ────────────────────────────────────────────────────────────────
     g.setColour(juce::Colour(ColorPalette::panelHeading));
     g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
-    g.drawText("Help", bounds.removeFromTop(Spacing::rowHeight),
+    g.drawText(UILabels::Panels::help, bounds.removeFromTop(Spacing::rowHeight),
                juce::Justification::centred);
 
     // Thin divider under title

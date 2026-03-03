@@ -3,7 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PillButton.h"
 #include "Logo.h"
-#include "../Theme/Symbols.h"
+#include "../Theme/ButtonCaptions.h"
 #include "../HintManager.h"
 
 /**
@@ -24,21 +24,22 @@ public:
     void resized() override;
 
     /** Register HintManager — call once from PluginEditor after construction. */
-    void setHintManager(HintManager& hm);
+    void setHintManager(HintManager &hm);
 
 private:
-    void mouseEnter(const juce::MouseEvent& e) override;
-    void mouseExit(const juce::MouseEvent& e) override;
+    void mouseEnter(const juce::MouseEvent &e) override;
 
-    HintManager* hints = nullptr;
+    void mouseExit(const juce::MouseEvent &e) override;
+
+    HintManager *hints = nullptr;
     HintManager::HintHandle hintHandle;
 
     Logo logo;
     PillButton settingsPill{
-        juce::String::fromUTF8(Symbols::settingsUTF8), juce::Colour(ColorPalette::blueAccent), true, 26.0f
+        ButtonCaptions::settings, juce::Colour(ColorPalette::blueAccent), true
     };
     PillButton helpPill{
-        juce::String::fromUTF8(Symbols::helpUTF8), juce::Colour(ColorPalette::blueAccent), true, 18.0f
+        ButtonCaptions::help, juce::Colour(ColorPalette::blueAccent), true
     };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderBar)

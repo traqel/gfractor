@@ -3,6 +3,7 @@
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
+#include "../Theme/UILabels.h"
 
 //==============================================================================
 static constexpr int kFifoCapacity = Layout::StereoMetering::fifoCapacity;
@@ -216,7 +217,7 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     // Title
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(Typography::makeFont(Typography::mainFontSize));
-    g.drawText("GONIOMETER", gonioArea.withHeight(20), juce::Justification::centred);
+    g.drawText(UILabels::Metering::goniometer, gonioArea.withHeight(20), juce::Justification::centred);
 
     // Background
     g.setColour(juce::Colour(ColorPalette::spectrumBg));
@@ -245,15 +246,15 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     // Axis labels
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(Typography::makeFont(Typography::mainFontSize));
-    g.drawText("M", gonioDrawArea.withHeight(18).translated(0, -6),
+    g.drawText(UILabels::Channels::mid, gonioDrawArea.withHeight(18).translated(0, -6),
                juce::Justification::centred);
-    g.drawText("L", juce::Rectangle(gonioDrawArea.getX() - 6,
-                                         static_cast<int>(cy) - 9, 18, 18),
+    g.drawText(UILabels::Channels::left, juce::Rectangle(gonioDrawArea.getX() - 6,
+                                          static_cast<int>(cy) - 9, 18, 18),
                juce::Justification::centred);
-    g.drawText("R", juce::Rectangle(gonioDrawArea.getRight() - 12,
-                                         static_cast<int>(cy) - 9, 18, 18),
+    g.drawText(UILabels::Channels::right, juce::Rectangle(gonioDrawArea.getRight() - 12,
+                                          static_cast<int>(cy) - 9, 18, 18),
                juce::Justification::centred);
-    g.drawText("S", gonioDrawArea.withTrimmedTop(gonioDrawArea.getHeight() - 18),
+    g.drawText(UILabels::Channels::side, gonioDrawArea.withTrimmedTop(gonioDrawArea.getHeight() - 18),
                juce::Justification::centred);
 }
 
@@ -265,7 +266,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
 
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(Typography::makeFont(Typography::mainFontSize));
-    g.drawText("CORRELATION", area.removeFromTop(labelH),
+    g.drawText(UILabels::Metering::correlation, area.removeFromTop(labelH),
                juce::Justification::centred);
 
     const auto labRow = area.removeFromBottom(20);
@@ -315,9 +316,9 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     // Scale labels -1, 0, +1
     g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.drawText("-1", labRow.withWidth(16), juce::Justification::centredLeft);
-    g.drawText("0", labRow, juce::Justification::centred);
-    g.drawText("+1", labRow.withTrimmedLeft(labRow.getWidth() - 16),
+    g.drawText(UILabels::Metering::minusOne, labRow.withWidth(16), juce::Justification::centredLeft);
+    g.drawText(UILabels::Metering::zero, labRow, juce::Justification::centred);
+    g.drawText(UILabels::Metering::plusOne, labRow.withTrimmedLeft(labRow.getWidth() - 16),
                juce::Justification::centredRight);
 
     // Numeric readout
@@ -338,7 +339,7 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
 
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(Typography::makeFont(Typography::mainFontSize));
-    g.drawText("WIDTH / OCTAVE", area.removeFromTop(labelH).withTrimmedTop(labelTopPad),
+    g.drawText(UILabels::Metering::widthPerOctave, area.removeFromTop(labelH).withTrimmedTop(labelTopPad),
                juce::Justification::centred);
 
     const auto freqRow = area.removeFromBottom(freqH);

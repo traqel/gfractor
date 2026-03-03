@@ -4,6 +4,7 @@
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
+#include "../Theme/UILabels.h"
 
 //==============================================================================
 SpectrumAnalyzer::SpectrumAnalyzer()
@@ -253,14 +254,14 @@ void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
     g.setFont(Typography::makeBoldFont(9.0f));
     g.setColour(textColour);
     if (channelMode == ChannelMode::LR) {
-        g.drawText("L", static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
+        g.drawText(UILabels::Channels::left, static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
                    juce::Justification::centredBottom);
-        g.drawText("R", static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
+        g.drawText(UILabels::Channels::right, static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
                    juce::Justification::centredBottom);
     } else {
-        g.drawText("M", static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
+        g.drawText(UILabels::Channels::mid, static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
                    juce::Justification::centredBottom);
-        g.drawText("S", static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
+        g.drawText(UILabels::Channels::side, static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
                    juce::Justification::centredBottom);
     }
 }
@@ -676,7 +677,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
     juce::Graphics g(gridImage);
     g.addTransform(juce::AffineTransform::scale(pixelScale));
 
-    const auto labelFont = Typography::makeBoldFont(Typography::mainFontSize);
+    const auto labelFont = Typography::makeBoldFont(Typography::smallFontSize);
     g.setFont(labelFont);
 
     // ── Band hint bar (within topMargin) ─────────────────────────────────────
@@ -727,7 +728,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
 
     // --- Vertical frequency grid lines + labels below ---
     static constexpr float freqLines[] = {20, 40, 80, 120, 200, 500, 1000, 2000, 5000, 10000, 20000};
-    static const juce::String freqLabels[] = {"20", "40", "80", "120", "200", "500", "1k", "2k", "5k", "10k", "20k"};
+    const auto axisFont = Typography::makeLightFont(12.0f);
 
     for (int i = 0; i < 11; ++i) {
         if (freqLines[i] < range.minFreq || freqLines[i] > range.maxFreq)
@@ -735,8 +736,9 @@ void SpectrumAnalyzer::rebuildGridImage() {
         const float x = sx + range.frequencyToX(freqLines[i], sw);
         g.setColour(gridColour);
         g.drawVerticalLine(static_cast<int>(x), sy, sy + sh);
-        g.setColour(textColour);
-        g.drawText(freqLabels[i],
+        g.setColour(axisTextColour);
+        g.setFont(axisFont);
+        g.drawText(UILabels::Spectrum::frequencyLabels[i],
                    static_cast<int>(x) - 15, static_cast<int>(sy + sh) + 6,
                    30, bottomMargin - 10, juce::Justification::centredTop);
     }
@@ -745,9 +747,6 @@ void SpectrumAnalyzer::rebuildGridImage() {
     static constexpr float dbLines[] = {
         -90.0f, -80.0f, -70.0f, -60.0f, -50.0f, -40.0f, -30.0f, -20.0f, -10.0f, -6.0f, -3.0f, 0.0f
     };
-    static const juce::String dbLabels[] = {
-        "-90", "-80", "-70", "-60", "-50", "-40", "-30", "-20", "-10", "-6", "-3", "0"
-    };
 
     for (int i = 0; i < 12; ++i) {
         if (dbLines[i] < range.minDb || dbLines[i] > range.maxDb)
@@ -755,8 +754,9 @@ void SpectrumAnalyzer::rebuildGridImage() {
         const float y = sy + range.dbToY(dbLines[i], sh);
         g.setColour(gridColour);
         g.drawHorizontalLine(static_cast<int>(y), sx, sx + sw);
-        g.setColour(textColour);
-        g.drawText(dbLabels[i],
+        g.setColour(axisTextColour);
+        g.setFont(axisFont);
+        g.drawText(UILabels::Spectrum::dbLabels[i],
                    6, static_cast<int>(y) - 7,
                    leftMargin - 14, 14, juce::Justification::centredRight);
     }

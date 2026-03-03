@@ -7,6 +7,7 @@
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/Typography.h"
+#include "../Theme/UILabels.h"
 
 //==============================================================================
 PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
@@ -291,7 +292,7 @@ void PreferencePanel::paint(juce::Graphics &g) {
     // Section header
     g.setColour(juce::Colour(ColorPalette::panelHeading));
     g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
-    g.drawText("Settings", getLocalBounds().removeFromTop(30),
+    g.drawText(UILabels::Panels::settings, getLocalBounds().removeFromTop(30),
                juce::Justification::centred);
 }
 

@@ -20,7 +20,7 @@ namespace Spacing {
     // Component heights
     inline constexpr int headerHeight = 40;
     inline constexpr int footerHeight = 52;
-    inline constexpr int hintBarHeight = Layout::HintBar::height;
+    inline constexpr int hintBarHeight = 24;
     inline constexpr int rowHeight = 24;
     inline constexpr int pillHeight = 28;
 
