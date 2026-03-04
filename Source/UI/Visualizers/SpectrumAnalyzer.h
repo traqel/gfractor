@@ -87,6 +87,9 @@ public:
     /** Callback fired when the fullscreen toggle button is clicked (set by PluginEditor) */
     std::function<void(bool fullscreen)> onFullscreen;
 
+    /** Sync the fullscreen button visual state without firing onFullscreen (for keyboard shortcut). */
+    void setFullscreen(bool fullscreen);
+
     //==============================================================================
     // ISpectrumControls implementation
 
@@ -352,7 +355,6 @@ public:
     static constexpr int peakHoldRebuildIntervalFrames = Layout::SpectrumAnalyzer::peakHoldRebuildInterval;
 
     void clearAllCurves();
-
 
     // Display slope tilt (-9 to +9 dB)
     float slopeDb = 0.0f;

@@ -19,7 +19,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     // Add hint bar at the bottom; wire HintManager as its sole text source
     addAndMakeVisible(hintBar);
     hintManager.setCallback([this](const HintManager::HintContent &c) { hintBar.setHint(c); });
-    hintManager.setPersistentHint("KEY", "F: Freeze  |  M / S: Channel  |  R / Ctrl: Reference");
+    hintManager.setPersistentHint("HOVER", "To see tooltips");
     // Wire FFT size dropdown on hint bar (orders 11-14 → indices 0-3)
     hintBar.getFftPill().setSelectedIndex(spectrumAnalyzer.getFftOrder() - 11);
     hintBar.getFftPill().onChange = [this](int index) {
@@ -240,6 +240,60 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     uiController.setReferenceCallback([this](const bool on) {
         footerBar.setReferenceState(on);
         setReferenceMode(on);
+    });
+    uiController.setGhostCallback([this]() {
+        auto &pill = footerBar.getGhostPill();
+        const bool newState = !pill.getToggleState();
+        pill.setToggleState(newState, juce::dontSendNotification);
+        spectrumAnalyzer.setGhostVisible(newState);
+    });
+    uiController.setHoldCallback([this]() {
+        auto &pill = footerBar.getInfinitePill();
+        const bool newState = !pill.getToggleState();
+        pill.setToggleState(newState, juce::dontSendNotification);
+        spectrumAnalyzer.setInfinitePeak(newState);
+    });
+    uiController.setFullscreenCallback([this]() {
+        const bool newFullscreen = !spectrumFullscreen;
+        setSpectrumFullscreen(newFullscreen);
+        spectrumAnalyzer.setFullscreen(newFullscreen);
+    });
+    uiController.setCycleModeCallback([this]() {
+        auto &pill = footerBar.getModePill();
+        const int newIdx = (pill.getSelectedIndex() + 1) % 3;
+        pill.setSelectedIndex(newIdx);
+        if (pill.onChange) pill.onChange(newIdx);
+    });
+    uiController.setCycleSlopeCallback([this]() {
+        auto &pill = hintBar.getSlopePill();
+        const int newIdx = (pill.getSelectedIndex() + 1) % 3;
+        pill.setSelectedIndex(newIdx);
+        static constexpr float values[] = {0.0f, 3.0f, 4.5f};
+        spectrumAnalyzer.setSlope(values[newIdx]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    });
+    uiController.setCycleDecayCallback([this]() {
+        auto &pill = hintBar.getDecayPill();
+        const int newIdx = (pill.getSelectedIndex() + 1) % 4;
+        pill.setSelectedIndex(newIdx);
+        static constexpr float values[] = {0.0f, 0.85f, 0.95f, 0.99f};
+        spectrumAnalyzer.setCurveDecay(values[newIdx]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    });
+    uiController.setCycleOverlapCallback([this]() {
+        auto &pill = hintBar.getOverlapPill();
+        const int newIdx = (pill.getSelectedIndex() + 1) % 3;
+        pill.setSelectedIndex(newIdx);
+        static constexpr int factors[] = {2, 4, 8};
+        spectrumAnalyzer.setOverlapFactor(factors[newIdx]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    });
+    uiController.setCycleFFTCallback([this]() {
+        auto &pill = hintBar.getFftPill();
+        const int newIdx = (pill.getSelectedIndex() + 1) % 4;
+        pill.setSelectedIndex(newIdx);
+        spectrumAnalyzer.setFftOrder(newIdx + 11);
+        AnalyzerSettings::save(spectrumAnalyzer);
     });
     uiController.setMetersCallback([this](const bool visible) {
         metersVisible = visible;

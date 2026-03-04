@@ -192,25 +192,25 @@ void FooterBar::mouseEnter(const juce::MouseEvent &e) {
     juce::String title, hint;
 
     if (c == &referencePill) {
-        title = "CLICK";
+        title = "CLICK | KEY R";
         hint = "Reference overlay (sidechain required)";
     } else if (c == &ghostPill) {
-        title = "CLICK";
+        title = "CLICK | KEY G";
         hint = "Show / hide ghost spectrum";
     } else if (c == &modePill) {
-        title = "CLICK";
+        title = "CLICK | KEY Tab";
         hint = "M/S  |  L/R  |  Transient";
     } else if (c == &primaryPill) {
-        title = "CLICK | KEY M";
-        hint = "Show / hide Primary spectrum";
+        title = "CLICK | KEY 1";
+        hint = "Show / hide Ch1 spectrum";
     } else if (c == &secondaryPill) {
-        title = "CLICK | KEY S";
-        hint = "Show / hide Secondary spectrum";
+        title = "CLICK | KEY 2";
+        hint = "Show / hide Ch2 spectrum";
     } else if (c == &freezePill) {
-        title = "CLICK | KEY F";
+        title = "CLICK | KEY Z";
         hint = "Freeze / resume spectrum";
     } else if (c == &infinitePill) {
-        title = "CLICK";
+        title = "CLICK | KEY H";
         hint = "Infinite peak hold";
     } else if (c == &metersPill) {
         title = "CLICK";

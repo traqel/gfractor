@@ -52,6 +52,9 @@ public:
     ToggleButton &getSecondaryPill() { return secondaryPill; }
     ToggleButton &getMetersPill() { return metersPill; }
     ToggleButton &getFreezePill() { return freezePill; }
+    ToggleButton &getGhostPill() { return ghostPill; }
+    ToggleButton &getInfinitePill() { return infinitePill; }
+    DropdownPill &getModePill() { return modePill; }
 
     /** Left margin from SpectrumAnalyzer — used for button alignment. */
     static constexpr int analyzerLeftMargin = Layout::SpectrumAnalyzer::leftMargin;

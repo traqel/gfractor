@@ -23,6 +23,10 @@ SpectrumAnalyzer::SpectrumAnalyzer()
     addAndMakeVisible(fullscreenButton);
 }
 
+void SpectrumAnalyzer::setFullscreen(const bool fullscreen) {
+    fullscreenButton.setToggleState(fullscreen, juce::dontSendNotification);
+}
+
 void SpectrumAnalyzer::applyTheme() {
     backgroundColour = juce::Colour(ColorPalette::background);
     gridColour = juce::Colour(ColorPalette::grid).withAlpha(0.5f);
