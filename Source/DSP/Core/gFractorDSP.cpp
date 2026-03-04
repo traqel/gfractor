@@ -1,5 +1,12 @@
 #include "gFractorDSP.h"
 
+gFractorDSP::~gFractorDSP()
+{
+    // Drain any unprocessed handoff pointers — audio thread is guaranteed stopped by now.
+    delete pendingStrategy.load(std::memory_order_acquire);
+    delete strategyPendingDeletion.load(std::memory_order_acquire);
+}
+
 void gFractorDSP::prepare(const juce::dsp::ProcessSpec &spec) {
     currentSpec = spec;
 
@@ -26,6 +33,10 @@ void gFractorDSP::prepare(const juce::dsp::ProcessSpec &spec) {
     bandFilter1.reset();
     bandFilter2.reset();
 
+    // Drain any pending handoff pointers — prepare() is always called before the audio thread starts.
+    delete pendingStrategy.exchange(nullptr, std::memory_order_acq_rel);
+    delete strategyPendingDeletion.exchange(nullptr, std::memory_order_acq_rel);
+
     channelModeStrategy = ChannelModeStrategyFactory::create(outputMode);
     channelModeStrategy->prepare(spec);
 
@@ -38,8 +49,16 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
         return;
 
     // If bypassed, skip all processing
-    if (bypassed)
+    if (bypassed.load(std::memory_order_acquire))
         return;
+
+    // Pick up any pending strategy swap posted by the message thread (lock-free handoff).
+    if (auto* next = pendingStrategy.exchange(nullptr, std::memory_order_acq_rel))
+    {
+        // Signal the replaced strategy for deferred deletion on the message thread.
+        strategyPendingDeletion.store(channelModeStrategy.release(), std::memory_order_release);
+        channelModeStrategy.reset(next);
+    }
 
     // Create DSP context from buffer
     juce::dsp::AudioBlock<float> block(buffer);
@@ -178,7 +197,8 @@ void gFractorDSP::reset() {
     auditBellFilter2.reset();
     bandFilter1.reset();
     bandFilter2.reset();
-    channelModeStrategy->reset();
+    if (channelModeStrategy)
+        channelModeStrategy->reset();
 }
 
 void gFractorDSP::setGain(const float gainDB) {
@@ -198,11 +218,9 @@ void gFractorDSP::setTransientLength(const float ms) {
 }
 
 void gFractorDSP::setBypassed(const bool shouldBeBypassed) {
-    bypassed = shouldBeBypassed;
-
-    // Optionally reset state when bypassing
-    if (bypassed)
-        reset();
+    bypassed.store(shouldBeBypassed, std::memory_order_release);
+    // Note: do NOT call reset() here — it would race with an in-flight process() call.
+    // Filter state is preserved across bypass; the audio thread stops writing it when bypassed.
 }
 
 void gFractorDSP::setPrimaryEnabled(const bool enabled) {
@@ -214,11 +232,16 @@ void gFractorDSP::setSecondaryEnabled(const bool enabled) {
 }
 
 void gFractorDSP::setOutputMode(const ChannelMode mode) {
+    // Delete any strategy the audio thread signalled for deferred deletion.
+    delete strategyPendingDeletion.exchange(nullptr, std::memory_order_acq_rel);
+
     outputMode = mode;
-    channelModeStrategy = ChannelModeStrategyFactory::create(mode);
-    if (isPrepared) {
-        channelModeStrategy->prepare(currentSpec);
-    }
+    auto next = ChannelModeStrategyFactory::create(mode);
+    if (isPrepared)
+        next->prepare(currentSpec);
+
+    // Post to the audio thread. If a previous pending swap was never picked up, delete it now.
+    delete pendingStrategy.exchange(next.release(), std::memory_order_acq_rel);
 }
 
 void gFractorDSP::setDryWet(const float proportion) {

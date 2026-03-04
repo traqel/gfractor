@@ -20,6 +20,7 @@
 class gFractorDSP : public IDSPProcessor {
 public:
     gFractorDSP() = default;
+    ~gFractorDSP() override;
 
     //==============================================================================
     // IDSPProcessor implementation
@@ -71,11 +72,15 @@ private:
     // Processing state
     juce::dsp::ProcessSpec currentSpec{};
     bool isPrepared = false;
-    bool bypassed = false;
+    std::atomic<bool> bypassed{false};
     std::atomic<bool> primaryEnabled{true};
     std::atomic<bool> secondaryEnabled{true};
     ChannelMode outputMode = ChannelMode::MidSide;
-    std::unique_ptr<IChannelModeStrategy> channelModeStrategy;
+    std::unique_ptr<IChannelModeStrategy> channelModeStrategy; // audio thread only
+    // Lock-free handoff: message thread posts new strategy; audio thread picks it up.
+    std::atomic<IChannelModeStrategy*> pendingStrategy{nullptr};
+    // Deferred deletion: audio thread posts the replaced strategy; message thread deletes it.
+    std::atomic<IChannelModeStrategy*> strategyPendingDeletion{nullptr};
 
     // Smoothed gains for click-free enable/disable transitions (audio thread only)
     juce::SmoothedValue<float> primaryGain;
