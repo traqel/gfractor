@@ -26,7 +26,7 @@ inline int channelModeToInt(const ChannelMode mode) {
 
 inline juce::String channelModeToString(const ChannelMode mode) {
     if (mode == ChannelMode::LR) return "L/R";
-    if (mode == ChannelMode::TonalTransient) return "T/N";
+    if (mode == ChannelMode::TonalTransient) return "TRN";
     return "M/S";
 }
 

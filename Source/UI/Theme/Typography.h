@@ -12,6 +12,8 @@
 namespace Typography {
     inline constexpr auto fontFamily = "JetBrains Mono";
     inline constexpr auto embeddedRegularFont = "JetBrainsMono-Regular.ttf";
+
+    inline constexpr float bigFontSize = 32.0f;
     inline constexpr float mainFontSize = 14.0f;
     inline constexpr float smallFontSize = 12.0f;
 

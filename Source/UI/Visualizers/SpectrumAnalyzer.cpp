@@ -101,6 +101,18 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
     if (!gridImage.isNull())
         g.drawImage(gridImage, 0, 0, getWidth(), getHeight(),
                     0, 0, gridImage.getWidth(), gridImage.getHeight());
+
+    // Mode watermark — faint label, top center of spectrum area
+    {
+        const auto label = channelModeToString(channelMode);
+        g.saveState();
+        g.setColour(juce::Colours::white.withAlpha(0.18f));
+        g.setFont(juce::Font(juce::FontOptions{}.withHeight(Typography::bigFontSize).withStyle("Bold")));
+        const auto area = spectrumArea.toNearestInt().withHeight(static_cast<int>(Typography::bigFontSize) + 4);
+        g.drawText(label, area, juce::Justification::centredTop, false);
+        g.restoreState();
+    }
+
     tooltip.paintRangeBars(g, spectrumArea, range,
                            showPrimary, showSecondary, showGhost, playRef,
                            primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour);
