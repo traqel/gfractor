@@ -89,6 +89,13 @@ public:
         if (!isEnabled())
             return;
 
+        // If the menu just closed (dismissed by clicking this button), don't reopen.
+        // The popup dismisses and fires its callback before mouseUp reaches us,
+        // so we detect this via elapsed time since close.
+        const auto msSinceClosed = juce::Time::getMillisecondCounter() - menuClosedAt;
+        if (msSinceClosed < 200)
+            return;
+
         juce::PopupMenu menu;
         for (int i = 0; i < options.size(); ++i)
             menu.addItem(i + 1, options[i], true, i == selectedIndex);
@@ -98,6 +105,7 @@ public:
             .withTargetComponent(this)
             .withMinimumWidth(getWidth()),
             [this](const int result) {
+                menuClosedAt = juce::Time::getMillisecondCounter();
                 if (result <= 0)
                     return;
                 selectedIndex = result - 1;
@@ -111,6 +119,7 @@ private:
     juce::StringArray options;
     juce::Colour activeCol;
     int selectedIndex = 0;
+    juce::uint32 menuClosedAt = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DropdownPill)
 };
