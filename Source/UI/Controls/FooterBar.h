@@ -7,7 +7,6 @@
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/ButtonCaptions.h"
 #include "../ISpectrumControls.h"
-#include "../../DSP/Interfaces/IPeakLevelSource.h"
 #include "../HintManager.h"
 #include "Buttons/ToggleButton.h"
 
@@ -16,18 +15,12 @@ class gFractorAudioProcessor;
 /**
  * FooterBar
  *
- * 30px tall footer strip containing:
- * - Left: Reference, Mid, Side pill buttons
- * - Right: Settings button
- *
- * Timer feeds peak levels to the SpectrumAnalyzer meter bars at 30Hz.
+ * 30px tall footer strip containing pill buttons for channel, mode, and display controls.
  */
-class FooterBar : public juce::Component,
-                  juce::Timer {
+class FooterBar : public juce::Component {
 public:
     FooterBar(gFractorAudioProcessor &processor,
-              ISpectrumControls &controls,
-              IPeakLevelSource &peakSource);
+              ISpectrumControls &controls);
 
     ~FooterBar() override;
 
@@ -60,11 +53,8 @@ public:
     static constexpr int analyzerLeftMargin = Layout::SpectrumAnalyzer::leftMargin;
 
 private:
-    void timerCallback() override;
-
     gFractorAudioProcessor &processorRef;
     ISpectrumControls &controlsRef;
-    IPeakLevelSource &peakSourceRef;
 
     // Left group — pill buttons
     DropdownPill modePill{ButtonCaptions::channelModeOptions, juce::Colour(ColorPalette::blueAccent)};
@@ -75,14 +65,6 @@ private:
     ToggleButton freezePill{ButtonCaptions::freeze, juce::Colour(ColorPalette::blueAccent)};
     ToggleButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent),};
     ToggleButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::blueAccent)};
-
-    // Smoothed peak levels (fed to SpectrumAnalyzer meter bars)
-    float peakMidDisplay = -100.0f;
-    float peakSideDisplay = -100.0f;
-
-    // Previous raw peak values for repaint gating
-    float primaryMid = -100.0f;
-    float secondarySide = -100.0f;
 
     // Mouse listener overrides — receive forwarded events from pill children
     void mouseEnter(const juce::MouseEvent &e) override;

@@ -6,11 +6,9 @@
 #include "../Theme/ButtonCaptions.h"
 
 FooterBar::FooterBar(gFractorAudioProcessor &processor,
-                     ISpectrumControls &controls,
-                     IPeakLevelSource &peakSource)
+                     ISpectrumControls &controls)
     : processorRef(processor),
-      controlsRef(controls),
-      peakSourceRef(peakSource) {
+      controlsRef(controls) {
     // Reference pill — not APVTS-bound, callback-driven
     referencePill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(referencePill);
@@ -83,12 +81,9 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
 
     applyTheme();
 
-    startTimerHz(30);
 }
 
-FooterBar::~FooterBar() {
-    stopTimer();
-}
+FooterBar::~FooterBar() = default;
 
 void FooterBar::paint(juce::Graphics &g) {
     g.fillAll(juce::Colour(ColorPalette::background));
@@ -146,25 +141,6 @@ void FooterBar::resized() {
 
     // ── Help  Settings ───────────────────────────────────────────────────────
     fb.performLayout(area.toFloat());
-}
-
-void FooterBar::timerCallback() {
-    // Smooth decay for peak display (fast attack, slow release)
-    const float newMid = peakSourceRef.getPeakPrimaryDb();
-    const float newSide = peakSourceRef.getPeakSecondaryDb();
-
-    peakMidDisplay = newMid > peakMidDisplay
-                         ? newMid
-                         : peakMidDisplay * 0.93f + newMid * 0.07f;
-
-    peakSideDisplay = newSide > peakSideDisplay
-                          ? newSide
-                          : peakSideDisplay * 0.93f + newSide * 0.07f;
-
-    if (std::abs(newMid - primaryMid) > 0.1f || std::abs(newSide - secondarySide) > 0.1f)
-        repaint();
-    primaryMid = newMid;
-    secondarySide = newSide;
 }
 
 void FooterBar::syncAnalyzerState() {

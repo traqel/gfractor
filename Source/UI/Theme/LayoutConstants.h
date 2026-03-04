@@ -42,9 +42,6 @@ namespace Layout {
         inline constexpr int defaultFftOrder = 13;
         inline constexpr int numPathPoints = 256;
 
-        inline constexpr float barWidth = 7.0f;
-        inline constexpr float barGap = 2.0f;
-        inline constexpr float barPaddingLeft = 3.0f;
         inline constexpr float barY = 3.0f;
         inline constexpr float barHeight = 16.0f;
 

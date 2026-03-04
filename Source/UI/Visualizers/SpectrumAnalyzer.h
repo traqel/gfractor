@@ -240,7 +240,7 @@ protected:
 private:
     //==============================================================================
     // Fullscreen toggle button (top-right corner)
-    ToggleButton fullscreenButton{"FS", juce::Colour(ColorPalette::axisTextColor), Typography::smallFontSize};
+    ToggleButton fullscreenButton{"FS", juce::Colour(ColorPalette::axisTextColor), Typography::mainFontSize};
 
     //==============================================================================
     // FFT configuration
