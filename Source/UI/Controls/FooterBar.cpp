@@ -161,8 +161,6 @@ void FooterBar::timerCallback() {
                           ? newSide
                           : peakSideDisplay * 0.93f + newSide * 0.07f;
 
-    controlsRef.setPeakLevels(peakMidDisplay, peakSideDisplay);
-
     if (std::abs(newMid - primaryMid) > 0.1f || std::abs(newSide - secondarySide) > 0.1f)
         repaint();
     primaryMid = newMid;

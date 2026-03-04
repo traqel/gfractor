@@ -127,12 +127,6 @@ public:
     /** Show/hide sidechain hint message */
     void setSidechainAvailable(const bool available) override { sidechainAvailable = available; }
 
-    /** Feed processor peak levels for the right-side primary/secondary meter bars (call at ~30 Hz). */
-    void setPeakLevels(const float primaryDb, const float secondaryDb) override {
-        meterPrimaryDb = primaryDb;
-        meterSecondaryDb = secondaryDb;
-    }
-
     void setChannelMode(const int mode) override {
         setChannelMode(channelModeFromInt(mode));
     }
@@ -318,12 +312,6 @@ private:
     juce::Colour axisTextColour{ColorPalette::axisTextColor};
     juce::Colour hintColour{ColorPalette::hintPink};
     juce::Colour bandHeaderColor{ColorPalette::spectrumBorder};
-
-    // Right-side primary/secondary peak level meters
-    float meterPrimaryDb = -100.0f;
-    float meterSecondaryDb = -100.0f;
-
-    void paintLevelMeters(juce::Graphics &g) const;
 
     // Tooltip + range bars overlay
     SpectrumTooltip tooltip;

@@ -118,7 +118,6 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
                          getSampleRate(), smoothedPrimaryDb, smoothedSecondaryDb,
                          showPrimary, showSecondary, playRef,
                          primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour);
-    paintLevelMeters(g);
 }
 
 void SpectrumAnalyzer::resized() {
@@ -245,43 +244,6 @@ void SpectrumAnalyzer::paintSelectedBand(juce::Graphics &g) const {
     }
     if (hi < range.maxFreq) {
         g.drawVerticalLine(static_cast<int>(xHi), sy, sy + sh);
-    }
-}
-
-void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
-    constexpr float barW = Layout::SpectrumAnalyzer::barWidth;
-    constexpr float gap = Layout::SpectrumAnalyzer::barGap;
-    constexpr float padLeft = Layout::SpectrumAnalyzer::barPaddingLeft;
-
-    const float x0 = spectrumArea.getRight() + padLeft; // primary-bar left
-    const float x1 = x0 + barW + gap; // secondary-bar left
-    const float y = spectrumArea.getY();
-    const float h = spectrumArea.getHeight();
-
-    const auto &activePrimaryCol = playRef ? refPrimaryColour : primaryColour;
-    const auto &activeSecondaryCol = playRef ? refSecondaryColour : secondaryColour;
-
-    const float primaryT = juce::jlimit(0.0f, 1.0f,
-                                       (meterPrimaryDb - range.minDb) / (range.maxDb - range.minDb));
-    const float secondaryT = juce::jlimit(0.0f, 1.0f,
-                                         (meterSecondaryDb - range.minDb) / (range.maxDb - range.minDb));
-
-    drawLevelBar(g, {x0, y, barW, h}, primaryT, activePrimaryCol, backgroundColour);
-    drawLevelBar(g, {x1, y, barW, h}, secondaryT, activeSecondaryCol, backgroundColour);
-
-    // Labels above bars
-    g.setFont(Typography::makeBoldFont(9.0f));
-    g.setColour(textColour);
-    if (channelMode == ChannelMode::LR) {
-        g.drawText(UILabels::Channels::left, static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
-                   juce::Justification::centredBottom);
-        g.drawText(UILabels::Channels::right, static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
-                   juce::Justification::centredBottom);
-    } else {
-        g.drawText(UILabels::Channels::mid, static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
-                   juce::Justification::centredBottom);
-        g.drawText(UILabels::Channels::side, static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
-                   juce::Justification::centredBottom);
     }
 }
 
