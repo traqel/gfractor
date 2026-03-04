@@ -194,12 +194,12 @@ juce::AudioProcessorEditor *gFractorAudioProcessor::createEditor() {
 //==============================================================================
 void gFractorAudioProcessor::getStateInformation(juce::MemoryBlock &destData) {
     // Serialize plugin state with version management
-    PluginState::serialize(apvts, destData);
+    PluginState::serialize(apvts, displayState, destData);
 }
 
 void gFractorAudioProcessor::setStateInformation(const void *data, const int sizeInBytes) {
     // Deserialize plugin state with version migration support
-    if (PluginState::deserialize(apvts, data, sizeInBytes)) {
+    if (PluginState::deserialize(apvts, displayState, data, sizeInBytes)) {
         // Update DSP with loaded parameter values
         if (parameterListener != nullptr)
             parameterListener->updateAllParameters();

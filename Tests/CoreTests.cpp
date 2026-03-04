@@ -396,12 +396,15 @@ public:
 
             // Serialize
             juce::MemoryBlock block;
-            expect(PluginState::serialize(proc1.apvts, block));
+            juce::ValueTree extraState{"DisplaySettings"};
+            expect(PluginState::serialize(proc1.apvts, extraState, block));
             expect(block.getSize() > 0);
 
             // Deserialize into a fresh processor
             MinimalProcessor proc2;
-            expect(PluginState::deserialize(proc2.apvts, block.getData(),
+            juce::ValueTree restoredExtra{"DisplaySettings"};
+            expect(PluginState::deserialize(proc2.apvts, restoredExtra,
+                                            block.getData(),
                                             static_cast<int>(block.getSize())));
 
             // Check values match
@@ -414,6 +417,55 @@ public:
                                       6.0f, 0.2f);
             expectWithinAbsoluteError(getVal(proc2.apvts, ParameterIDs::dryWet),
                                       50.0f, 1.0f);
+        }
+
+        beginTest("Display state round-trip");
+        {
+            struct MinimalProcessor : juce::AudioProcessor {
+                MinimalProcessor()
+                    : AudioProcessor(BusesProperties()
+                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+                      apvts(*this, nullptr, "Parameters",
+                            ParameterLayout::createParameterLayout()) {}
+                const juce::String getName() const override { return "Test"; }
+                void prepareToPlay(double, int) override {}
+                void releaseResources() override {}
+                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {}
+                double getTailLengthSeconds() const override { return 0.0; }
+                bool acceptsMidi() const override { return false; }
+                bool producesMidi() const override { return false; }
+                juce::AudioProcessorEditor *createEditor() override { return nullptr; }
+                bool hasEditor() const override { return false; }
+                int getNumPrograms() override { return 1; }
+                int getCurrentProgram() override { return 0; }
+                void setCurrentProgram(int) override {}
+                const juce::String getProgramName(int) override { return {}; }
+                void changeProgramName(int, const juce::String &) override {}
+                void getStateInformation(juce::MemoryBlock &) override {}
+                void setStateInformation(const void *, int) override {}
+                juce::AudioProcessorValueTreeState apvts;
+            };
+
+            MinimalProcessor proc1, proc2;
+
+            juce::ValueTree extra1{"DisplaySettings"};
+            extra1.setProperty("channelMode", 1, nullptr);     // L/R
+            extra1.setProperty("minDb",        -90.0, nullptr);
+            extra1.setProperty("uiTheme",      2,     nullptr); // Balanced
+
+            juce::MemoryBlock block;
+            expect(PluginState::serialize(proc1.apvts, extra1, block));
+            expect(block.getSize() > 0);
+
+            juce::ValueTree extra2{"DisplaySettings"};
+            expect(PluginState::deserialize(proc2.apvts, extra2,
+                                            block.getData(),
+                                            static_cast<int>(block.getSize())));
+
+            expectEquals(static_cast<int>(extra2["channelMode"]), 1);
+            expectWithinAbsoluteError(static_cast<double>(extra2["minDb"]), -90.0, 0.001);
+            expectEquals(static_cast<int>(extra2["uiTheme"]), 2);
         }
 
         beginTest("Version compatibility");
@@ -471,8 +523,9 @@ public:
             };
 
             MinimalProcessor proc;
+            juce::ValueTree extraGarbage{"DisplaySettings"};
             const uint8_t garbage[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0xFF, 0x42, 0x13};
-            expect(PluginState::deserialize(proc.apvts, garbage, sizeof(garbage)) == false);
+            expect(PluginState::deserialize(proc.apvts, extraGarbage, garbage, sizeof(garbage)) == false);
         }
 
         beginTest("Empty data");
@@ -523,7 +576,8 @@ public:
             };
 
             MinimalProcessor proc;
-            expect(PluginState::deserialize(proc.apvts, nullptr, 0) == false);
+            juce::ValueTree extraEmpty{"DisplaySettings"};
+            expect(PluginState::deserialize(proc.apvts, extraEmpty, nullptr, 0) == false);
         }
     }
 };

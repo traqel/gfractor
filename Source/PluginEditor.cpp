@@ -76,8 +76,43 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         resized();
     };
 
-    // Load globally saved analyzer preferences (dB/freq range, colors, slope)
+    // Load globally saved analyzer preferences as baseline
     AnalyzerSettings::load(spectrumAnalyzer);
+
+    // Override with per-project state if this project has saved display settings
+    {
+        auto &displayState = audioProcessor.getDisplayState();
+        if (displayState.isValid() && displayState.getNumProperties() > 0) {
+            auto theme = ColorPalette::getTheme();
+            AnalyzerSettings::loadFromValueTree(spectrumAnalyzer, theme, displayState);
+            ColorPalette::setTheme(theme);
+            applyTheme();
+
+            // Re-sync HintBar pills to restored analyzer state (setSelectedIndex does not fire onChange)
+            hintBar.getFftPill().setSelectedIndex(spectrumAnalyzer.getFftOrder() - 11);
+            const auto of = spectrumAnalyzer.getOverlapFactor();
+            hintBar.getOverlapPill().setSelectedIndex(of == 2 ? 0 : of == 4 ? 1 : 2);
+            const auto cd = spectrumAnalyzer.getCurveDecay();
+            int di = 2;
+            for (int i = 0; i < 4; ++i)
+                if (std::abs(cd - decayValues[i]) < 0.001f) { di = i; break; }
+            hintBar.getDecayPill().setSelectedIndex(di);
+            const auto sl = spectrumAnalyzer.getSlope();
+            int si = 0;
+            for (int i = 0; i < 3; ++i)
+                if (std::abs(sl - slopeValues[i]) < 0.01f) { si = i; break; }
+            hintBar.getSlopePill().setSelectedIndex(si);
+
+            // Restore channel mode — trigger modePill onChange so labels + DSP all update
+            if (displayState.hasProperty("channelMode")) {
+                const int modeIdx = static_cast<int>(displayState["channelMode"]);
+                auto &modePill = footerBar.getModePill();
+                modePill.setSelectedIndex(modeIdx);
+                if (modePill.onChange) modePill.onChange(modeIdx);
+            }
+        }
+    }
+
     spectrumAnalyzer.setBandHintsVisible(AnalyzerSettings::loadBandHints());
     FooterBar::syncAnalyzerState();
 
@@ -106,6 +141,11 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
                     spectrumAnalyzer,
                     audioProcessor.getAPVTS(),
                     [this] { applyTheme(); });
+                preferencePanel->onSave = [this] {
+                    AnalyzerSettings::saveToValueTree(spectrumAnalyzer,
+                                                      ColorPalette::getTheme(),
+                                                      audioProcessor.getDisplayState());
+                };
                 preferencePanel->onClose = [this] {
                     preferencePanel.reset();
                     panelBackdrop.reset();

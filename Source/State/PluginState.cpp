@@ -3,12 +3,14 @@
 #include <utility>
 
 bool PluginState::serialize(juce::AudioProcessorValueTreeState &apvts,
+                            juce::ValueTree &extraState,
                             juce::MemoryBlock &destData) {
     juce::ValueTree rootState(stateIdentifier);
     rootState.setProperty(versionIdentifier, currentStateVersion, nullptr);
 
-    const auto apvtsState = apvts.copyState();
-    rootState.appendChild(apvtsState, nullptr);
+    rootState.appendChild(apvts.copyState(), nullptr);
+    if (extraState.isValid())
+        rootState.appendChild(extraState.createCopy(), nullptr);
 
     const std::unique_ptr xml(rootState.createXml());
     if (xml == nullptr)
@@ -19,6 +21,7 @@ bool PluginState::serialize(juce::AudioProcessorValueTreeState &apvts,
 }
 
 bool PluginState::deserialize(juce::AudioProcessorValueTreeState &apvts,
+                              juce::ValueTree &extraState,
                               const void *data,
                               const int sizeInBytes) {
     const std::unique_ptr xml(
@@ -29,19 +32,18 @@ bool PluginState::deserialize(juce::AudioProcessorValueTreeState &apvts,
 
     auto rootState = juce::ValueTree::fromXml(*xml);
 
-    if (!rootState.isValid())
-        return false;
-
-    if (!rootState.hasType(stateIdentifier))
+    if (!rootState.isValid() || !rootState.hasType(stateIdentifier))
         return false;
 
     const auto apvtsState = rootState.getChildWithName(apvts.state.getType());
-    if (apvtsState.isValid()) {
+    if (apvtsState.isValid())
         apvts.replaceState(apvtsState);
-        return true;
-    }
 
-    return false;
+    const auto savedExtra = rootState.getChildWithName(extraState.getType());
+    if (savedExtra.isValid())
+        extraState = savedExtra.createCopy();
+
+    return apvtsState.isValid();
 }
 
 bool PluginState::isCompatible(const int stateVersion) {

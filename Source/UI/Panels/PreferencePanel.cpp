@@ -164,6 +164,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     saveButton.onClick = [this] {
         AnalyzerSettings::save(settingsRef);
         AnalyzerSettings::saveTheme(ColorPalette::getTheme());
+        if (onSave) onSave();
         if (onClose) onClose();
     };
 

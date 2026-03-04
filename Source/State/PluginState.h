@@ -22,9 +22,11 @@ public:
     static constexpr int minimumCompatibleVersion = 1;
 
     static bool serialize(juce::AudioProcessorValueTreeState &apvts,
+                          juce::ValueTree &extraState,
                           juce::MemoryBlock &destData);
 
     static bool deserialize(juce::AudioProcessorValueTreeState &apvts,
+                            juce::ValueTree &extraState,
                             const void *data,
                             int sizeInBytes);
 

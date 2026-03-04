@@ -71,6 +71,61 @@ struct AnalyzerSettings {
     }
 
     //==========================================================================
+    // Per-project state (ValueTree-based, saved inside plugin state blob)
+
+    static void saveToValueTree(const ISpectrumDisplaySettings &settings,
+                                ColorPalette::Theme theme,
+                                juce::ValueTree &tree) {
+        tree.setProperty("minDb",         static_cast<double>(settings.getMinDb()),                                       nullptr);
+        tree.setProperty("maxDb",         static_cast<double>(settings.getMaxDb()),                                       nullptr);
+        tree.setProperty("minFreq",       static_cast<double>(settings.getMinFreq()),                                     nullptr);
+        tree.setProperty("maxFreq",       static_cast<double>(settings.getMaxFreq()),                                     nullptr);
+        tree.setProperty("midColour",     static_cast<int>(settings.getPrimaryColour().getARGB()),                        nullptr);
+        tree.setProperty("sideColour",    static_cast<int>(settings.getSecondaryColour().getARGB()),                      nullptr);
+        tree.setProperty("refMidColour",  static_cast<int>(settings.getRefPrimaryColour().getARGB()),                     nullptr);
+        tree.setProperty("refSideColour", static_cast<int>(settings.getRefSecondaryColour().getARGB()),                   nullptr);
+        tree.setProperty("smoothingMode", static_cast<int>(settings.getSmoothing()),                                      nullptr);
+        tree.setProperty("fftOrder",      settings.getFftOrder(),                                                         nullptr);
+        tree.setProperty("overlapFactor", settings.getOverlapFactor(),                                                    nullptr);
+        tree.setProperty("curveDecay",    static_cast<double>(settings.getCurveDecay()),                                  nullptr);
+        tree.setProperty("slopeDb",       static_cast<double>(settings.getSlope()),                                       nullptr);
+        tree.setProperty("uiTheme",       static_cast<int>(theme),                                                        nullptr);
+    }
+
+    static void loadFromValueTree(ISpectrumDisplaySettings &settings,
+                                  ColorPalette::Theme &theme,
+                                  const juce::ValueTree &tree) {
+        if (!tree.isValid()) return;
+
+        if (tree.hasProperty("minDb") && tree.hasProperty("maxDb"))
+            settings.setDbRange(static_cast<float>(static_cast<double>(tree["minDb"])),
+                                static_cast<float>(static_cast<double>(tree["maxDb"])));
+        if (tree.hasProperty("minFreq") && tree.hasProperty("maxFreq"))
+            settings.setFreqRange(static_cast<float>(static_cast<double>(tree["minFreq"])),
+                                  static_cast<float>(static_cast<double>(tree["maxFreq"])));
+        if (tree.hasProperty("midColour"))
+            settings.setPrimaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["midColour"]))));
+        if (tree.hasProperty("sideColour"))
+            settings.setSecondaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["sideColour"]))));
+        if (tree.hasProperty("refMidColour"))
+            settings.setRefPrimaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["refMidColour"]))));
+        if (tree.hasProperty("refSideColour"))
+            settings.setRefSecondaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["refSideColour"]))));
+        if (tree.hasProperty("smoothingMode"))
+            settings.setSmoothing(static_cast<SmoothingMode>(static_cast<int>(tree["smoothingMode"])));
+        if (tree.hasProperty("fftOrder"))
+            settings.setFftOrder(static_cast<int>(tree["fftOrder"]));
+        if (tree.hasProperty("overlapFactor"))
+            settings.setOverlapFactor(static_cast<int>(tree["overlapFactor"]));
+        if (tree.hasProperty("curveDecay"))
+            settings.setCurveDecay(static_cast<float>(static_cast<double>(tree["curveDecay"])));
+        if (tree.hasProperty("slopeDb"))
+            settings.setSlope(static_cast<float>(static_cast<double>(tree["slopeDb"])));
+        if (tree.hasProperty("uiTheme"))
+            theme = static_cast<ColorPalette::Theme>(static_cast<int>(tree["uiTheme"]));
+    }
+
+    //==========================================================================
     // UI Layout persistence (separate from spectrum display settings)
 
     static void saveMeteringState(const int panelW, const bool visible) {

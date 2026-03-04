@@ -30,6 +30,9 @@ public:
     static constexpr int panelWidth = Layout::PreferencePanel::panelWidth;
     static constexpr int panelHeight = Layout::PreferencePanel::panelHeight;
 
+    /** Called when settings are saved (before close). Used by PluginEditor to persist to project state. */
+    std::function<void()> onSave;
+
     /** Called when the panel should close (set by PluginEditor) */
     std::function<void()> onClose;
 

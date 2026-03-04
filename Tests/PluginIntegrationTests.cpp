@@ -5,6 +5,7 @@
 #include "PluginProcessor.h"
 #include "DSP/Interfaces/IAudioDataSink.h"
 #include "State/ParameterIDs.h"
+#include "Utility/ChannelMode.h"
 
 class PluginIntegrationTests : public juce::UnitTest {
 public:
@@ -64,6 +65,29 @@ public:
             juce::MidiBuffer midi;
             restored.processBlock(block, midi);
             bufferIsFinite(block);
+        }
+
+        beginTest("Display state round-trip: channel mode survives save/load");
+        {
+            gFractorAudioProcessor source;
+            // Changing output mode updates displayState automatically
+            source.setOutputMode(ChannelMode::LR);
+
+            juce::MemoryBlock state;
+            source.getStateInformation(state);
+            expect(state.getSize() > 0);
+
+            gFractorAudioProcessor restored;
+            restored.setStateInformation(state.getData(), static_cast<int>(state.getSize()));
+
+            // channelMode == 1 is L/R
+            expectEquals(static_cast<int>(restored.getDisplayState()["channelMode"]), 1);
+
+            // TonalTransient round-trip
+            source.setOutputMode(ChannelMode::TonalTransient);
+            source.getStateInformation(state);
+            restored.setStateInformation(state.getData(), static_cast<int>(state.getSize()));
+            expectEquals(static_cast<int>(restored.getDisplayState()["channelMode"]), 2);
         }
 
         beginTest("Processor rejects corrupt/truncated state safely");

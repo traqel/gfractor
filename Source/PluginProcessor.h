@@ -84,6 +84,10 @@ public:
     const juce::AudioProcessorValueTreeState &getAPVTS() const { return apvts; }
 
     //==============================================================================
+    // Per-project display settings (saved in plugin state, not the global prefs file)
+    juce::ValueTree &getDisplayState() { return displayState; }
+
+    //==============================================================================
     // Audio data sink registration (decoupled from concrete UI types)
     void registerAudioDataSink(IAudioDataSink *sink);
     void unregisterAudioDataSink(IAudioDataSink *sink);
@@ -117,6 +121,7 @@ public:
      *  T/N mode introduces kFftSize samples of latency via SpectralSeparator. */
     void setOutputMode(const ChannelMode mode) {
         dspProcessor.setOutputMode(mode);
+        displayState.setProperty("channelMode", channelModeToInt(mode), nullptr);
     }
 
 
@@ -129,6 +134,9 @@ private:
     //==============================================================================
     // Parameter state management
     juce::AudioProcessorValueTreeState apvts;
+
+    // Per-project display settings (analyzer colors, ranges, theme, etc.)
+    juce::ValueTree displayState{"DisplaySettings"};
 
     //==============================================================================
     // DSP Processor
