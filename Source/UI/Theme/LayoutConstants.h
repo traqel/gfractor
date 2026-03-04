@@ -11,6 +11,9 @@ namespace Layout {
     namespace PillButton {
         inline constexpr int buttonWidth = 64;
         inline constexpr float buttonHeight = 28;
+        inline constexpr int smallSquareButton = 20;
+        inline constexpr int normalSquareButton = 28;
+
     }
 
     //==========================================================================

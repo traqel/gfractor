@@ -16,6 +16,7 @@ HeaderBar::HeaderBar(std::function<void()> settingsCallback,
     addAndMakeVisible(settingsPill);
 
     // Help button - non-toggle
+    helpPill.setIcon(Icons::help);
     helpPill.setClickingTogglesState(false);
     helpPill.setToggleState(false, juce::dontSendNotification);
     helpPill.onClick = std::move(helpCallback);
@@ -53,14 +54,13 @@ void HeaderBar::resized() {
 
     using Item = juce::FlexItem;
 
-    constexpr auto bh = Layout::PillButton::buttonHeight;
-    constexpr auto bw = Layout::PillButton::buttonWidth;
+    constexpr auto bs = Layout::PillButton::normalSquareButton;
 
-    fb.items.add(Item(logo).withFlex(1.0f).withHeight(bh));
-    fb.items.add(Item().withHeight(bh));
-    fb.items.add(Item(settingsPill).withWidth(bw).withHeight(bh));
-    fb.items.add(Item().withWidth(Spacing::gapM).withHeight(bh));
-    fb.items.add(Item(helpPill).withWidth(bw).withHeight(bh));
+    fb.items.add(Item(logo).withFlex(1.0f).withHeight(bs));
+    fb.items.add(Item().withHeight(bs));
+    fb.items.add(Item(settingsPill).withWidth(bs).withHeight(bs));
+    fb.items.add(Item().withWidth(Spacing::gapM).withHeight(bs));
+    fb.items.add(Item(helpPill).withWidth(bs).withHeight(bs));
 
     const auto bounds = getLocalBounds();
     fb.performLayout(bounds);

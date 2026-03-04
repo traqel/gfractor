@@ -33,4 +33,12 @@ namespace Icons {
   "/>
 </svg>
 )svg";
+    // Question-mark help icon (stroke/fill in black; button recolors at paint time)
+    inline constexpr auto help = R"svg(
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 13">
+  <path d="M2,3.5 C2,1 8,1 8,4 C8,6.5 5,6.5 5,9" fill="none" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="5" cy="12" r="1.2" fill="#000000"/>
+</svg>
+)svg";
+
 } // namespace Icons

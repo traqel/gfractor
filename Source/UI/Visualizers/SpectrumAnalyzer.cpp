@@ -125,8 +125,8 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
 void SpectrumAnalyzer::resized() {
     rebuildGridImage();
 
-    constexpr int btnSize = 20;
-    constexpr int btnMargin = 4;
+    constexpr int btnSize = Layout::PillButton::smallSquareButton;
+    constexpr int btnMargin = Spacing::gapS;
     constexpr int rMargin = Layout::SpectrumAnalyzer::rightMargin;
     constexpr int tMargin = Layout::SpectrumAnalyzer::topMargin;
     // Position inside spectrum area, top-right — clear of meter bars (right margin) and channel labels (top margin)
