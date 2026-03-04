@@ -21,9 +21,7 @@ class PreferencePanel : public juce::Component {
 public:
     PreferencePanel(ISpectrumDisplaySettings &settings,
                     juce::AudioProcessorValueTreeState &apvts,
-                    std::function<void()> themeChangedCallback = {},
-                    bool bandHintsOn = true,
-                    std::function<void(bool)> bandHintsChangedCallback = {});
+                    std::function<void()> themeChangedCallback = {});
 
     void paint(juce::Graphics &g) override;
 
@@ -65,7 +63,6 @@ private:
         float curveDecay;
         float slope;
         ColorPalette::Theme theme;
-        bool bandHints;
         float transientLength;
     };
 
@@ -104,9 +101,6 @@ private:
     juce::ComboBox themeCombo;
     juce::Label themeLabel;
 
-    ToggleButton bandHintsToggle{"Band Hints", juce::Colour(ColorPalette::blueAccent), true};
-    juce::Label bandHintsLabel;
-
     PillButton saveButton{"Save", juce::Colour(ColorPalette::textDimmed)};
     PillButton cancelButton{"Cancel", juce::Colour(ColorPalette::textDimmed)};
     PillButton resetButton{"Reset", juce::Colour(ColorPalette::textDimmed)};
@@ -132,7 +126,6 @@ private:
     void resetToDefaults();
 
     std::function<void()> onThemeChanged;
-    std::function<void(bool)> onBandHintsChanged;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PreferencePanel)
 };

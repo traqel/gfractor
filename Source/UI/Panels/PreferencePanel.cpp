@@ -12,9 +12,7 @@
 //==============================================================================
 PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
                                  juce::AudioProcessorValueTreeState &apvts,
-                                 std::function<void()> themeChangedCallback,
-                                 const bool bandHintsOn,
-                                 std::function<void(bool)> bandHintsChangedCallback)
+                                 std::function<void()> themeChangedCallback)
     : settingsRef(settings),
       apvtsRef(apvts),
       snapshot{
@@ -25,11 +23,9 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
           settings.getSmoothing(), settings.getFftOrder(), settings.getOverlapFactor(),
           settings.getCurveDecay(), settings.getSlope(),
           ColorPalette::getTheme(),
-          bandHintsOn,
           apvts.getRawParameterValue("transientLength")->load()
       },
-      onThemeChanged(std::move(themeChangedCallback)),
-      onBandHintsChanged(std::move(bandHintsChangedCallback)) {
+      onThemeChanged(std::move(themeChangedCallback)) {
     constexpr auto textBoxWidth = Layout::PreferencePanel::textBoxWidth;
     setOpaque(true);
 
@@ -226,24 +222,11 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     themeLabel.setText("Theme", juce::dontSendNotification);
     themeLabel.setJustificationType(juce::Justification::centredRight);
 
-    // --- Band hints toggle ---
-    bandHintsToggle.setToggleState(bandHintsOn, juce::dontSendNotification);
-    bandHintsToggle.onClick = [this] {
-        if (onBandHintsChanged)
-            onBandHintsChanged(bandHintsToggle.getToggleState());
-    };
-    addAndMakeVisible(bandHintsToggle);
-
-    addAndMakeVisible(bandHintsLabel);
-    bandHintsLabel.setText("Bands", juce::dontSendNotification);
-    bandHintsLabel.setJustificationType(juce::Justification::centredRight);
-
     // --- Save button ---
     addAndMakeVisible(saveButton);
     saveButton.onClick = [this] {
         AnalyzerSettings::save(settingsRef);
         AnalyzerSettings::saveTheme(ColorPalette::getTheme());
-        AnalyzerSettings::saveBandHints(bandHintsToggle.getToggleState());
         if (onClose) onClose();
     };
 
@@ -273,7 +256,6 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     applyLabelFont(slopeLabel);
     applyLabelFont(transientLengthLabel);
     applyLabelFont(themeLabel);
-    applyLabelFont(bandHintsLabel);
 
     minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
@@ -308,13 +290,7 @@ void PreferencePanel::resized() {
         control.setBounds(row);
     };
 
-    layoutRow(minDbLabel, minDbSlider);
-    layoutRow(maxDbLabel, maxDbSlider);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
-    layoutRow(minFreqLabel, minFreqSlider);
-    layoutRow(maxFreqLabel, maxFreqSlider);
+    layoutRow(themeLabel, themeCombo);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -342,11 +318,19 @@ void PreferencePanel::resized() {
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    layoutRow(themeLabel, themeCombo);
+    layoutRow(minDbLabel, minDbSlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    layoutRow(bandHintsLabel, bandHintsToggle);
+    layoutRow(maxDbLabel, maxDbSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(minFreqLabel, minFreqSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(maxFreqLabel, maxFreqSlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -533,10 +517,6 @@ void PreferencePanel::revertToSnapshot() {
     themeCombo.setSelectedId(themeToId(snapshot.theme), juce::dontSendNotification);
     if (onThemeChanged)
         onThemeChanged();
-
-    bandHintsToggle.setToggleState(snapshot.bandHints, juce::dontSendNotification);
-    if (onBandHintsChanged)
-        onBandHintsChanged(snapshot.bandHints);
 }
 
 void PreferencePanel::resetToDefaults() {
@@ -578,10 +558,6 @@ void PreferencePanel::resetToDefaults() {
     themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Balanced), juce::dontSendNotification);
     if (onThemeChanged)
         onThemeChanged();
-
-    bandHintsToggle.setToggleState(true, juce::dontSendNotification);
-    if (onBandHintsChanged)
-        onBandHintsChanged(true);
 
     // Update color swatches
     primarySwatch.colour = D::primaryColour();
