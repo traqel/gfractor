@@ -22,12 +22,21 @@ public:
     void setHint(const HintManager::HintContent& content);
 
     DropdownPill& getFftPill() { return fftPill; }
+    DropdownPill& getOverlapPill() { return overlapPill; }
+    DropdownPill& getDecayPill() { return decayPill; }
+    DropdownPill& getSlopePill() { return slopePill; }
 
 private:
     HintManager::HintContent currentContent;
 
     DropdownPill fftPill{{"2048", "4096", "8192", "16384"}, juce::Colour(ColorPalette::textDimmed)};
+    DropdownPill overlapPill{{"2x", "4x", "8x"}, juce::Colour(ColorPalette::textDimmed)};
+    DropdownPill decayPill{{"Off", "Fast", "Med", "Slow"}, juce::Colour(ColorPalette::textDimmed)};
+    DropdownPill slopePill{{"0", "+3", "+4.5"}, juce::Colour(ColorPalette::textDimmed)};
     juce::Rectangle<int> fftLabelBounds;
+    juce::Rectangle<int> overlapLabelBounds;
+    juce::Rectangle<int> decayLabelBounds;
+    juce::Rectangle<int> slopeLabelBounds;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HintBar)
 };

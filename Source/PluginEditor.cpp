@@ -26,6 +26,38 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         spectrumAnalyzer.setFftOrder(index + 11);
         AnalyzerSettings::save(spectrumAnalyzer);
     };
+    // Wire overlap dropdown on hint bar (factors 2,4,8 → indices 0,1,2)
+    hintBar.getOverlapPill().setSelectedIndex(
+        spectrumAnalyzer.getOverlapFactor() == 2 ? 0 : spectrumAnalyzer.getOverlapFactor() == 4 ? 1 : 2);
+    hintBar.getOverlapPill().onChange = [this](int index) {
+        static constexpr int factors[] = {2, 4, 8};
+        spectrumAnalyzer.setOverlapFactor(factors[index]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    };
+    // Wire decay dropdown on hint bar (Off=0.0, Fast=0.85, Med=0.95, Slow=0.99)
+    static constexpr float decayValues[] = {0.0f, 0.85f, 0.95f, 0.99f};
+    const auto currentDecay = spectrumAnalyzer.getCurveDecay();
+    int decayIndex = 2; // default Med
+    for (int i = 0; i < 4; ++i)
+        if (std::abs(currentDecay - decayValues[i]) < 0.001f) { decayIndex = i; break; }
+    hintBar.getDecayPill().setSelectedIndex(decayIndex);
+    hintBar.getDecayPill().onChange = [this](int index) {
+        static constexpr float values[] = {0.0f, 0.85f, 0.95f, 0.99f};
+        spectrumAnalyzer.setCurveDecay(values[index]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    };
+    // Wire slope dropdown on hint bar (0, 3, 4.5 dB/oct → indices 0,1,2)
+    static constexpr float slopeValues[] = {0.0f, 3.0f, 4.5f};
+    const auto currentSlope = spectrumAnalyzer.getSlope();
+    int slopeIndex = 0;
+    for (int i = 0; i < 3; ++i)
+        if (std::abs(currentSlope - slopeValues[i]) < 0.01f) { slopeIndex = i; break; }
+    hintBar.getSlopePill().setSelectedIndex(slopeIndex);
+    hintBar.getSlopePill().onChange = [this](int index) {
+        static constexpr float values[] = {0.0f, 3.0f, 4.5f};
+        spectrumAnalyzer.setSlope(values[index]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    };
     // Register with processor so it can push audio data
     audioProcessor.registerAudioDataSink(&spectrumAnalyzer);
     audioProcessor.setGhostDataSink(&spectrumAnalyzer);

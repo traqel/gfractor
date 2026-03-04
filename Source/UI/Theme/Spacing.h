@@ -30,6 +30,7 @@ namespace Spacing {
     inline constexpr int gapM = 8;
     inline constexpr int gapL = 12;
     inline constexpr int gapXL = 20;
+    inline constexpr int gapXXL = 30;
 }
 
 namespace Radius {

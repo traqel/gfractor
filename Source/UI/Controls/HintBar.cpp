@@ -6,7 +6,13 @@
 HintBar::HintBar() {
     setInterceptsMouseClicks(false, true);
     fftPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    overlapPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    decayPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    slopePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     addAndMakeVisible(fftPill);
+    addAndMakeVisible(overlapPill);
+    addAndMakeVisible(decayPill);
+    addAndMakeVisible(slopePill);
 }
 
 void HintBar::paint(juce::Graphics &g) {
@@ -14,7 +20,7 @@ void HintBar::paint(juce::Graphics &g) {
 
     constexpr int paddingX = 12;
     const auto textArea = getLocalBounds().reduced(paddingX, 0).toFloat()
-            .withTrimmedRight(static_cast<float>(fftPill.getWidth() + fftLabelBounds.getWidth() + Spacing::gapM * 2));
+                              .withTrimmedRight(static_cast<float>(getWidth() - slopeLabelBounds.getX() + Spacing::gapM));
 
     juce::AttributedString str;
 
@@ -36,25 +42,45 @@ void HintBar::paint(juce::Graphics &g) {
     layout.createLayout(str, textArea.getWidth(), textArea.getHeight());
     layout.draw(g, textArea);
 
-    // -- FFT label (left of pill) --
+    // -- Labels (left of each pill) --
     g.setFont(Typography::makeBoldFont(Typography::smallFontSize));
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.drawText("FFT", fftLabelBounds, juce::Justification::centredRight);
+    g.drawText("OVL", overlapLabelBounds, juce::Justification::centredRight);
+    g.drawText("DCY", decayLabelBounds, juce::Justification::centredRight);
+    g.drawText("SLP", slopeLabelBounds, juce::Justification::centredRight);
 }
 
 void HintBar::resized() {
-    constexpr int pillW = 72;
-    constexpr int pillH = 20;
-    constexpr int paddingX = 28;
+    constexpr int pillW = Layout::PillButton::buttonWidth;
+    constexpr int pillH = Layout::HintBar::height - Spacing::gapS;
+    constexpr int paddingX = Spacing::gapXL;
     constexpr int labelW = 28;
-    constexpr int labelGap = 4;
+    constexpr int labelGap = Spacing::gapS;
+    constexpr int pillGap = Spacing::gapM;
 
     const auto area = getLocalBounds();
-    const int pillX = area.getRight() - pillW - paddingX;
     const int pillY = (area.getHeight() - pillH) / 2;
 
-    fftPill.setBounds(pillX, pillY, pillW, pillH);
-    fftLabelBounds = juce::Rectangle<int>(pillX - labelW - labelGap, 0, labelW, area.getHeight());
+    // FFT pill — rightmost
+    const int fftPillX = area.getRight() - pillW - paddingX;
+    fftPill.setBounds(fftPillX, pillY, pillW, pillH);
+    fftLabelBounds = {fftPillX - labelW - labelGap, 0, labelW, area.getHeight()};
+
+    // Overlap pill — left of FFT
+    const int overlapPillX = fftLabelBounds.getX() - pillGap - pillW;
+    overlapPill.setBounds(overlapPillX, pillY, pillW, pillH);
+    overlapLabelBounds = {overlapPillX - labelW - labelGap, 0, labelW, area.getHeight()};
+
+    // Decay pill — left of Overlap
+    const int decayPillX = overlapLabelBounds.getX() - pillGap - pillW;
+    decayPill.setBounds(decayPillX, pillY, pillW, pillH);
+    decayLabelBounds = {decayPillX - labelW - labelGap, 0, labelW, area.getHeight()};
+
+    // Slope pill — left of Decay
+    const int slopePillX = decayLabelBounds.getX() - pillGap - pillW;
+    slopePill.setBounds(slopePillX, pillY, pillW, pillH);
+    slopeLabelBounds = {slopePillX - labelW - labelGap, 0, labelW, area.getHeight()};
 }
 
 void HintBar::setHint(const HintManager::HintContent &content) {
