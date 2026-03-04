@@ -4,6 +4,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../../Theme/ColorPalette.h"
 #include "../../Theme/Typography.h"
+#include "Theme/Spacing.h"
 
 /**
  * ToggleButton

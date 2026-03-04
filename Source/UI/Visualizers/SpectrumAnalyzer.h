@@ -16,6 +16,7 @@
 #include "../ISpectrumDisplaySettings.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
+#include "../Controls/Buttons/ToggleButton.h"
 #include "../../Utility/ChannelMode.h"
 #include "../../Utility/DisplayRange.h"
 #include "../../DSP/Interfaces/IAudioDataSink.h"
@@ -82,6 +83,9 @@ public:
 
     /** Callback for band selection filter (set by PluginEditor) */
     std::function<void(bool active, float freqHz, float q)> onBandFilter;
+
+    /** Callback fired when the fullscreen toggle button is clicked (set by PluginEditor) */
+    std::function<void(bool fullscreen)> onFullscreen;
 
     //==============================================================================
     // ISpectrumControls implementation
@@ -237,6 +241,10 @@ protected:
     void onSampleRateChanged() override;
 
 private:
+    //==============================================================================
+    // Fullscreen toggle button (top-right corner)
+    ToggleButton fullscreenButton{"FS", juce::Colour(ColorPalette::axisTextColor), Typography::smallFontSize};
+
     //==============================================================================
     // FFT configuration
     static constexpr int defaultFftOrder = Defaults::fftOrder;

@@ -79,7 +79,12 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     // Load globally saved analyzer preferences (dB/freq range, colors, slope)
     AnalyzerSettings::load(spectrumAnalyzer);
     spectrumAnalyzer.setBandHintsVisible(AnalyzerSettings::loadBandHints());
-    footerBar.syncAnalyzerState();
+    FooterBar::syncAnalyzerState();
+
+    // Wire fullscreen toggle callback
+    spectrumAnalyzer.onFullscreen = [this](const bool fullscreen) {
+        setSpectrumFullscreen(fullscreen);
+    };
 
     // Wire audition filter callback (right-click in analyzer -> bell filter)
     spectrumAnalyzer.onAuditFilter = [this](const bool active, const float freq, const float q) {
@@ -264,7 +269,8 @@ gFractorAudioProcessorEditor::~gFractorAudioProcessorEditor() {
     audioProcessor.unregisterAudioDataSink(&meteringPanel);
     audioProcessor.unregisterAudioDataSink(&spectrumAnalyzer);
 
-    // Clear the audit filter callback (captures `this`)
+    // Clear callbacks that capture `this`
+    spectrumAnalyzer.onFullscreen = nullptr;
     spectrumAnalyzer.onAuditFilter = nullptr;
 
     performanceDisplay.setProcessor(nullptr);
@@ -288,41 +294,59 @@ void gFractorAudioProcessorEditor::paint(juce::Graphics &g) {
 }
 
 void gFractorAudioProcessorEditor::resized() {
-    juce::FlexBox outerFb;
-    outerFb.flexDirection = juce::FlexBox::Direction::column;
-    outerFb.alignItems = juce::FlexBox::AlignItems::stretch;
+    const auto bounds = getLocalBounds();
 
-    using Item = juce::FlexItem;
+    if (spectrumFullscreen) {
+        // Fullscreen: spectrum fills everything except the HintBar at the bottom
+        headerBar->setVisible(false);
+        footerBar.setVisible(false);
+        meteringPanel.setVisible(false);
+        panelDivider.setVisible(false);
 
-    // Main: Header + Spectrum + Footer (all in one vertical flexbox)
-    juce::FlexBox mainFb;
-    mainFb.flexDirection = juce::FlexBox::Direction::column;
-    mainFb.alignItems = juce::FlexBox::AlignItems::stretch;
+        hintBar.setBounds(bounds.getX(), bounds.getBottom() - Spacing::hintBarHeight,
+                          bounds.getWidth(), Spacing::hintBarHeight);
+        spectrumAnalyzer.setBounds(bounds.withTrimmedBottom(Spacing::hintBarHeight));
+    } else {
+        headerBar->setVisible(true);
+        footerBar.setVisible(true);
+        if (metersVisible) meteringPanel.setVisible(true);
 
-    mainFb.items.add(Item(*headerBar).withHeight(Spacing::headerHeight));
+        juce::FlexBox outerFb;
+        outerFb.flexDirection = juce::FlexBox::Direction::column;
+        outerFb.alignItems = juce::FlexBox::AlignItems::stretch;
 
-    juce::FlexBox contentFb;
-    contentFb.flexDirection = juce::FlexBox::Direction::row;
-    contentFb.alignItems = juce::FlexBox::AlignItems::stretch;
+        using Item = juce::FlexItem;
 
-    contentFb.items.add(Item(spectrumAnalyzer).withFlex(1.0f));
+        // Main: Header + Spectrum + Footer (all in one vertical flexbox)
+        juce::FlexBox mainFb;
+        mainFb.flexDirection = juce::FlexBox::Direction::column;
+        mainFb.alignItems = juce::FlexBox::AlignItems::stretch;
 
-    if (metersVisible) {
-        constexpr float dividerW = 5.0f;
-        contentFb.items.add(Item(panelDivider).withWidth(dividerW));
-        contentFb.items.add(Item(meteringPanel).withWidth(static_cast<float>(meteringPanelW)));
+        mainFb.items.add(Item(*headerBar).withHeight(Spacing::headerHeight));
+
+        juce::FlexBox contentFb;
+        contentFb.flexDirection = juce::FlexBox::Direction::row;
+        contentFb.alignItems = juce::FlexBox::AlignItems::stretch;
+
+        contentFb.items.add(Item(spectrumAnalyzer).withFlex(1.0f));
+
+        if (metersVisible) {
+            constexpr float dividerW = 5.0f;
+            contentFb.items.add(Item(panelDivider).withWidth(dividerW));
+            contentFb.items.add(Item(meteringPanel).withWidth(static_cast<float>(meteringPanelW)));
+        }
+
+        mainFb.items.add(Item(contentFb).withFlex(1.0f));
+        mainFb.items.add(Item(footerBar).withHeight(Spacing::footerHeight));
+
+        const auto horizontalMargin = juce::FlexItem::Margin(0, Spacing::marginM, 0, Spacing::marginM);
+        outerFb.items.add(Item(mainFb).withFlex(1.0f).withMargin(horizontalMargin));
+        outerFb.items.add(Item(hintBar).withHeight(Spacing::hintBarHeight));
+
+        outerFb.performLayout(bounds.toFloat());
+
+        panelDivider.setVisible(metersVisible);
     }
-
-    mainFb.items.add(Item(contentFb).withFlex(1.0f));
-    mainFb.items.add(Item(footerBar).withHeight(Spacing::footerHeight));
-
-    const auto horizontalMargin = juce::FlexItem::Margin(0, Spacing::marginM, 0, Spacing::marginM);
-    outerFb.items.add(Item(mainFb).withFlex(1.0f).withMargin(horizontalMargin));
-    outerFb.items.add(Item(hintBar).withHeight(Spacing::hintBarHeight));
-
-    outerFb.performLayout(getLocalBounds().toFloat());
-
-    panelDivider.setVisible(metersVisible);
 
     // Backdrop fills the whole editor (click-outside detection)
     if (panelBackdrop != nullptr)
@@ -383,6 +407,11 @@ void gFractorAudioProcessorEditor::setReferenceMode(const bool on) {
 
 void gFractorAudioProcessorEditor::timerCallback() {
     uiController.timerCallback();
+}
+
+void gFractorAudioProcessorEditor::setSpectrumFullscreen(const bool fullscreen) {
+    spectrumFullscreen = fullscreen;
+    resized();
 }
 
 void gFractorAudioProcessorEditor::togglePerformanceDisplay() {

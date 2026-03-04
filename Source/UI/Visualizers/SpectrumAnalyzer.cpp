@@ -15,6 +15,12 @@ SpectrumAnalyzer::SpectrumAnalyzer()
     fftProcessor.setTemporalDecay(curveDecay);
     SpectrumAnalyzer::setFftOrder(defaultFftOrder);
     setOpaque(true);
+
+    fullscreenButton.onClick = [this] {
+        if (onFullscreen)
+            onFullscreen(fullscreenButton.getToggleState());
+    };
+    addAndMakeVisible(fullscreenButton);
 }
 
 void SpectrumAnalyzer::applyTheme() {
@@ -113,6 +119,15 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
 
 void SpectrumAnalyzer::resized() {
     rebuildGridImage();
+
+    constexpr int btnSize = 20;
+    constexpr int btnMargin = 4;
+    constexpr int rightMargin = Layout::SpectrumAnalyzer::rightMargin;
+    constexpr int topMargin = Layout::SpectrumAnalyzer::topMargin;
+    // Position inside spectrum area, top-right — clear of meter bars (right margin) and channel labels (top margin)
+    fullscreenButton.setBounds(getWidth() - rightMargin - btnSize - btnMargin,
+                               topMargin + btnMargin,
+                               btnSize, btnSize);
 }
 
 void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {

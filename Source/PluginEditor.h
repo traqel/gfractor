@@ -148,6 +148,8 @@ private:
 
     void togglePerformanceDisplay();
 
+    void setSpectrumFullscreen(bool fullscreen);
+
     //==============================================================================
     // Resize support
     juce::ComponentBoundsConstrainer resizeConstraints;
@@ -157,6 +159,10 @@ private:
     static constexpr int minHeight = 600;
     static constexpr int maxWidth = 2200;
     static constexpr int maxHeight = 1200;
+
+    //==============================================================================
+    // Fullscreen spectrum mode
+    bool spectrumFullscreen = false;
 
     //==============================================================================
     // Control-key reference toggle
