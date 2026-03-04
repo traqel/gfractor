@@ -20,8 +20,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
           settings.getMinFreq(), settings.getMaxFreq(),
           settings.getPrimaryColour(), settings.getSecondaryColour(),
           settings.getRefPrimaryColour(), settings.getRefSecondaryColour(),
-          settings.getSmoothing(), settings.getFftOrder(), settings.getOverlapFactor(),
-          settings.getCurveDecay(), settings.getSlope(),
+          settings.getSmoothing(),
           ColorPalette::getTheme(),
           apvts.getRawParameterValue("transientLength")->load()
       },
@@ -114,37 +113,6 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     coloursLabel.setText("Colours", juce::dontSendNotification);
     coloursLabel.setJustificationType(juce::Justification::centredRight);
 
-    // --- FFT order combo box ---
-    addAndMakeVisible(fftOrderCombo);
-    fftOrderCombo.addItem("2048", 2);
-    fftOrderCombo.addItem("4096", 3);
-    fftOrderCombo.addItem("8192", 4);
-    fftOrderCombo.addItem("16384", 5);
-    fftOrderCombo.setSelectedId(fftOrderToId(settings.getFftOrder()),
-                                juce::dontSendNotification);
-    fftOrderCombo.onChange = [this] {
-        settingsRef.setFftOrder(idToFftOrder(fftOrderCombo.getSelectedId()));
-    };
-
-    addAndMakeVisible(fftOrderLabel);
-    fftOrderLabel.setText("FFT", juce::dontSendNotification);
-    fftOrderLabel.setJustificationType(juce::Justification::centredRight);
-
-    // --- Hann overlap combo box ---
-    addAndMakeVisible(overlapCombo);
-    overlapCombo.addItem("2x (50%)", 1);
-    overlapCombo.addItem("4x (75%)", 2);
-    overlapCombo.addItem("8x (87.5%)", 3);
-    overlapCombo.setSelectedId(overlapFactorToId(settings.getOverlapFactor()),
-                               juce::dontSendNotification);
-    overlapCombo.onChange = [this] {
-        settingsRef.setOverlapFactor(idToOverlapFactor(overlapCombo.getSelectedId()));
-    };
-
-    addAndMakeVisible(overlapLabel);
-    overlapLabel.setText("Overlap", juce::dontSendNotification);
-    overlapLabel.setJustificationType(juce::Justification::centredRight);
-
     // --- Smoothing combo box ---
     addAndMakeVisible(smoothingCombo);
     smoothingCombo.addItem("Off", 1);
@@ -160,37 +128,6 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     addAndMakeVisible(smoothingLabel);
     smoothingLabel.setText("Smooth", juce::dontSendNotification);
     smoothingLabel.setJustificationType(juce::Justification::centredRight);
-
-    // --- Curve decay slider ---
-    addAndMakeVisible(decaySlider);
-    decaySlider.setRange(0.0, 1.0, 0.001);
-    decaySlider.setSkewFactorFromMidPoint(0.95);
-    decaySlider.setValue(settings.getCurveDecay(), juce::dontSendNotification);
-    decaySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
-    decaySlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    decaySlider.setNumDecimalPlacesToDisplay(3);
-    decaySlider.onValueChange = [this] {
-        settingsRef.setCurveDecay(static_cast<float>(decaySlider.getValue()));
-    };
-
-    addAndMakeVisible(decayLabel);
-    decayLabel.setText("Decay", juce::dontSendNotification);
-    decayLabel.setJustificationType(juce::Justification::centredRight);
-
-    // --- Slope slider ---
-    addAndMakeVisible(slopeSlider);
-    slopeSlider.setRange(-9.0, 9.0, 0.1);
-    slopeSlider.setValue(settings.getSlope(), juce::dontSendNotification);
-    slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
-    slopeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    slopeSlider.setTextValueSuffix(" dB");
-    slopeSlider.onValueChange = [this] {
-        settingsRef.setSlope(static_cast<float>(slopeSlider.getValue()));
-    };
-
-    addAndMakeVisible(slopeLabel);
-    slopeLabel.setText("Slope", juce::dontSendNotification);
-    slopeLabel.setJustificationType(juce::Justification::centredRight);
 
     // --- Transient length slider ---
     addAndMakeVisible(transientLengthSlider);
@@ -249,11 +186,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     applyLabelFont(minFreqLabel);
     applyLabelFont(maxFreqLabel);
     applyLabelFont(coloursLabel);
-    applyLabelFont(fftOrderLabel);
-    applyLabelFont(overlapLabel);
     applyLabelFont(smoothingLabel);
-    applyLabelFont(decayLabel);
-    applyLabelFont(slopeLabel);
     applyLabelFont(transientLengthLabel);
     applyLabelFont(themeLabel);
 
@@ -261,8 +194,6 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-    decaySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
-    slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
 }
 
 //==============================================================================
@@ -294,23 +225,7 @@ void PreferencePanel::resized() {
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    layoutRow(fftOrderLabel, fftOrderCombo);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
-    layoutRow(overlapLabel, overlapCombo);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
     layoutRow(smoothingLabel, smoothingCombo);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
-    layoutRow(decayLabel, decaySlider);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
-    layoutRow(slopeLabel, slopeSlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -409,27 +324,6 @@ void PreferencePanel::ColourSwatch::changeListenerCallback(juce::ChangeBroadcast
 //==============================================================================
 // Static helpers
 
-int PreferencePanel::fftOrderToId(const int order) {
-    switch (order) {
-        case 11: return 2;
-        case 12: return 3;
-        case 13: return 4;
-        case 14: return 5;
-        default: return 4;
-    }
-}
-
-int PreferencePanel::idToFftOrder(const int id) {
-    switch (id) {
-        case 1: return 10;
-        case 2: return 11;
-        case 3: return 12;
-        case 4: return 13;
-        case 5: return 14;
-        default: return 13;
-    }
-}
-
 int PreferencePanel::smoothingModeToId(const SmoothingMode m) {
     switch (m) {
         case SmoothingMode::None: return 1;
@@ -447,24 +341,6 @@ SmoothingMode PreferencePanel::idToSmoothingMode(const int id) {
         case 3: return SmoothingMode::SixthOctave;
         case 4: return SmoothingMode::TwelfthOctave;
         default: return SmoothingMode::ThirdOctave;
-    }
-}
-
-int PreferencePanel::overlapFactorToId(const int factor) {
-    switch (factor) {
-        case 2: return 1;
-        case 4: return 2;
-        case 8: return 3;
-        default: return 2;
-    }
-}
-
-int PreferencePanel::idToOverlapFactor(const int id) {
-    switch (id) {
-        case 1: return 2;
-        case 2: return 4;
-        case 3: return 8;
-        default: return 4;
     }
 }
 
@@ -497,18 +373,6 @@ void PreferencePanel::revertToSnapshot() {
     settingsRef.setSmoothing(snapshot.smoothing);
     smoothingCombo.setSelectedId(smoothingModeToId(snapshot.smoothing), juce::dontSendNotification);
 
-    settingsRef.setFftOrder(snapshot.fftOrder);
-    fftOrderCombo.setSelectedId(fftOrderToId(snapshot.fftOrder), juce::dontSendNotification);
-
-    settingsRef.setOverlapFactor(snapshot.overlapFactor);
-    overlapCombo.setSelectedId(overlapFactorToId(snapshot.overlapFactor), juce::dontSendNotification);
-
-    settingsRef.setCurveDecay(snapshot.curveDecay);
-    decaySlider.setValue(snapshot.curveDecay, juce::dontSendNotification);
-
-    slopeSlider.setValue(snapshot.slope, juce::dontSendNotification);
-    settingsRef.setSlope(snapshot.slope);
-
     if (auto *param = apvtsRef.getParameter("transientLength"))
         param->setValueNotifyingHost(param->convertTo0to1(snapshot.transientLength));
     transientLengthSlider.setValue(snapshot.transientLength, juce::dontSendNotification);
@@ -532,23 +396,11 @@ void PreferencePanel::resetToDefaults() {
     settingsRef.setSmoothing(D::smoothing);
     smoothingCombo.setSelectedId(smoothingModeToId(D::smoothing), juce::dontSendNotification);
 
-    settingsRef.setFftOrder(D::fftOrder);
-    fftOrderCombo.setSelectedId(fftOrderToId(D::fftOrder), juce::dontSendNotification);
-
-    settingsRef.setOverlapFactor(D::overlapFactor);
-    overlapCombo.setSelectedId(overlapFactorToId(D::overlapFactor), juce::dontSendNotification);
-
-    settingsRef.setCurveDecay(D::curveDecay);
-    decaySlider.setValue(D::curveDecay, juce::dontSendNotification);
-
     // Update sliders to reflect defaults
     minDbSlider.setValue(D::minDb, juce::dontSendNotification);
     maxDbSlider.setValue(D::maxDb, juce::dontSendNotification);
     minFreqSlider.setValue(D::minFreq, juce::dontSendNotification);
     maxFreqSlider.setValue(D::maxFreq, juce::dontSendNotification);
-
-    slopeSlider.setValue(0.0, juce::dontSendNotification);
-    settingsRef.setSlope(0.0f);
 
     if (auto *param = apvtsRef.getParameter("transientLength"))
         param->setValueNotifyingHost(param->convertTo0to1(2.0f));

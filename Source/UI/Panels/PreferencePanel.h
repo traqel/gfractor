@@ -58,10 +58,6 @@ private:
         float minFreq, maxFreq;
         juce::Colour primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour;
         SmoothingMode smoothing;
-        int fftOrder;
-        int overlapFactor;
-        float curveDecay;
-        float slope;
         ColorPalette::Theme theme;
         float transientLength;
     };
@@ -79,20 +75,8 @@ private:
     ColourSwatch primarySwatch, secondarySwatch, refPrimarySwatch, refSecondarySwatch;
     juce::Label coloursLabel;
 
-    juce::ComboBox fftOrderCombo;
-    juce::Label fftOrderLabel;
-
-    juce::ComboBox overlapCombo;
-    juce::Label overlapLabel;
-
     juce::ComboBox smoothingCombo;
     juce::Label smoothingLabel;
-
-    juce::Slider decaySlider;
-    juce::Label decayLabel;
-
-    juce::Slider slopeSlider;
-    juce::Label slopeLabel;
 
     juce::Slider transientLengthSlider;
     juce::Label transientLengthLabel;
@@ -105,17 +89,9 @@ private:
     PillButton cancelButton{"Cancel", juce::Colour(ColorPalette::textDimmed)};
     PillButton resetButton{"Reset", juce::Colour(ColorPalette::textDimmed)};
 
-    static int fftOrderToId(int order);
-
-    static int idToFftOrder(int id);
-
     static int smoothingModeToId(SmoothingMode m);
 
     static SmoothingMode idToSmoothingMode(int id);
-
-    static int overlapFactorToId(int factor);
-
-    static int idToOverlapFactor(int id);
 
     static int themeToId(ColorPalette::Theme theme);
 
