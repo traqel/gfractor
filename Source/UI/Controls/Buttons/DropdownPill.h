@@ -42,7 +42,7 @@ public:
 
         // Background
         if (isEnabled()) {
-            auto fillCol = activeCol;
+            auto fillCol = juce::Colour(ColorPalette::pillInactiveBg);
             if (isMouseOver()) {
                 fillCol = fillCol.brighter(0.1f);
                 const auto gradient = juce::ColourGradient::vertical(fillCol, 0.0f, fillCol.darker(1.0f),
@@ -62,7 +62,7 @@ public:
 
         // Divider
         const auto textCol = isEnabled()
-                                 ? juce::Colour(ColorPalette::textBright)
+                                 ? juce::Colour(activeCol)
                                  : juce::Colour(ColorPalette::textMuted).withAlpha(0.3f);
         g.setColour(textCol.withAlpha(0.25f));
         constexpr int dividerInset = Layout::DropdownPill::dividerInset;

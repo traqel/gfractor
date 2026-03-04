@@ -20,6 +20,12 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     addAndMakeVisible(hintBar);
     hintManager.setCallback([this](const HintManager::HintContent &c) { hintBar.setHint(c); });
     hintManager.setPersistentHint("KEY", "F: Freeze  |  M / S: Channel  |  R / Ctrl: Reference");
+    // Wire FFT size dropdown on hint bar (orders 11-14 → indices 0-3)
+    hintBar.getFftPill().setSelectedIndex(spectrumAnalyzer.getFftOrder() - 11);
+    hintBar.getFftPill().onChange = [this](int index) {
+        spectrumAnalyzer.setFftOrder(index + 11);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    };
     // Register with processor so it can push audio data
     audioProcessor.registerAudioDataSink(&spectrumAnalyzer);
     audioProcessor.setGhostDataSink(&spectrumAnalyzer);
