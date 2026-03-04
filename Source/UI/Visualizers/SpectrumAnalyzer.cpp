@@ -5,6 +5,7 @@
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
 #include "../Theme/UILabels.h"
+#include "../Theme/Icons.h"
 
 //==============================================================================
 SpectrumAnalyzer::SpectrumAnalyzer()
@@ -16,6 +17,7 @@ SpectrumAnalyzer::SpectrumAnalyzer()
     SpectrumAnalyzer::setFftOrder(defaultFftOrder);
     setOpaque(true);
 
+    fullscreenButton.setIcon(Icons::fullscreen);
     fullscreenButton.onClick = [this] {
         if (onFullscreen)
             onFullscreen(fullscreenButton.getToggleState());
@@ -125,11 +127,11 @@ void SpectrumAnalyzer::resized() {
 
     constexpr int btnSize = 20;
     constexpr int btnMargin = 4;
-    constexpr int rightMargin = Layout::SpectrumAnalyzer::rightMargin;
-    constexpr int topMargin = Layout::SpectrumAnalyzer::topMargin;
+    constexpr int rMargin = Layout::SpectrumAnalyzer::rightMargin;
+    constexpr int tMargin = Layout::SpectrumAnalyzer::topMargin;
     // Position inside spectrum area, top-right — clear of meter bars (right margin) and channel labels (top margin)
-    fullscreenButton.setBounds(getWidth() - rightMargin - btnSize - btnMargin,
-                               topMargin + btnMargin,
+    fullscreenButton.setBounds(getWidth() - rMargin - btnSize - btnMargin,
+                               tMargin + btnMargin,
                                btnSize, btnSize);
 }
 
@@ -143,9 +145,9 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     if (activePrimaryColour != lastGradPrimaryCol || activeSecondaryColour != lastGradSecondaryCol
         || ty != lastGradTy || h != lastGradH) {
         cachedPrimaryGrad = juce::ColourGradient(activePrimaryColour.withAlpha(0.30f), 0.0f, ty,
-                                             activePrimaryColour.withAlpha(0.0f), 0.0f, ty + h, false);
+                                                 activePrimaryColour.withAlpha(0.0f), 0.0f, ty + h, false);
         cachedSecondaryGrad = juce::ColourGradient(activeSecondaryColour.withAlpha(0.25f), 0.0f, ty,
-                                              activeSecondaryColour.withAlpha(0.0f), 0.0f, ty + h, false);
+                                                   activeSecondaryColour.withAlpha(0.0f), 0.0f, ty + h, false);
         lastGradPrimaryCol = activePrimaryColour;
         lastGradSecondaryCol = activeSecondaryColour;
         lastGradTy = ty;

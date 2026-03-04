@@ -36,6 +36,15 @@ public:
         repaint();
     }
 
+    /** Load an SVG string as the button icon. When set, the icon is drawn instead of text.
+     *  The SVG should use black (#000000) strokes/fills — the button recolors it at paint time. */
+    void setIcon(const juce::String &svgString) {
+        if (auto xml = juce::XmlDocument::parse(svgString))
+            icon = juce::Drawable::createFromSVG(*xml);
+        lastIconColour = juce::Colours::black;
+        repaint();
+    }
+
 protected:
     void paintButton(juce::Graphics &g,
                      const bool shouldDrawButtonAsHighlighted,
@@ -59,6 +68,7 @@ protected:
         };
 
         auto fillCol = juce::Colour(ColorPalette::pillInactiveBg);
+        juce::Colour iconColour;
         if (isEnabled()) {
             // Highlight button
             if (shouldDrawButtonAsHighlighted) {
@@ -72,20 +82,25 @@ protected:
                 g.setColour(fillCol);
                 g.fillRoundedRectangle(bounds, Radius::cornerRadius);
             }
-
-            // Text
-            g.setColour(activeCol);
-            drawButtonLabel(juce::Colour(activeCol));
+            iconColour = activeCol;
         } else {
-            // Text
-            g.setColour(fillCol);
-            drawButtonLabel(activeCol.withAlpha(0.3f));
+            iconColour = activeCol.withAlpha(0.3f);
+        }
+
+        if (icon != nullptr) {
+            icon->replaceColour(lastIconColour, iconColour);
+            lastIconColour = iconColour;
+            icon->drawWithin(g, bounds.reduced(7.0f), juce::RectanglePlacement::centred, 1.0f);
+        } else {
+            drawButtonLabel(iconColour);
         }
     }
 
 private:
     juce::Colour activeCol;
     float buttonFontSize;
+    std::unique_ptr<juce::Drawable> icon;
+    juce::Colour lastIconColour = juce::Colours::black;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PillButton)

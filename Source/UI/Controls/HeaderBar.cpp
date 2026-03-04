@@ -1,5 +1,6 @@
 #include "HeaderBar.h"
 #include "../Theme/ColorPalette.h"
+#include "../Theme/Icons.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 
@@ -8,6 +9,7 @@ HeaderBar::HeaderBar(std::function<void()> settingsCallback,
     addAndMakeVisible(logo);
 
     // Settings button - non-toggle
+    settingsPill.setIcon(Icons::settings);
     settingsPill.setClickingTogglesState(false);
     settingsPill.setToggleState(false, juce::dontSendNotification);
     settingsPill.onClick = std::move(settingsCallback);

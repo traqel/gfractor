@@ -30,6 +30,15 @@ public:
         repaint();
     }
 
+    /** Load an SVG string as the button icon. When set, the icon is drawn instead of text.
+     *  The SVG should use black (#000000) strokes/fills — the button recolors it at paint time. */
+    void setIcon(const juce::String &svgString) {
+        if (auto xml = juce::XmlDocument::parse(svgString))
+            icon = juce::Drawable::createFromSVG(*xml);
+        lastIconColour = juce::Colours::black;
+        repaint();
+    }
+
     void attachToParameter(juce::AudioProcessorValueTreeState &apvts,
                            const juce::String &paramID) {
         attachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
@@ -61,14 +70,22 @@ protected:
             textColour = juce::Colour(ColorPalette::textMuted);
         }
 
-        g.setColour(textColour);
-        g.setFont(Typography::makeBoldFont(buttonFontSize));
-        g.drawText(getButtonText(), bounds, juce::Justification::centred);
+        if (icon != nullptr) {
+            icon->replaceColour(lastIconColour, textColour);
+            lastIconColour = textColour;
+            icon->drawWithin(g, bounds.reduced(3.0f), juce::RectanglePlacement::centred, 1.0f);
+        } else {
+            g.setColour(textColour);
+            g.setFont(Typography::makeBoldFont(buttonFontSize));
+            g.drawText(getButtonText(), bounds, juce::Justification::centred);
+        }
     }
 
 private:
     juce::Colour activeCol;
     float buttonFontSize;
+    std::unique_ptr<juce::Drawable> icon;
+    juce::Colour lastIconColour = juce::Colours::black;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ToggleButton)
