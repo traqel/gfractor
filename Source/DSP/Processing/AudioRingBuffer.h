@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <atomic>
 #include <vector>
 
 /**
@@ -41,6 +42,8 @@ public:
     int getRollingSize() const { return rollingSize; }
 
 private:
+    std::atomic<bool> accepting { true };
+
     juce::AbstractFifo fifo;
     std::vector<float> fifoL, fifoR;
 

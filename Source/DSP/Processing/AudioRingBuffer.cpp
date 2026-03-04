@@ -23,6 +23,9 @@ void AudioRingBuffer::push(const juce::AudioBuffer<float> &buffer) {
 }
 
 void AudioRingBuffer::push(const float *left, const float *right, const int numSamples) {
+    if (!accepting.load(std::memory_order_relaxed))
+        return;
+
     if (left == nullptr || right == nullptr || numSamples <= 0)
         return;
 
@@ -101,6 +104,10 @@ void AudioRingBuffer::resizeRolling(const int newSize) {
 }
 
 void AudioRingBuffer::resetFifo(const int newActiveCapacity) {
+    // Pause push() on the audio thread to avoid a data race on AbstractFifo internals
+    // (setTotalSize/reset are not thread-safe with concurrent prepareToWrite).
+    accepting.store(false, std::memory_order_seq_cst);
     fifo.setTotalSize(newActiveCapacity);
     fifo.reset();
+    accepting.store(true, std::memory_order_release);
 }
