@@ -43,9 +43,9 @@ protected:
         const auto bounds = getLocalBounds().toFloat().reduced(0.5f);
 
         if (shouldDrawButtonAsHighlighted) {
-            auto fillCol = juce::Colour(ColorPalette::pillInactiveBg);
-            fillCol = fillCol.brighter(0.1f);
-            g.setColour(fillCol);
+            const auto fillCol = juce::Colour(ColorPalette::pillInactiveBg).brighter(0.1f);
+            const auto gradient = juce::ColourGradient::vertical(fillCol, 0.0f, fillCol.darker(1.0f), bounds.getHeight());
+            g.setGradientFill(gradient);
             g.fillRoundedRectangle(bounds, Radius::cornerRadius);
         }
 

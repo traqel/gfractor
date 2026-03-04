@@ -61,10 +61,17 @@ protected:
         auto fillCol = juce::Colour(ColorPalette::pillInactiveBg);
         if (isEnabled()) {
             // Highlight button
-            if (shouldDrawButtonAsHighlighted)
+            if (shouldDrawButtonAsHighlighted) {
                 fillCol = fillCol.brighter(0.1f);
-            g.setColour(fillCol);
-            g.fillRoundedRectangle(bounds, Radius::cornerRadius);
+                const auto gradient = juce::ColourGradient::vertical(fillCol, 0.0f, fillCol.darker(1.0f),
+                                                                     bounds.getHeight());
+                g.setGradientFill(gradient);
+                g.fillRoundedRectangle(bounds, Radius::cornerRadius);
+            }
+            else {
+                g.setColour(fillCol);
+                g.fillRoundedRectangle(bounds, Radius::cornerRadius);
+            }
 
             // Text
             g.setColour(activeCol);
