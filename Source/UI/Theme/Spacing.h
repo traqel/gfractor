@@ -15,7 +15,7 @@ namespace Spacing {
     inline constexpr int marginS = 8;
     inline constexpr int marginM = 12;
     inline constexpr int marginL = 20;
-    inline constexpr int marginXL = 30;
+    inline constexpr int marginXL = 36;
 
     // Component heights
     inline constexpr int headerHeight = 40;

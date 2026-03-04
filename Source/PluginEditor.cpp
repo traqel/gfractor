@@ -295,7 +295,7 @@ void gFractorAudioProcessorEditor::resized() {
     // Preference panel overlay (top-right of spectrum area)
     if (preferencePanel != nullptr) {
         preferencePanel->setBounds(getWidth() - PreferencePanel::panelWidth - Spacing::marginS,
-                                   Spacing::marginS,
+                                   Spacing::marginXL,
                                    PreferencePanel::panelWidth,
                                    PreferencePanel::panelHeight);
     }
@@ -303,7 +303,7 @@ void gFractorAudioProcessorEditor::resized() {
     // Help panel overlay (same anchor as preference panel)
     if (helpPanel != nullptr) {
         helpPanel->setBounds(getWidth() - HelpPanel::panelWidth - Spacing::marginS,
-                             Spacing::marginS,
+                             Spacing::marginXL,
                              HelpPanel::panelWidth,
                              HelpPanel::panelHeight);
     }

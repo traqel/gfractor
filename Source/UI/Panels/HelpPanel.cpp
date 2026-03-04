@@ -14,8 +14,6 @@ HelpPanel::HelpPanel() {
 void HelpPanel::paint(juce::Graphics &g) {
     // Background + border
     g.fillAll(juce::Colour(ColorPalette::panel));
-    g.setColour(juce::Colour(ColorPalette::panelBorder));
-    g.drawRect(getLocalBounds(), 1);
 
     auto bounds = getLocalBounds().reduced(Spacing::paddingS);
 
