@@ -495,7 +495,7 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
         // Sub-bass glow: measure peak energy below 25 Hz
         {
-            constexpr float kThresholdDb  = -30.0f; // glow starts here
+            constexpr float kThresholdDb  = -20.0f; // glow starts here
             constexpr float kMaxDb        = -1.0f;  // glow is full here
             constexpr float kAttack       = 0.6f;
             constexpr float kRelease      = 0.05f;
