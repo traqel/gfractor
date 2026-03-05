@@ -145,9 +145,9 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
 
     // --- Theme combo box ---
     addAndMakeVisible(themeCombo);
-    themeCombo.addItem("Dark", 1);
-    themeCombo.addItem("Light", 2);
-    themeCombo.addItem("Balanced", 3);
+    themeCombo.addItem("Balanced", 1);
+    themeCombo.addItem("Dark", 2);
+    themeCombo.addItem("Light", 3);
     themeCombo.setSelectedId(themeToId(ColorPalette::getTheme()), juce::dontSendNotification);
     themeCombo.onChange = [this] {
         ColorPalette::setTheme(idToTheme(themeCombo.getSelectedId()));
@@ -178,11 +178,6 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     addAndMakeVisible(resetButton);
     resetButton.onClick = [this] { resetToDefaults(); };
 
-    minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-    maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-    minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-    maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-
     applyThemeColours();
 }
 
@@ -198,16 +193,16 @@ void PreferencePanel::applyThemeColours() {
         label->setColour(juce::Label::textColourId, textColour);
     }
 
-    const auto comboBoxBg = juce::Colour(ColorPalette::panel);
+    const auto panelColour = juce::Colour(ColorPalette::panel);
     for (auto *combo : { &smoothingCombo, &themeCombo }) {
         combo->setColour(juce::ComboBox::textColourId,       textColour);
-        combo->setColour(juce::ComboBox::backgroundColourId, comboBoxBg);
+        combo->setColour(juce::ComboBox::backgroundColourId, panelColour);
         combo->setColour(juce::ComboBox::arrowColourId,      textColour);
         combo->setColour(juce::ComboBox::outlineColourId,    juce::Colours::transparentBlack);
         combo->repaint();
     }
 
-    const auto textBoxBg = juce::Colour(ColorPalette::panel);
+    const auto textBoxBg = panelColour;
     for (auto *slider : { &minDbSlider, &maxDbSlider, &minFreqSlider,
                           &maxFreqSlider, &transientLengthSlider }) {
         slider->setColour(juce::Slider::textBoxTextColourId,       textColour);
@@ -367,19 +362,19 @@ SmoothingMode PreferencePanel::idToSmoothingMode(const int id) {
 
 int PreferencePanel::themeToId(const ColorPalette::Theme theme) {
     switch (theme) {
-        case ColorPalette::Theme::Dark: return 1;
-        case ColorPalette::Theme::Light: return 2;
-        case ColorPalette::Theme::Balanced: return 3;
+        case ColorPalette::Theme::Balanced: return 1;
+        case ColorPalette::Theme::Dark:     return 2;
+        case ColorPalette::Theme::Light:    return 3;
     }
     return 1;
 }
 
 ColorPalette::Theme PreferencePanel::idToTheme(const int id) {
     switch (id) {
-        case 1: return ColorPalette::Theme::Dark;
-        case 2: return ColorPalette::Theme::Light;
-        case 3: return ColorPalette::Theme::Balanced;
-        default: return ColorPalette::Theme::Dark;
+        case 1:  return ColorPalette::Theme::Balanced;
+        case 2:  return ColorPalette::Theme::Dark;
+        case 3:  return ColorPalette::Theme::Light;
+        default: return ColorPalette::Theme::Balanced;
     }
 }
 
@@ -400,6 +395,8 @@ void PreferencePanel::revertToSnapshot() {
 
     ColorPalette::setTheme(snapshot.theme);
     themeCombo.setSelectedId(themeToId(snapshot.theme), juce::dontSendNotification);
+    applyThemeColours();
+    repaint();
     if (onThemeChanged)
         onThemeChanged();
 }
@@ -429,6 +426,8 @@ void PreferencePanel::resetToDefaults() {
 
     ColorPalette::setTheme(ColorPalette::Theme::Balanced);
     themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Balanced), juce::dontSendNotification);
+    applyThemeColours();
+    repaint();
     if (onThemeChanged)
         onThemeChanged();
 
