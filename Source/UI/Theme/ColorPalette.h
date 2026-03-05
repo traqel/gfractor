@@ -60,7 +60,7 @@ namespace ColorPalette {
 
     inline constexpr ThemeSpec lightTheme{
         0xffF2F5F2,
-        0xffFFFFFF,
+        0xffF8FAF8,
         0xffE7ECE7,
         0xffD3DBD3,
         0xffAAB4AA,

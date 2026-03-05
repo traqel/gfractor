@@ -12,7 +12,8 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
       footerBar(audioProcessor, spectrumAnalyzer) {
     ColorPalette::setTheme(AnalyzerSettings::loadTheme());
 
-    // Set custom LookAndFeel
+    // Set custom LookAndFeel for this component and globally (covers AlertWindows etc.)
+    juce::LookAndFeel::setDefaultLookAndFeel(&gFractorLnf);
     setLookAndFeel(&gFractorLnf);
     applyTheme();
     // Add spectrum analyzer (owned by editor)
@@ -452,6 +453,7 @@ gFractorAudioProcessorEditor::~gFractorAudioProcessorEditor() {
     AnalyzerSettings::saveMeteringState(meteringPanelW, metersVisible);
 
     // Clear custom LookAndFeel before member destruction
+    juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     setLookAndFeel(nullptr);
 }
 
