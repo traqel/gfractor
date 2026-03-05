@@ -309,7 +309,6 @@ private:
     juce::Colour backgroundColour{ColorPalette::background};
     juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
     juce::Colour textColour{ColorPalette::textBright};
-    juce::Colour axisTextColour{ColorPalette::axisTextColor};
     juce::Colour hintColour{ColorPalette::hintPink};
     juce::Colour bandHeaderColor{ColorPalette::spectrumBorder};
 

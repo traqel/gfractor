@@ -79,7 +79,7 @@ namespace ColorPalette {
         0xcc101410,
         0xb3202a20,
         0xb3d47896,
-        0xff9F7B00
+        0xff101410
     };
 
     inline constexpr ThemeSpec balancedTheme{

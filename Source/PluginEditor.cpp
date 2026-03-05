@@ -8,6 +8,7 @@
 gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcessor &p)
     : AudioProcessorEditor(&p),
       audioProcessor(p),
+      presetManager(p.getAPVTS()),
       footerBar(audioProcessor, spectrumAnalyzer) {
     ColorPalette::setTheme(AnalyzerSettings::loadTheme());
 
@@ -117,7 +118,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
 
             // Restore channel mode — trigger modePill onChange so labels + DSP all update
             if (displayState.hasProperty("channelMode")) {
-                const int modeIdx = static_cast<int>(displayState["channelMode"]);
+                const int modeIdx = displayState["channelMode"];
                 auto &modePill = footerBar.getModePill();
                 modePill.setSelectedIndex(modeIdx);
                 if (modePill.onChange) modePill.onChange(modeIdx);
@@ -172,6 +173,80 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
                 preferencePanel->cancel();
             }
         });
+
+    // Preset manager display state callbacks
+    presetManager.getDisplayState = [this]() -> juce::ValueTree {
+        using K = PresetManager::DisplayKeys;
+        juce::ValueTree t { "Display" };
+        t.setProperty(K::channelMode,   footerBar.getModePill().getSelectedIndex(),       nullptr);
+        t.setProperty(K::fftOrder,      spectrumAnalyzer.getFftOrder(),                   nullptr);
+        t.setProperty(K::curveDecay,    spectrumAnalyzer.getCurveDecay(), nullptr);
+        t.setProperty(K::slopeDb,       spectrumAnalyzer.getSlope(), nullptr);
+        t.setProperty(K::overlapFactor, spectrumAnalyzer.getOverlapFactor(),              nullptr);
+        return t;
+    };
+
+    presetManager.applyDisplayState = [this](const juce::ValueTree &t) {
+        using K = PresetManager::DisplayKeys;
+        static constexpr float kDecay[] = {0.0f, 0.85f, 0.95f, 0.99f};
+        static constexpr float kSlope[] = {0.0f, 3.0f, 4.5f};
+
+        if (t.hasProperty(K::fftOrder)) {
+            const int order = t[K::fftOrder];
+            spectrumAnalyzer.setFftOrder(order);
+            hintBar.getFftPill().setSelectedIndex(order - 11);
+        }
+        if (t.hasProperty(K::overlapFactor)) {
+            const int of = t[K::overlapFactor];
+            spectrumAnalyzer.setOverlapFactor(of);
+            hintBar.getOverlapPill().setSelectedIndex(of == 2 ? 0 : of == 4 ? 1 : 2);
+        }
+        if (t.hasProperty(K::curveDecay)) {
+            const float cd = static_cast<float>(static_cast<double>(t[K::curveDecay]));
+            spectrumAnalyzer.setCurveDecay(cd);
+            int di = 2;
+            for (int i = 0; i < 4; ++i)
+                if (std::abs(cd - kDecay[i]) < 0.001f) { di = i; break; }
+            hintBar.getDecayPill().setSelectedIndex(di);
+        }
+        if (t.hasProperty(K::slopeDb)) {
+            const float sl = static_cast<float>(static_cast<double>(t[K::slopeDb]));
+            spectrumAnalyzer.setSlope(sl);
+            int si = 0;
+            for (int i = 0; i < 3; ++i)
+                if (std::abs(sl - kSlope[i]) < 0.01f) { si = i; break; }
+            hintBar.getSlopePill().setSelectedIndex(si);
+        }
+        if (t.hasProperty(K::channelMode)) {
+            const int modeIdx = t[K::channelMode];
+            auto &modePill = footerBar.getModePill();
+            modePill.setSelectedIndex(modeIdx);
+            if (modePill.onChange) modePill.onChange(modeIdx);
+        }
+        // Do NOT call AnalyzerSettings::save() here — loading a preset must not
+        // permanently overwrite the user's global display preferences (Issue 6).
+    };
+
+    headerBar->setPresetManager(presetManager);
+    headerBar->onSavePreset = [this] {
+        auto *dialog = new juce::AlertWindow("Save Preset", "Enter preset name:", juce::AlertWindow::NoIcon);
+        dialog->addTextEditor("name", presetManager.getCurrentName() == PresetManager::initPresetName
+                                          ? ""
+                                          : presetManager.getCurrentName());
+        dialog->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+        dialog->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+        juce::Component::SafePointer<gFractorAudioProcessorEditor> safeThis { this };
+        dialog->enterModalState(true, juce::ModalCallbackFunction::create([safeThis, dialog](int result) {
+            if (safeThis != nullptr && result == 1) {
+                const auto name = dialog->getTextEditorContents("name").trim();
+                if (name.isNotEmpty()) {
+                    safeThis->presetManager.saveCurrentAs(name);
+                    safeThis->headerBar->updatePresetButton();
+                }
+            }
+            delete dialog;
+        }), true);
+    };
 
     // Help menu callbacks
     headerBar->onAbout = [this] {
@@ -355,6 +430,10 @@ gFractorAudioProcessorEditor::~gFractorAudioProcessorEditor() {
     stopTimer();
     removeKeyListener(this);
 
+    // Null out preset callbacks that capture UI members, before any member is destroyed.
+    presetManager.getDisplayState  = nullptr;
+    presetManager.applyDisplayState = nullptr;
+
     // Disconnect audio thread from UI components FIRST — the ghost sink must
     // be cleared before unregistering sinks so the audio thread can't call
     // pushGhostData on a partially-unregistered SpectrumAnalyzer.
@@ -487,6 +566,7 @@ void gFractorAudioProcessorEditor::setReferenceMode(const bool on) {
 
 void gFractorAudioProcessorEditor::timerCallback() {
     uiController.timerCallback();
+    if (headerBar) headerBar->updatePresetButton();
 }
 
 void gFractorAudioProcessorEditor::setSpectrumFullscreen(const bool fullscreen) {

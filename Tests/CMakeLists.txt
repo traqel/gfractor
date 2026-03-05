@@ -21,6 +21,7 @@ file(GLOB_RECURSE DSP_SOURCES
 set(CORE_SOURCES
     "${CMAKE_SOURCE_DIR}/Source/UI/Visualizers/PeakHold.cpp"
     "${CMAKE_SOURCE_DIR}/Source/State/PluginState.cpp"
+    "${CMAKE_SOURCE_DIR}/Source/State/PresetManager.cpp"
 )
 
 # If no test files exist yet, create a dummy test

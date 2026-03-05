@@ -76,10 +76,10 @@ struct AnalyzerSettings {
     static void saveToValueTree(const ISpectrumDisplaySettings &settings,
                                 ColorPalette::Theme theme,
                                 juce::ValueTree &tree) {
-        tree.setProperty("minDb",         static_cast<double>(settings.getMinDb()),                                       nullptr);
-        tree.setProperty("maxDb",         static_cast<double>(settings.getMaxDb()),                                       nullptr);
-        tree.setProperty("minFreq",       static_cast<double>(settings.getMinFreq()),                                     nullptr);
-        tree.setProperty("maxFreq",       static_cast<double>(settings.getMaxFreq()),                                     nullptr);
+        tree.setProperty("minDb",         settings.getMinDb(),                                       nullptr);
+        tree.setProperty("maxDb",         settings.getMaxDb(),                                       nullptr);
+        tree.setProperty("minFreq",       settings.getMinFreq(),                                     nullptr);
+        tree.setProperty("maxFreq",       settings.getMaxFreq(),                                     nullptr);
         tree.setProperty("midColour",     static_cast<int>(settings.getPrimaryColour().getARGB()),                        nullptr);
         tree.setProperty("sideColour",    static_cast<int>(settings.getSecondaryColour().getARGB()),                      nullptr);
         tree.setProperty("refMidColour",  static_cast<int>(settings.getRefPrimaryColour().getARGB()),                     nullptr);
@@ -87,8 +87,8 @@ struct AnalyzerSettings {
         tree.setProperty("smoothingMode", static_cast<int>(settings.getSmoothing()),                                      nullptr);
         tree.setProperty("fftOrder",      settings.getFftOrder(),                                                         nullptr);
         tree.setProperty("overlapFactor", settings.getOverlapFactor(),                                                    nullptr);
-        tree.setProperty("curveDecay",    static_cast<double>(settings.getCurveDecay()),                                  nullptr);
-        tree.setProperty("slopeDb",       static_cast<double>(settings.getSlope()),                                       nullptr);
+        tree.setProperty("curveDecay",    settings.getCurveDecay(),                                  nullptr);
+        tree.setProperty("slopeDb",       settings.getSlope(),                                       nullptr);
         tree.setProperty("uiTheme",       static_cast<int>(theme),                                                        nullptr);
     }
 
@@ -114,9 +114,9 @@ struct AnalyzerSettings {
         if (tree.hasProperty("smoothingMode"))
             settings.setSmoothing(static_cast<SmoothingMode>(static_cast<int>(tree["smoothingMode"])));
         if (tree.hasProperty("fftOrder"))
-            settings.setFftOrder(static_cast<int>(tree["fftOrder"]));
+            settings.setFftOrder(tree["fftOrder"]);
         if (tree.hasProperty("overlapFactor"))
-            settings.setOverlapFactor(static_cast<int>(tree["overlapFactor"]));
+            settings.setOverlapFactor(tree["overlapFactor"]);
         if (tree.hasProperty("curveDecay"))
             settings.setCurveDecay(static_cast<float>(static_cast<double>(tree["curveDecay"])));
         if (tree.hasProperty("slopeDb"))

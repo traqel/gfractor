@@ -10,6 +10,7 @@
 #include "UI/Panels/StereoMeteringPanel.h"
 #include "UI/Panels/PreferencePanel.h"
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
+#include "State/PresetManager.h"
 #include "UI/Theme/ColorPalette.h"
 #include "UI/UIController.h"
 
@@ -73,6 +74,9 @@ private:
 
     static constexpr int kMinPanelW = 120;
     static constexpr int kMaxPanelW = 320;
+
+    // Preset manager — owns current preset name & dirty state
+    PresetManager presetManager;
 
     // Header bar (logo, subtitle, settings, help)
     std::unique_ptr<HeaderBar> headerBar;

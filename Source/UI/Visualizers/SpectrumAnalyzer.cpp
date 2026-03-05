@@ -731,7 +731,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
         const float x = sx + range.frequencyToX(freqLines[i], sw);
         g.setColour(gridColour);
         g.drawVerticalLine(static_cast<int>(x), sy, sy + sh);
-        g.setColour(axisTextColour);
+        g.setColour(juce::Colour(ColorPalette::axisTextColor));
         g.setFont(axisFont);
         g.drawText(UILabels::Spectrum::frequencyLabels[i],
                    static_cast<int>(x) - 15, static_cast<int>(sy + sh) + 6,
@@ -749,7 +749,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
         const float y = sy + range.dbToY(dbLines[i], sh);
         g.setColour(gridColour);
         g.drawHorizontalLine(static_cast<int>(y), sx, sx + sw);
-        g.setColour(axisTextColour);
+        g.setColour(juce::Colour(ColorPalette::axisTextColor));
         g.setFont(axisFont);
         g.drawText(UILabels::Spectrum::dbLabels[i],
                    6, static_cast<int>(y) - 7,
