@@ -4,6 +4,10 @@
 #include "UI/Theme/ColorPalette.h"
 #include "UI/Theme/Spacing.h"
 
+// Shared lookup tables used by wireHintBarPills() and display-state restore
+static constexpr float kDecayValues[] = {0.0f, 0.85f, 0.95f, 0.99f};
+static constexpr float kSlopeValues[] = {0.0f, 3.0f, 4.5f};
+
 //==============================================================================
 gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcessor &p)
     : AudioProcessorEditor(&p),
@@ -22,50 +26,7 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     addAndMakeVisible(hintBar);
     hintManager.setCallback([this](const HintManager::HintContent &c) { hintBar.setHint(c); });
     hintManager.setPersistentHint("HOVER", "To see tooltips");
-    // Wire FFT size dropdown on hint bar (orders 11-14 → indices 0-3)
-    hintBar.getFftPill().setSelectedIndex(spectrumAnalyzer.getFftOrder() - 11);
-    hintBar.getFftPill().onChange = [this](int index) {
-        spectrumAnalyzer.setFftOrder(index + 11);
-        AnalyzerSettings::save(spectrumAnalyzer);
-    };
-    // Wire overlap dropdown on hint bar (factors 2,4,8 → indices 0,1,2)
-    hintBar.getOverlapPill().setSelectedIndex(
-        spectrumAnalyzer.getOverlapFactor() == 2 ? 0 : spectrumAnalyzer.getOverlapFactor() == 4 ? 1 : 2);
-    hintBar.getOverlapPill().onChange = [this](int index) {
-        static constexpr int factors[] = {2, 4, 8};
-        spectrumAnalyzer.setOverlapFactor(factors[index]);
-        AnalyzerSettings::save(spectrumAnalyzer);
-    };
-    // Wire decay dropdown on hint bar (Off=0.0, Fast=0.85, Med=0.95, Slow=0.99)
-    static constexpr float decayValues[] = {0.0f, 0.85f, 0.95f, 0.99f};
-    const auto currentDecay = spectrumAnalyzer.getCurveDecay();
-    int decayIndex = 2; // default Med
-    for (int i = 0; i < 4; ++i)
-        if (std::abs(currentDecay - decayValues[i]) < 0.001f) {
-            decayIndex = i;
-            break;
-        }
-    hintBar.getDecayPill().setSelectedIndex(decayIndex);
-    hintBar.getDecayPill().onChange = [this](int index) {
-        static constexpr float values[] = {0.0f, 0.85f, 0.95f, 0.99f};
-        spectrumAnalyzer.setCurveDecay(values[index]);
-        AnalyzerSettings::save(spectrumAnalyzer);
-    };
-    // Wire slope dropdown on hint bar (0, 3, 4.5 dB/oct → indices 0,1,2)
-    static constexpr float slopeValues[] = {0.0f, 3.0f, 4.5f};
-    const auto currentSlope = spectrumAnalyzer.getSlope();
-    int slopeIndex = 0;
-    for (int i = 0; i < 3; ++i)
-        if (std::abs(currentSlope - slopeValues[i]) < 0.01f) {
-            slopeIndex = i;
-            break;
-        }
-    hintBar.getSlopePill().setSelectedIndex(slopeIndex);
-    hintBar.getSlopePill().onChange = [this](int index) {
-        static constexpr float values[] = {0.0f, 3.0f, 4.5f};
-        spectrumAnalyzer.setSlope(values[index]);
-        AnalyzerSettings::save(spectrumAnalyzer);
-    };
+    wireHintBarPills();
     // Register with processor so it can push audio data
     audioProcessor.registerAudioDataSink(&spectrumAnalyzer);
     audioProcessor.setGhostDataSink(&spectrumAnalyzer);
@@ -103,18 +64,12 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
             const auto cd = spectrumAnalyzer.getCurveDecay();
             int di = 2;
             for (int i = 0; i < 4; ++i)
-                if (std::abs(cd - decayValues[i]) < 0.001f) {
-                    di = i;
-                    break;
-                }
+                if (std::abs(cd - kDecayValues[i]) < 0.001f) { di = i; break; }
             hintBar.getDecayPill().setSelectedIndex(di);
             const auto sl = spectrumAnalyzer.getSlope();
             int si = 0;
             for (int i = 0; i < 3; ++i)
-                if (std::abs(sl - slopeValues[i]) < 0.01f) {
-                    si = i;
-                    break;
-                }
+                if (std::abs(sl - kSlopeValues[i]) < 0.01f) { si = i; break; }
             hintBar.getSlopePill().setSelectedIndex(si);
 
             // Restore channel mode — trigger modePill onChange so labels + DSP all update
@@ -328,94 +283,93 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
 
     // Wire up UIController for timer and key handling (GRASP: Controller pattern)
     uiController.setSpectrumControls(&spectrumAnalyzer);
-    uiController.setSidechainAvailableGetter([this]() { return audioProcessor.isSidechainAvailable(); });
-    uiController.setReferenceModeSetter([this](const bool on) { setReferenceMode(on); });
-    uiController.setSidechainCallback([this](const bool available) {
-        footerBar.setReferenceEnabled(available);
-        spectrumAnalyzer.setSidechainAvailable(available);
-        footerBar.setReferenceState(false);
-        setReferenceMode(false);
-        controlHeld = false;
-    });
-    uiController.setPillStateGetter([this]() {
-        UIController::PillState state;
-        state.freeze = spectrumAnalyzer.isFrozen();
-        state.primary = footerBar.getPrimaryPill().getToggleState();
-        state.secondary = footerBar.getSecondaryPill().getToggleState();
-        state.reference = footerBar.getReferencePill().getToggleState();
-        state.meters = footerBar.getMetersPill().getToggleState();
-        return state;
-    });
-    uiController.setFreezeCallback([this](bool frozen) {
-        spectrumAnalyzer.setFrozen(frozen);
-        footerBar.getFreezePill().setToggleState(frozen, juce::dontSendNotification);
-    });
-    uiController.setPrimaryCallback([this]() { footerBar.getPrimaryPill().triggerClick(); });
-    uiController.setSecondaryCallback([this]() { footerBar.getSecondaryPill().triggerClick(); });
-    uiController.setReferenceCallback([this](const bool on) {
-        footerBar.setReferenceState(on);
-        setReferenceMode(on);
-    });
-    uiController.setGhostCallback([this]() {
-        auto &pill = footerBar.getGhostPill();
-        const bool newState = !pill.getToggleState();
-        pill.setToggleState(newState, juce::dontSendNotification);
-        spectrumAnalyzer.setGhostVisible(newState);
-    });
-    uiController.setHoldCallback([this]() {
-        auto &pill = footerBar.getInfinitePill();
-        const bool newState = !pill.getToggleState();
-        pill.setToggleState(newState, juce::dontSendNotification);
-        spectrumAnalyzer.setInfinitePeak(newState);
-    });
-    uiController.setFullscreenCallback([this]() {
-        const bool newFullscreen = !spectrumFullscreen;
-        setSpectrumFullscreen(newFullscreen);
-        spectrumAnalyzer.setFullscreen(newFullscreen);
-    });
-    uiController.setCycleModeCallback([this]() {
-        auto &pill = footerBar.getModePill();
-        const int newIdx = (pill.getSelectedIndex() + 1) % 3;
-        pill.setSelectedIndex(newIdx);
-        if (pill.onChange) pill.onChange(newIdx);
-    });
-    uiController.setCycleSlopeCallback([this]() {
-        auto &pill = hintBar.getSlopePill();
-        const int newIdx = (pill.getSelectedIndex() + 1) % 3;
-        pill.setSelectedIndex(newIdx);
-        static constexpr float values[] = {0.0f, 3.0f, 4.5f};
-        spectrumAnalyzer.setSlope(values[newIdx]);
-        AnalyzerSettings::save(spectrumAnalyzer);
-    });
-    uiController.setCycleDecayCallback([this]() {
-        auto &pill = hintBar.getDecayPill();
-        const int newIdx = (pill.getSelectedIndex() + 1) % 4;
-        pill.setSelectedIndex(newIdx);
-        static constexpr float values[] = {0.0f, 0.85f, 0.95f, 0.99f};
-        spectrumAnalyzer.setCurveDecay(values[newIdx]);
-        AnalyzerSettings::save(spectrumAnalyzer);
-    });
-    uiController.setCycleOverlapCallback([this]() {
-        auto &pill = hintBar.getOverlapPill();
-        const int newIdx = (pill.getSelectedIndex() + 1) % 3;
-        pill.setSelectedIndex(newIdx);
-        static constexpr int factors[] = {2, 4, 8};
-        spectrumAnalyzer.setOverlapFactor(factors[newIdx]);
-        AnalyzerSettings::save(spectrumAnalyzer);
-    });
-    uiController.setCycleFFTCallback([this]() {
-        auto &pill = hintBar.getFftPill();
-        const int newIdx = (pill.getSelectedIndex() + 1) % 4;
-        pill.setSelectedIndex(newIdx);
-        spectrumAnalyzer.setFftOrder(newIdx + 11);
-        AnalyzerSettings::save(spectrumAnalyzer);
-    });
-    uiController.setMetersCallback([this](const bool visible) {
-        metersVisible = visible;
-        meteringPanel.setVisible(visible);
-        resized();
-    });
-    uiController.setPerformanceCallback([this]() { togglePerformanceDisplay(); });
+    {
+        UIController::Actions actions;
+        actions.getSidechainAvailable = [this]() { return audioProcessor.isSidechainAvailable(); };
+        actions.setReferenceMode      = [this](const bool on) { setReferenceMode(on); };
+        actions.onSidechainChanged    = [this](const bool available) {
+            footerBar.setReferenceEnabled(available);
+            spectrumAnalyzer.setSidechainAvailable(available);
+            footerBar.setReferenceState(false);
+            setReferenceMode(false);
+            controlHeld = false;
+        };
+        actions.getPillState = [this]() {
+            UIController::PillState s;
+            s.freeze    = spectrumAnalyzer.isFrozen();
+            s.primary   = footerBar.getPrimaryPill().getToggleState();
+            s.secondary = footerBar.getSecondaryPill().getToggleState();
+            s.reference = footerBar.getReferencePill().getToggleState();
+            s.meters    = footerBar.getMetersPill().getToggleState();
+            return s;
+        };
+        actions.onFreeze     = [this](bool frozen) {
+            spectrumAnalyzer.setFrozen(frozen);
+            footerBar.getFreezePill().setToggleState(frozen, juce::dontSendNotification);
+        };
+        actions.onPrimary    = [this]() { footerBar.getPrimaryPill().triggerClick(); };
+        actions.onSecondary  = [this]() { footerBar.getSecondaryPill().triggerClick(); };
+        actions.onReference  = [this](const bool on) { footerBar.setReferenceState(on); setReferenceMode(on); };
+        actions.onGhost      = [this]() {
+            auto &pill = footerBar.getGhostPill();
+            const bool ns = !pill.getToggleState();
+            pill.setToggleState(ns, juce::dontSendNotification);
+            spectrumAnalyzer.setGhostVisible(ns);
+        };
+        actions.onHold       = [this]() {
+            auto &pill = footerBar.getInfinitePill();
+            const bool ns = !pill.getToggleState();
+            pill.setToggleState(ns, juce::dontSendNotification);
+            spectrumAnalyzer.setInfinitePeak(ns);
+        };
+        actions.onFullscreen = [this]() {
+            const bool newFullscreen = !spectrumFullscreen;
+            setSpectrumFullscreen(newFullscreen);
+            spectrumAnalyzer.setFullscreen(newFullscreen);
+        };
+        actions.onCycleMode  = [this]() {
+            auto &pill = footerBar.getModePill();
+            const int idx = (pill.getSelectedIndex() + 1) % 3;
+            pill.setSelectedIndex(idx);
+            if (pill.onChange) pill.onChange(idx);
+        };
+        actions.onCycleSlope = [this]() {
+            auto &pill = hintBar.getSlopePill();
+            const int idx = (pill.getSelectedIndex() + 1) % 3;
+            pill.setSelectedIndex(idx);
+            spectrumAnalyzer.setSlope(kSlopeValues[idx]);
+            AnalyzerSettings::save(spectrumAnalyzer);
+        };
+        actions.onCycleDecay = [this]() {
+            auto &pill = hintBar.getDecayPill();
+            const int idx = (pill.getSelectedIndex() + 1) % 4;
+            pill.setSelectedIndex(idx);
+            spectrumAnalyzer.setCurveDecay(kDecayValues[idx]);
+            AnalyzerSettings::save(spectrumAnalyzer);
+        };
+        actions.onCycleOverlap = [this]() {
+            auto &pill = hintBar.getOverlapPill();
+            const int idx = (pill.getSelectedIndex() + 1) % 3;
+            pill.setSelectedIndex(idx);
+            static constexpr int factors[] = {2, 4, 8};
+            spectrumAnalyzer.setOverlapFactor(factors[idx]);
+            AnalyzerSettings::save(spectrumAnalyzer);
+        };
+        actions.onCycleFFT = [this]() {
+            auto &pill = hintBar.getFftPill();
+            const int idx = (pill.getSelectedIndex() + 1) % 4;
+            pill.setSelectedIndex(idx);
+            spectrumAnalyzer.setFftOrder(idx + 11);
+            AnalyzerSettings::save(spectrumAnalyzer);
+        };
+        actions.onMeters     = [this](const bool visible) {
+            metersVisible = visible;
+            meteringPanel.setVisible(visible);
+            resized();
+        };
+        actions.onPerformance = [this]() { togglePerformanceDisplay(); };
+        uiController.configure(std::move(actions));
+    }
 
     // Poll sidechain availability to enable/disable Reference button
     startTimerHz(5);
@@ -455,6 +409,47 @@ gFractorAudioProcessorEditor::~gFractorAudioProcessorEditor() {
     // Clear custom LookAndFeel before member destruction
     juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     setLookAndFeel(nullptr);
+}
+
+//==============================================================================
+void gFractorAudioProcessorEditor::wireHintBarPills() {
+    // FFT size dropdown (orders 11-14 → indices 0-3)
+    hintBar.getFftPill().setSelectedIndex(spectrumAnalyzer.getFftOrder() - 11);
+    hintBar.getFftPill().onChange = [this](int index) {
+        spectrumAnalyzer.setFftOrder(index + 11);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    };
+
+    // Overlap factor dropdown (factors 2, 4, 8 → indices 0, 1, 2)
+    const auto of = spectrumAnalyzer.getOverlapFactor();
+    hintBar.getOverlapPill().setSelectedIndex(of == 2 ? 0 : of == 4 ? 1 : 2);
+    hintBar.getOverlapPill().onChange = [this](int index) {
+        static constexpr int factors[] = {2, 4, 8};
+        spectrumAnalyzer.setOverlapFactor(factors[index]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    };
+
+    // Decay dropdown (Off=0.0, Fast=0.85, Med=0.95, Slow=0.99)
+    const auto cd = spectrumAnalyzer.getCurveDecay();
+    int di = 2; // default: Med
+    for (int i = 0; i < 4; ++i)
+        if (std::abs(cd - kDecayValues[i]) < 0.001f) { di = i; break; }
+    hintBar.getDecayPill().setSelectedIndex(di);
+    hintBar.getDecayPill().onChange = [this](int index) {
+        spectrumAnalyzer.setCurveDecay(kDecayValues[index]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    };
+
+    // Slope dropdown (0, +3, +4.5 dB/oct → indices 0, 1, 2)
+    const auto sl = spectrumAnalyzer.getSlope();
+    int si = 0;
+    for (int i = 0; i < 3; ++i)
+        if (std::abs(sl - kSlopeValues[i]) < 0.01f) { si = i; break; }
+    hintBar.getSlopePill().setSelectedIndex(si);
+    hintBar.getSlopePill().onChange = [this](int index) {
+        spectrumAnalyzer.setSlope(kSlopeValues[index]);
+        AnalyzerSettings::save(spectrumAnalyzer);
+    };
 }
 
 //==============================================================================

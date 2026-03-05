@@ -83,7 +83,7 @@ namespace ColorPalette {
     };
 
     inline constexpr ThemeSpec balancedTheme{
-        0xff262830,  // background
+        0xff1A1C24,  // background
         0xff2C3038,  // panel
         0xff22252C,  // spectrumBg
         0xff363C46,  // grid
@@ -98,7 +98,7 @@ namespace ColorPalette {
         0xffD2DAE4,  // textLight
         0xff8893A0,  // textMuted
         0xff93A0AF,  // textDimmed
-        0xff262830,  // pillInactiveBg
+        0xff1A1C24,  // pillInactiveBg
         0x7fAAB6C4,  // panelBorder
         0xccF4F7FA,  // panelHeading
         0xb3F4F7FA,  // swatchBorder

@@ -23,15 +23,8 @@ void gFractorDSP::prepare(const juce::dsp::ProcessSpec &spec) {
 
     dryWetMixer.setWetMixProportion(dryWetMix);
 
-    auditBellFilter1.prepare(spec);
-    auditBellFilter2.prepare(spec);
-    auditBellFilter1.reset();
-    auditBellFilter2.reset();
-
-    bandFilter1.prepare(spec);
-    bandFilter2.prepare(spec);
-    bandFilter1.reset();
-    bandFilter2.reset();
+    auditFilter.prepare(spec);
+    bandFilter.prepare(spec);
 
     // Drain any pending handoff pointers — prepare() is always called before the audio thread starts.
     delete pendingStrategy.exchange(nullptr, std::memory_order_acq_rel);
@@ -131,46 +124,10 @@ void gFractorDSP::process(juce::AudioBuffer<float> &buffer) {
     dryWetMixer.mixWetSamples(block);
 
     // Transient audition bell filter — 4th order (two cascaded 2nd-order BPFs)
-    if (auditFilterActive.load(std::memory_order_relaxed)) {
-        const float freq = auditFilterFreq.load(std::memory_order_relaxed);
-        if (const float q = auditFilterQ.load(std::memory_order_relaxed);
-            std::abs(freq - lastAuditFreq) > 0.01f || std::abs(q - lastAuditQ) > 0.01f) {
-            const auto coeffs = juce::dsp::IIR::Coefficients<float>::makeBandPass(
-                currentSpec.sampleRate, freq, q);
-            *auditBellFilter1.state = *coeffs;
-            *auditBellFilter2.state = *coeffs;
-            lastAuditFreq = freq;
-            lastAuditQ = q;
-        }
-        auditBellFilter1.process(context);
-        auditBellFilter2.process(context);
-    } else if (lastAuditFreq > 0.0f) {
-        auditBellFilter1.reset();
-        auditBellFilter2.reset();
-        lastAuditFreq = -1.0f;
-        lastAuditQ = -1.0f;
-    }
+    auditFilter.process(context);
 
     // Band selection filter — 4th order (two cascaded 2nd-order BPFs)
-    if (bandFilterActive.load(std::memory_order_relaxed)) {
-        const float freq = bandFilterFreq.load(std::memory_order_relaxed);
-        if (const float q = bandFilterQ.load(std::memory_order_relaxed);
-            std::abs(freq - lastBandFreq) > 0.01f || std::abs(q - lastBandQ) > 0.01f) {
-            const auto coeffs = juce::dsp::IIR::Coefficients<float>::makeBandPass(
-                currentSpec.sampleRate, freq, q);
-            *bandFilter1.state = *coeffs;
-            *bandFilter2.state = *coeffs;
-            lastBandFreq = freq;
-            lastBandQ = q;
-        }
-        bandFilter1.process(context);
-        bandFilter2.process(context);
-    } else if (lastBandFreq > 0.0f) {
-        bandFilter1.reset();
-        bandFilter2.reset();
-        lastBandFreq = -1.0f;
-        lastBandQ = -1.0f;
-    }
+    bandFilter.process(context);
 
     // Channel mode processing via strategy
     channelModeStrategy->process(context,
@@ -193,10 +150,8 @@ void gFractorDSP::reset() {
 
     gainProcessor.reset();
     dryWetMixer.reset();
-    auditBellFilter1.reset();
-    auditBellFilter2.reset();
-    bandFilter1.reset();
-    bandFilter2.reset();
+    auditFilter.reset();
+    bandFilter.reset();
     if (channelModeStrategy)
         channelModeStrategy->reset();
 }
@@ -250,13 +205,9 @@ void gFractorDSP::setDryWet(const float proportion) {
 }
 
 void gFractorDSP::setAuditFilter(const bool active, const float frequencyHz, const float q) {
-    auditFilterFreq.store(frequencyHz, std::memory_order_relaxed);
-    auditFilterQ.store(q, std::memory_order_relaxed);
-    auditFilterActive.store(active, std::memory_order_relaxed);
+    auditFilter.setParams(active, frequencyHz, q);
 }
 
 void gFractorDSP::setBandFilter(const bool active, const float frequencyHz, const float q) {
-    bandFilterFreq.store(frequencyHz, std::memory_order_relaxed);
-    bandFilterQ.store(q, std::memory_order_relaxed);
-    bandFilterActive.store(active, std::memory_order_relaxed);
+    bandFilter.setParams(active, frequencyHz, q);
 }

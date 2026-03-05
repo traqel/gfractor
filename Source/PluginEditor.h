@@ -13,6 +13,8 @@
 #include "State/PresetManager.h"
 #include "UI/Theme/ColorPalette.h"
 #include "UI/UIController.h"
+#include "UI/Controls/PanelDivider.h"
+#include "UI/Controls/PanelBackdrop.h"
 
 #include "UI/Controls/PerformanceDisplay.h"
 
@@ -90,56 +92,6 @@ private:
     // Hint bar (context-dependent hints at bottom of screen)
     HintBar hintBar;
 
-    // Preference panel overlay + click-outside backdrop
-    struct PanelBackdrop : Component {
-        std::function<void()> onMouseDown;
-        void mouseDown(const juce::MouseEvent &) override { if (onMouseDown) onMouseDown(); }
-    };
-
-    struct PanelDivider : Component {
-        std::function<void(int)> onDrag;
-        PanelDivider() { setMouseCursor(juce::MouseCursor::LeftRightResizeCursor); }
-
-        void paint(juce::Graphics &g) override {
-            const auto col = isHovered || isDragging
-                                 ? juce::Colour(ColorPalette::primaryGreen).withAlpha(0.45f)
-                                 : juce::Colour(ColorPalette::border);
-            g.setColour(col);
-            g.drawVerticalLine(getWidth() / 2, 0.0f, static_cast<float>(getHeight()));
-        }
-
-        void mouseEnter(const juce::MouseEvent &) override {
-            isHovered = true;
-            repaint();
-        }
-
-        void mouseExit(const juce::MouseEvent &) override {
-            isHovered = false;
-            repaint();
-        }
-
-        void mouseDown(const juce::MouseEvent &e) override {
-            isDragging = true;
-            lastX = e.getScreenX();
-            repaint();
-        }
-
-        void mouseUp(const juce::MouseEvent &) override {
-            isDragging = false;
-            repaint();
-        }
-
-        void mouseDrag(const juce::MouseEvent &e) override {
-            if (onDrag) onDrag(lastX - e.getScreenX());
-            lastX = e.getScreenX();
-        }
-
-    private:
-        int lastX = 0;
-        bool isHovered = false;
-        bool isDragging = false;
-    };
-
     std::unique_ptr<PreferencePanel> preferencePanel;
     std::unique_ptr<PanelBackdrop> panelBackdrop;
     PanelDivider panelDivider;
@@ -147,6 +99,8 @@ private:
     // Performance display (debug builds only, toggled with Ctrl+Shift+P)
     PerformanceDisplay performanceDisplay;
     bool performanceDisplayVisible = false;
+
+    void wireHintBarPills();
 
     void togglePerformanceDisplay();
 

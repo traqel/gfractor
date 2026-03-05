@@ -7,6 +7,7 @@
 #include "../../Utility/ChannelMode.h"
 #include "../Interfaces/IDSPProcessor.h"
 #include "../Processing/ChannelModeStrategies.h"
+#include "../Processing/BandpassFilter.h"
 
 /**
  * Main DSP processor for the gFractor plugin.
@@ -106,25 +107,10 @@ private:
 
     //==============================================================================
     // Transient audition bell filter — 4th order (two cascaded 2nd-order BPFs)
-    std::atomic<bool> auditFilterActive{false};
-    std::atomic<float> auditFilterFreq{1000.0f};
-    std::atomic<float> auditFilterQ{4.0f};
-    using IIRDuplicator = juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>,
-        juce::dsp::IIR::Coefficients<float> >;
-    IIRDuplicator auditBellFilter1;
-    IIRDuplicator auditBellFilter2;
-    float lastAuditFreq = -1.0f;
-    float lastAuditQ = -1.0f;
+    BandpassFilter auditFilter;
 
-    //==============================================================================
     // Band selection filter — 4th order (two cascaded 2nd-order BPFs)
-    std::atomic<bool> bandFilterActive{false};
-    std::atomic<float> bandFilterFreq{1000.0f};
-    std::atomic<float> bandFilterQ{1.0f};
-    IIRDuplicator bandFilter1;
-    IIRDuplicator bandFilter2;
-    float lastBandFreq = -1.0f;
-    float lastBandQ = -1.0f;
+    BandpassFilter bandFilter;
 
     // Peak level metering (written on audio thread, read on UI thread)
     std::atomic<float> peakPrimaryDb{-100.0f};

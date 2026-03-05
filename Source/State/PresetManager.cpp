@@ -10,12 +10,14 @@ PresetManager::PresetManager(juce::AudioProcessorValueTreeState &apvts_)
 
     savedDisplaySnapshot = makeInitDisplayState();
 
-    // Register as ValueTree::Listener to track APVTS changes without polling.
-    apvts.state.addListener(this);
+    // Register on every parameter so parameterValueChanged fires synchronously.
+    for (auto* p : apvts.processor.getParameters())
+        p->addListener(this);
 }
 
 PresetManager::~PresetManager() {
-    apvts.state.removeListener(this);
+    for (auto* p : apvts.processor.getParameters())
+        p->removeListener(this);
 }
 
 //==============================================================================
@@ -23,7 +25,7 @@ juce::ValueTree PresetManager::makeInitDisplayState() {
     juce::ValueTree t { "Display" };
     t.setProperty(DisplayKeys::channelMode,   0,                                         nullptr);
     t.setProperty(DisplayKeys::fftOrder,      Layout::SpectrumAnalyzer::defaultFftOrder, nullptr);
-    t.setProperty(DisplayKeys::curveDecay,    0.95,                                      nullptr);
+    t.setProperty(DisplayKeys::curveDecay,    0.95f,                                     nullptr);
     t.setProperty(DisplayKeys::slopeDb,       0.0,                                       nullptr);
     t.setProperty(DisplayKeys::overlapFactor, 4,                                         nullptr);
     return t;
@@ -55,11 +57,7 @@ bool PresetManager::loadPreset(const Preset &preset) {
     if (auto *paramsXml = xml->getChildByName("Parameters")) {
         auto tree = juce::ValueTree::fromXml(*paramsXml);
         if (tree.isValid()) {
-            // Remove listener before replaceState so it doesn't fire during the swap,
-            // then re-register on the new state and clear the dirty flag.
-            apvts.state.removeListener(this);
             apvts.replaceState(tree);
-            apvts.state.addListener(this);
             apvtsLoaded = true;
         }
     }

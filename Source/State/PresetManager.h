@@ -25,7 +25,7 @@
  *   - Display: cheap polling via getDisplayState() (reads 5 ints from UI,
  *     called on the message thread only).
  */
-class PresetManager : private juce::ValueTree::Listener {
+class PresetManager : private juce::AudioProcessorParameter::Listener {
 public:
     struct Preset {
         juce::String name;
@@ -91,15 +91,11 @@ public:
     bool isDirty() const;
 
 private:
-    // ValueTree::Listener — fired on any parameter change (message or audio thread).
-    void valueTreePropertyChanged(juce::ValueTree &, const juce::Identifier &) override {
+    // AudioProcessorParameter::Listener — fired synchronously on parameter change.
+    void parameterValueChanged(int, float) override {
         apvtsDirty.store(true, std::memory_order_release);
     }
-    // Silence unused overrides.
-    void valueTreeChildAdded(juce::ValueTree &, juce::ValueTree &) override {}
-    void valueTreeChildRemoved(juce::ValueTree &, juce::ValueTree &, int) override {}
-    void valueTreeChildOrderChanged(juce::ValueTree &, int, int) override {}
-    void valueTreeParentChanged(juce::ValueTree &) override {}
+    void parameterGestureChanged(int, bool) override {}
 
     juce::AudioProcessorValueTreeState &apvts;
     juce::String currentName { initPresetName };

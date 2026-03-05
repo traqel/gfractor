@@ -7,76 +7,25 @@ void UIController::setSpectrumControls(ISpectrumControls *controls) {
     spectrumControls = controls;
 }
 
-void UIController::setSidechainAvailableGetter(std::function<bool()> getter) {
-    getSidechainAvailable = std::move(getter);
-}
-
-void UIController::setReferenceModeSetter(std::function<void(bool)> setter) {
-    setReferenceMode = std::move(setter);
-}
-
-void UIController::setSidechainCallback(std::function<void(bool)> callback) {
-    onSidechainChanged = std::move(callback);
-}
-
-void UIController::setPillStateGetter(std::function<PillState()> getter) {
-    getPillState = std::move(getter);
-}
-
-void UIController::setFreezeCallback(std::function<void(bool)> callback) {
-    onFreeze = std::move(callback);
-}
-
-void UIController::setPrimaryCallback(std::function<void()> callback) {
-    onPrimary = std::move(callback);
-}
-
-void UIController::setSecondaryCallback(std::function<void()> callback) {
-    onSecondary = std::move(callback);
-}
-
-void UIController::setReferenceCallback(std::function<void(bool)> callback) {
-    onReference = std::move(callback);
-}
-
-void UIController::setGhostCallback(std::function<void()> callback) {
-    onGhost = std::move(callback);
-}
-
-void UIController::setHoldCallback(std::function<void()> callback) {
-    onHold = std::move(callback);
-}
-
-void UIController::setFullscreenCallback(std::function<void()> callback) {
-    onFullscreen = std::move(callback);
-}
-
-void UIController::setCycleModeCallback(std::function<void()> callback) {
-    onCycleMode = std::move(callback);
-}
-
-void UIController::setCycleSlopeCallback(std::function<void()> callback) {
-    onCycleSlope = std::move(callback);
-}
-
-void UIController::setCycleDecayCallback(std::function<void()> callback) {
-    onCycleDecay = std::move(callback);
-}
-
-void UIController::setCycleOverlapCallback(std::function<void()> callback) {
-    onCycleOverlap = std::move(callback);
-}
-
-void UIController::setCycleFFTCallback(std::function<void()> callback) {
-    onCycleFFT = std::move(callback);
-}
-
-void UIController::setMetersCallback(std::function<void(bool)> callback) {
-    onMeters = std::move(callback);
-}
-
-void UIController::setPerformanceCallback(std::function<void()> callback) {
-    onPerformance = std::move(callback);
+void UIController::configure(Actions a) {
+    getSidechainAvailable = std::move(a.getSidechainAvailable);
+    setReferenceMode      = std::move(a.setReferenceMode);
+    onSidechainChanged    = std::move(a.onSidechainChanged);
+    getPillState          = std::move(a.getPillState);
+    onFreeze              = std::move(a.onFreeze);
+    onPrimary             = std::move(a.onPrimary);
+    onSecondary           = std::move(a.onSecondary);
+    onReference           = std::move(a.onReference);
+    onGhost               = std::move(a.onGhost);
+    onHold                = std::move(a.onHold);
+    onFullscreen          = std::move(a.onFullscreen);
+    onCycleMode           = std::move(a.onCycleMode);
+    onCycleSlope          = std::move(a.onCycleSlope);
+    onCycleDecay          = std::move(a.onCycleDecay);
+    onCycleOverlap        = std::move(a.onCycleOverlap);
+    onCycleFFT            = std::move(a.onCycleFFT);
+    onMeters              = std::move(a.onMeters);
+    onPerformance         = std::move(a.onPerformance);
 }
 
 void UIController::timerCallback() {
@@ -106,9 +55,8 @@ bool UIController::keyPressed(const juce::KeyPress &key) const {
 
     // R — toggle Reference overlay
     if (key == juce::KeyPress('r')) {
-        if (getPillState && onReference) {
+        if (getPillState && onReference)
             onReference(!getPillState().reference);
-        }
         return true;
     }
 
@@ -120,9 +68,8 @@ bool UIController::keyPressed(const juce::KeyPress &key) const {
 
     // Z — Freeze / resume spectrum
     if (key == juce::KeyPress('z')) {
-        if (onFreeze && spectrumControls) {
+        if (onFreeze && spectrumControls)
             onFreeze(!spectrumControls->isFrozen());
-        }
         return true;
     }
 
@@ -181,7 +128,7 @@ bool UIController::keyStateChanged(const bool isKeyDown, bool &controlHeldRef) {
     if (!getSidechainAvailable || !onReference)
         return false;
 
-    const bool ctrlNow = juce::ModifierKeys::currentModifiers.isCtrlDown();
+    const bool ctrlNow  = juce::ModifierKeys::currentModifiers.isCtrlDown();
     const bool available = getSidechainAvailable();
 
     if (ctrlNow && !controlHeld && available) {
@@ -190,7 +137,7 @@ bool UIController::keyStateChanged(const bool isKeyDown, bool &controlHeldRef) {
     }
 
     controlHeldRef = ctrlNow;
-    controlHeld = ctrlNow;
+    controlHeld    = ctrlNow;
 
     return isKeyDown && ctrlNow;
 }
