@@ -151,6 +151,8 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     themeCombo.setSelectedId(themeToId(ColorPalette::getTheme()), juce::dontSendNotification);
     themeCombo.onChange = [this] {
         ColorPalette::setTheme(idToTheme(themeCombo.getSelectedId()));
+        applyThemeColours();
+        repaint();
         if (onThemeChanged)
             onThemeChanged();
     };
@@ -176,25 +178,43 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     addAndMakeVisible(resetButton);
     resetButton.onClick = [this] { resetToDefaults(); };
 
-    const auto panelFont = Typography::makeFont(Typography::mainFontSize);
-    const auto applyLabelFont = [&](juce::Label &label) {
-        label.setFont(panelFont);
-        label.setMinimumHorizontalScale(1.0f);
-    };
-
-    applyLabelFont(minDbLabel);
-    applyLabelFont(maxDbLabel);
-    applyLabelFont(minFreqLabel);
-    applyLabelFont(maxFreqLabel);
-    applyLabelFont(coloursLabel);
-    applyLabelFont(smoothingLabel);
-    applyLabelFont(transientLengthLabel);
-    applyLabelFont(themeLabel);
-
     minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+
+    applyThemeColours();
+}
+
+//==============================================================================
+void PreferencePanel::applyThemeColours() {
+    const auto textColour = juce::Colour(ColorPalette::textBright);
+    const auto panelFont  = Typography::makeFont(Typography::mainFontSize);
+
+    for (auto *label : { &minDbLabel, &maxDbLabel, &minFreqLabel, &maxFreqLabel,
+                         &coloursLabel, &smoothingLabel, &transientLengthLabel, &themeLabel }) {
+        label->setFont(panelFont);
+        label->setMinimumHorizontalScale(1.0f);
+        label->setColour(juce::Label::textColourId, textColour);
+    }
+
+    const auto comboBoxBg = juce::Colour(ColorPalette::panel);
+    for (auto *combo : { &smoothingCombo, &themeCombo }) {
+        combo->setColour(juce::ComboBox::textColourId,       textColour);
+        combo->setColour(juce::ComboBox::backgroundColourId, comboBoxBg);
+        combo->setColour(juce::ComboBox::arrowColourId,      textColour);
+        combo->setColour(juce::ComboBox::outlineColourId,    juce::Colours::transparentBlack);
+        combo->repaint();
+    }
+
+    const auto textBoxBg = juce::Colour(ColorPalette::panel);
+    for (auto *slider : { &minDbSlider, &maxDbSlider, &minFreqSlider,
+                          &maxFreqSlider, &transientLengthSlider }) {
+        slider->setColour(juce::Slider::textBoxTextColourId,       textColour);
+        slider->setColour(juce::Slider::textBoxBackgroundColourId, textBoxBg);
+        slider->setColour(juce::Slider::textBoxOutlineColourId,    juce::Colours::transparentBlack);
+        slider->repaint();
+    }
 }
 
 //==============================================================================

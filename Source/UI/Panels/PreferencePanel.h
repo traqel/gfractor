@@ -100,6 +100,8 @@ private:
 
     static ColorPalette::Theme idToTheme(int id);
 
+    void applyThemeColours();
+
     void revertToSnapshot();
 
     void resetToDefaults();
