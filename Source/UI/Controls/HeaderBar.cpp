@@ -4,8 +4,7 @@
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 
-HeaderBar::HeaderBar(std::function<void()> settingsCallback,
-                     std::function<void()> helpCallback) {
+HeaderBar::HeaderBar(std::function<void()> settingsCallback) {
     addAndMakeVisible(logo);
 
     // Settings button - non-toggle
@@ -15,11 +14,11 @@ HeaderBar::HeaderBar(std::function<void()> settingsCallback,
     settingsPill.onClick = std::move(settingsCallback);
     addAndMakeVisible(settingsPill);
 
-    // Help button - non-toggle
+    // Help button - shows popup menu
     helpPill.setIcon(Icons::help);
     helpPill.setClickingTogglesState(false);
     helpPill.setToggleState(false, juce::dontSendNotification);
-    helpPill.onClick = std::move(helpCallback);
+    helpPill.onClick = [this] { showHelpMenu(); };
     addAndMakeVisible(helpPill);
 }
 
@@ -39,12 +38,33 @@ void HeaderBar::mouseEnter(const juce::MouseEvent &e) {
     if (e.eventComponent == &settingsPill)
         hintHandle = hints->setHint("CLICK", "Analyzer settings");
     else if (e.eventComponent == &helpPill)
-        hintHandle = hints->setHint("CLICK", "Keyboard shortcuts");
+        hintHandle = hints->setHint("CLICK", "Help menu");
 }
 
 void HeaderBar::mouseExit(const juce::MouseEvent &e) {
     if (e.eventComponent != this && hints)
         hintHandle = {};
+}
+
+void HeaderBar::showHelpMenu() {
+    juce::PopupMenu menu;
+    menu.addItem(1, "About gFractor");
+    menu.addItem(2, "Check for Updates");
+    menu.addSeparator();
+    menu.addItem(3, "Manual");
+
+    const auto bounds = helpPill.getBoundsInParent();
+    const auto screenBounds = localAreaToGlobal(bounds);
+
+    menu.showMenuAsync(
+        juce::PopupMenu::Options()
+            .withTargetScreenArea(screenBounds)
+            .withMinimumWidth(160),
+        [this](int result) {
+            if (result == 1 && onAbout)           onAbout();
+            else if (result == 2 && onCheckForUpdates) onCheckForUpdates();
+            else if (result == 3 && onManual)     onManual();
+        });
 }
 
 void HeaderBar::resized() {

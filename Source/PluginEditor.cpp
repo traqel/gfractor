@@ -39,7 +39,10 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     const auto currentDecay = spectrumAnalyzer.getCurveDecay();
     int decayIndex = 2; // default Med
     for (int i = 0; i < 4; ++i)
-        if (std::abs(currentDecay - decayValues[i]) < 0.001f) { decayIndex = i; break; }
+        if (std::abs(currentDecay - decayValues[i]) < 0.001f) {
+            decayIndex = i;
+            break;
+        }
     hintBar.getDecayPill().setSelectedIndex(decayIndex);
     hintBar.getDecayPill().onChange = [this](int index) {
         static constexpr float values[] = {0.0f, 0.85f, 0.95f, 0.99f};
@@ -51,7 +54,10 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
     const auto currentSlope = spectrumAnalyzer.getSlope();
     int slopeIndex = 0;
     for (int i = 0; i < 3; ++i)
-        if (std::abs(currentSlope - slopeValues[i]) < 0.01f) { slopeIndex = i; break; }
+        if (std::abs(currentSlope - slopeValues[i]) < 0.01f) {
+            slopeIndex = i;
+            break;
+        }
     hintBar.getSlopePill().setSelectedIndex(slopeIndex);
     hintBar.getSlopePill().onChange = [this](int index) {
         static constexpr float values[] = {0.0f, 3.0f, 4.5f};
@@ -95,12 +101,18 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
             const auto cd = spectrumAnalyzer.getCurveDecay();
             int di = 2;
             for (int i = 0; i < 4; ++i)
-                if (std::abs(cd - decayValues[i]) < 0.001f) { di = i; break; }
+                if (std::abs(cd - decayValues[i]) < 0.001f) {
+                    di = i;
+                    break;
+                }
             hintBar.getDecayPill().setSelectedIndex(di);
             const auto sl = spectrumAnalyzer.getSlope();
             int si = 0;
             for (int i = 0; i < 3; ++i)
-                if (std::abs(sl - slopeValues[i]) < 0.01f) { si = i; break; }
+                if (std::abs(sl - slopeValues[i]) < 0.01f) {
+                    si = i;
+                    break;
+                }
             hintBar.getSlopePill().setSelectedIndex(si);
 
             // Restore channel mode — trigger modePill onChange so labels + DSP all update
@@ -131,12 +143,11 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
         audioProcessor.setBandFilter(active, freq, q);
     };
 
-    // Create header bar with settings and help callbacks
+    // Create header bar with settings callback
     headerBar = std::make_unique<HeaderBar>(
         [this] {
             // Settings callback — toggle preference panel overlay
             if (preferencePanel == nullptr) {
-                helpPanel.reset(); // close help panel if open
                 preferencePanel = std::make_unique<PreferencePanel>(
                     spectrumAnalyzer,
                     audioProcessor.getAPVTS(),
@@ -153,10 +164,6 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
                 panelBackdrop = std::make_unique<PanelBackdrop>();
                 panelBackdrop->onMouseDown = [this] {
                     if (preferencePanel != nullptr) preferencePanel->cancel();
-                    else if (helpPanel != nullptr) {
-                        helpPanel.reset();
-                        panelBackdrop.reset();
-                    }
                 };
                 addAndMakeVisible(panelBackdrop.get());
                 addAndMakeVisible(preferencePanel.get());
@@ -164,34 +171,26 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
             } else {
                 preferencePanel->cancel();
             }
-        },
-        [this] {
-            // Help callback
-            if (helpPanel != nullptr) {
-                helpPanel.reset();
-                panelBackdrop.reset();
-                return;
-            }
-            // Close settings if open
-            if (preferencePanel != nullptr) {
-                preferencePanel->cancel();
-            }
-            helpPanel = std::make_unique<HelpPanel>();
-            helpPanel->onClose = [this] {
-                helpPanel.reset();
-                panelBackdrop.reset();
-            };
-            panelBackdrop = std::make_unique<PanelBackdrop>();
-            panelBackdrop->onMouseDown = [this] {
-                if (helpPanel != nullptr) {
-                    helpPanel.reset();
-                    panelBackdrop.reset();
-                } else if (preferencePanel != nullptr) preferencePanel->cancel();
-            };
-            addAndMakeVisible(panelBackdrop.get());
-            addAndMakeVisible(helpPanel.get());
-            resized();
         });
+
+    // Help menu callbacks
+    headerBar->onAbout = [this] {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::AlertWindow::InfoIcon,
+            "gFractor",
+            "Version: " + juce::String(JucePlugin_VersionString) + "\n"
+            "Manufacturer: GrowlAudio\n\n"
+            "Spectrum Analyzer\n"
+            "growl-audio.com",
+            "OK",
+            this);
+    };
+    headerBar->onCheckForUpdates = [] {
+        juce::URL("https://growl-audio.com/gfractor/updates").launchInDefaultBrowser();
+    };
+    headerBar->onManual = [] {
+        juce::URL("https://growl-audio.com/gfractor/manual").launchInDefaultBrowser();
+    };
 
     // Add header and footer bars
     addAndMakeVisible(*headerBar);
@@ -454,14 +453,6 @@ void gFractorAudioProcessorEditor::resized() {
                                    PreferencePanel::panelHeight);
     }
 
-    // Help panel overlay (same anchor as preference panel)
-    if (helpPanel != nullptr) {
-        helpPanel->setBounds(getWidth() - HelpPanel::panelWidth - Spacing::marginS,
-                             Spacing::marginXL,
-                             HelpPanel::panelWidth,
-                             HelpPanel::panelHeight);
-    }
-
     // Performance display (top right corner, fixed size)
     constexpr int perfWidth = 120;
     constexpr int perfHeight = 34;
@@ -477,11 +468,6 @@ bool gFractorAudioProcessorEditor::keyPressed(const juce::KeyPress &key,
     if (key == juce::KeyPress::escapeKey) {
         if (preferencePanel != nullptr) {
             preferencePanel->cancel();
-            return true;
-        }
-        if (helpPanel != nullptr) {
-            helpPanel.reset();
-            panelBackdrop.reset();
             return true;
         }
     }

@@ -29,6 +29,8 @@ void Logo::paint(juce::Graphics &g) {
     g.setColour(juce::Colour(ColorPalette::textLight));
 
     const int subtitleX = logoX + static_cast<int>(gWidth) + 90;
-    g.drawText(UILabels::Logo::subtitle, subtitleX, logoY,
-               200, logoH, juce::Justification::centredLeft);
+    const auto subtitleText = juce::String(UILabels::Logo::subtitle)
+                              + "  v" + JucePlugin_VersionString;
+    g.drawText(subtitleText, subtitleX, logoY,
+               220, logoH, juce::Justification::centredLeft);
 }

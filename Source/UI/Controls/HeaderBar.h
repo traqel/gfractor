@@ -13,11 +13,12 @@
  * - Logo ("g" in teal + "Fractor" in white bold italic)
  * - Subtitle: "MID . SIDE SPECTRUM ANALYZER"
  * - Right: Settings and Help buttons
+ *
+ * The Help button shows a popup menu with About, Check for Updates, and Manual items.
  */
 class HeaderBar : public juce::Component {
 public:
-    HeaderBar(std::function<void()> settingsCallback,
-              std::function<void()> helpCallback);
+    explicit HeaderBar(std::function<void()> settingsCallback);
 
     void paint(juce::Graphics &g) override;
 
@@ -26,10 +27,17 @@ public:
     /** Register HintManager — call once from PluginEditor after construction. */
     void setHintManager(HintManager &hm);
 
+    /** Callbacks for help menu actions — set by PluginEditor after construction. */
+    std::function<void()> onAbout;
+    std::function<void()> onCheckForUpdates;
+    std::function<void()> onManual;
+
 private:
     void mouseEnter(const juce::MouseEvent &e) override;
 
     void mouseExit(const juce::MouseEvent &e) override;
+
+    void showHelpMenu();
 
     HintManager *hints = nullptr;
     HintManager::HintHandle hintHandle;

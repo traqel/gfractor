@@ -9,7 +9,6 @@
 #include "UI/Controls/HintBar.h"
 #include "UI/Panels/StereoMeteringPanel.h"
 #include "UI/Panels/PreferencePanel.h"
-#include "UI/Panels/HelpPanel.h"
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
 #include "UI/Theme/ColorPalette.h"
 #include "UI/UIController.h"
@@ -138,7 +137,6 @@ private:
     };
 
     std::unique_ptr<PreferencePanel> preferencePanel;
-    std::unique_ptr<HelpPanel> helpPanel;
     std::unique_ptr<PanelBackdrop> panelBackdrop;
     PanelDivider panelDivider;
 

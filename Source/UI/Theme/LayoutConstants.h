@@ -117,17 +117,6 @@ namespace Layout {
     }
 
     //==========================================================================
-    // HelpPanel
-    //==========================================================================
-    namespace HelpPanel {
-        inline constexpr int panelWidth = 340;
-        inline constexpr int panelHeight = 436;
-        inline constexpr int sectionHeight = 24;
-        inline constexpr int rowHeight = 28;
-        inline constexpr int keyWidth = 120;
-    }
-
-    //==========================================================================
     // DropdownPill
     //==========================================================================
     namespace DropdownPill {
