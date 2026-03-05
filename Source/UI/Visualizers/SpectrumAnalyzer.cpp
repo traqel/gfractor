@@ -102,6 +102,22 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
         g.drawImage(gridImage, 0, 0, getWidth(), getHeight(),
                     0, 0, gridImage.getWidth(), gridImage.getHeight());
 
+    // Sub-bass glow on left edge
+    if (lowFreqGlow > 0.001f)
+    {
+        const float glowW = spectrumArea.getWidth() * 0.18f * lowFreqGlow;
+        const auto  glowRect = juce::Rectangle<float>(
+                                   spectrumArea.getX(), spectrumArea.getY(),
+                                   glowW, spectrumArea.getHeight());
+        const juce::Colour glowColour = juce::Colour(0xFFFF4400);
+        const juce::ColourGradient grad(glowColour.withAlpha(0.45f * lowFreqGlow),
+                                        glowRect.getX(), 0.0f,
+                                        glowColour.withAlpha(0.0f),
+                                        glowRect.getRight(), 0.0f, false);
+        g.setGradientFill(grad);
+        g.fillRect(glowRect);
+    }
+
     // Mode watermark — faint label, top center of spectrum area
     {
         const auto label = channelModeToString(channelMode);
@@ -476,6 +492,26 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
     if (fftDataReady && w > 0 && h > 0) {
         buildPath(primaryPath, smoothedPrimaryDb, w, h);
         buildPath(secondaryPath, smoothedSecondaryDb, w, h);
+
+        // Sub-bass glow: measure peak energy below 25 Hz
+        {
+            constexpr float kThresholdDb  = -30.0f; // glow starts here
+            constexpr float kMaxDb        = -1.0f;  // glow is full here
+            constexpr float kAttack       = 0.6f;
+            constexpr float kRelease      = 0.05f;
+
+            const float binWidth = (getSampleRate() > 0.0) ? static_cast<float>(getSampleRate()) / static_cast<float>(fftSize) : 1.0f;
+            const int   maxBin   = juce::jlimit(1, static_cast<int>(smoothedPrimaryDb.size()) - 1,
+                                                static_cast<int>(std::ceil(20.0f / binWidth)));
+            float peakDb = kThresholdDb;
+            for (int b = 0; b <= maxBin; ++b)
+                peakDb = std::max(peakDb, smoothedPrimaryDb[static_cast<size_t>(b)]);
+
+            const float target = juce::jlimit(0.0f, 1.0f,
+                                              (peakDb - kThresholdDb) / (kMaxDb - kThresholdDb));
+            const float coeff  = target > lowFreqGlow ? kAttack : kRelease;
+            lowFreqGlow += coeff * (target - lowFreqGlow);
+        }
 
         if (peakHold.isEnabled()) {
             const bool peaksChanged = peakHold.accumulate(smoothedPrimaryDb, smoothedSecondaryDb, numBins);

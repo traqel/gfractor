@@ -312,6 +312,9 @@ private:
     juce::Colour hintColour{ColorPalette::hintPink};
     juce::Colour bandHeaderColor{ColorPalette::spectrumBorder};
 
+    // Sub-bass glow: 0=none, 1=full. Smoothed per-frame, drawn in paint().
+    float lowFreqGlow = 0.0f;
+
     // Tooltip + range bars overlay
     SpectrumTooltip tooltip;
 
