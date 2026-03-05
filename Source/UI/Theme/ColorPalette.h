@@ -65,11 +65,11 @@ namespace ColorPalette {
         0xffD3DBD3,
         0xffAAB4AA,
         0xffBFC8BF,
-        0xff2B9A53,
-        0xff9F7B00,
-        0xff2B6CB0,
-        0xff2B7DE5,
-        0xffD84F91,
+        0xff00FF70,
+        0xffFFCC00,
+        0xff00A0FF,
+        0xff00C8FF,
+        0xffFF00CC,
         0xff101410,
         0xff223022,
         0xff5A675A,
@@ -83,27 +83,27 @@ namespace ColorPalette {
     };
 
     inline constexpr ThemeSpec balancedTheme{
-        0xff1A1D22,
-        0xff20252C,
-        0xff161A1F,
-        0xff2C333D,
-        0xff3D4652,
-        0xff313A46,
-        0xff45B97C,
-        0xffCF9A3D,
-        0xff4C8BD8,
-        0xff5EA9F2,
-        0xffE075AC,
-        0xffF4F7FA,
-        0xffD2DAE4,
-        0xff8893A0,
-        0xff93A0AF,
-        0xff1A1D22,
-        0x7fAAB6C4,
-        0xccF4F7FA,
-        0xb3F4F7FA,
-        0xb3ffb3c7,
-        0xFFFFFF00
+        0xff262830,  // background
+        0xff2C3038,  // panel
+        0xff22252C,  // spectrumBg
+        0xff363C46,  // grid
+        0xff474E58,  // border
+        0xff3C4450,  // spectrumBorder
+        0xff45B97C,  // primaryGreen
+        0xffCF9A3D,  // secondaryAmber
+        0xff4C8BD8,  // blueAccent
+        0xff5EA9F2,  // refPrimaryBlue
+        0xffE075AC,  // refSecondaryPink
+        0xffF4F7FA,  // textBright
+        0xffD2DAE4,  // textLight
+        0xff8893A0,  // textMuted
+        0xff93A0AF,  // textDimmed
+        0xff262830,  // pillInactiveBg
+        0x7fAAB6C4,  // panelBorder
+        0xccF4F7FA,  // panelHeading
+        0xb3F4F7FA,  // swatchBorder
+        0xb3ffb3c7,  // hintPink
+        0xFFFFFF00   // textAxis
     };
 
     constexpr const ThemeSpec &getThemeSpec(const Theme theme) {
