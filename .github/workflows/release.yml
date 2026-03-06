@@ -55,7 +55,7 @@ jobs:
 
           - name: Linux
             os: ubuntu-latest
-            artifact_pattern: "*.deb"
+            artifact_pattern: "deb"
 
     steps:
       - name: Checkout code
@@ -75,7 +75,7 @@ jobs:
             libxinerama-dev \
             libxrandr-dev \
             libxcursor-dev \
-            libgl1-mesa-dev
+            libgl-dev
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
@@ -89,6 +89,10 @@ jobs:
       - name: Package (Linux .deb)
         if: matrix.os == 'ubuntu-latest'
         run: cpack -G DEB --config build/CPackConfig.cmake
+
+      - name: Rename Linux artifact
+        if: matrix.os == 'ubuntu-latest'
+        run: mv gFractor-*-Linux.deb ${{ env.PLUGIN_NAME }}-Linux-${{ needs.create-release.outputs.version }}.deb
 
       # macOS Code Signing
       - name: Sign and Notarize (macOS)
