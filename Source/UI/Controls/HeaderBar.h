@@ -47,7 +47,7 @@ private:
 
     void mouseExit(const juce::MouseEvent &e) override;
 
-    void showHelpMenu() const;
+    void showHelpMenu();
     void showPresetMenu();
 
     HintManager *hints = nullptr;
