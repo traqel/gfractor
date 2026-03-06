@@ -33,6 +33,13 @@ jobs:
             artifact_path: |
               build/*_artefacts/Release/VST3/*.vst3
 
+          - name: Linux
+            os: ubuntu-latest
+            cmake_args: ""
+            artifact_name: Linux
+            artifact_path: |
+              build/*_artefacts/Release/VST3/*.vst3
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
