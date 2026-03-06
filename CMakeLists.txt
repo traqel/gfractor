@@ -171,6 +171,28 @@ install(TARGETS ${PLUGIN_NAME}
     RUNTIME DESTINATION bin
 )
 
+# Linux .deb packaging via CPack
+if(UNIX AND NOT APPLE)
+    # Install VST3 bundle to system VST3 path
+    install(DIRECTORY
+        "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_NAME}_artefacts/Release/VST3/${PLUGIN_NAME}.vst3"
+        DESTINATION "lib/vst3"
+    )
+
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_PACKAGE_NAME "${PLUGIN_NAME}")
+    set(CPACK_PACKAGE_VENDOR "${PLUGIN_MANUFACTURER}")
+    set(CPACK_PACKAGE_VERSION "${PLUGIN_VERSION}")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PLUGIN_DESCRIPTION}")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${PLUGIN_MANUFACTURER} <contact@growlaudio.com>")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS
+        "libasound2, libfreetype6, libx11-6, libxext6, libxinerama1, libxrandr2, libxcursor1, libgl1"
+    )
+    set(CPACK_PACKAGE_FILE_NAME "${PLUGIN_NAME}-${PLUGIN_VERSION}-Linux")
+    include(CPack)
+endif()
+
 # Print configuration summary
 message(STATUS "========================================")
 message(STATUS "gFractor Plugin Build Configuration")
