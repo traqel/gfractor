@@ -10,6 +10,7 @@
 #include "../HintManager.h"
 #include "GhostSpectrum.h"
 #include "PeakHold.h"
+#include "TargetCurve.h"
 #include "SpectrumTooltip.h"
 #include "BandConstants.h"
 #include "../ISpectrumControls.h"
@@ -136,6 +137,26 @@ public:
         if (onBandFilter)
             onBandFilter(active, frequencyHz, q);
     }
+
+    /** Save the current peak hold curves to a target curve file. */
+    void savePeakHoldCurve() override;
+
+    /** Load a target curve from file and overlay on the spectrum. */
+    void loadTargetCurve(std::function<void(bool)> onLoaded = nullptr) override;
+
+    /** Clear the loaded target curve. */
+    void clearTargetCurve() override;
+
+    [[nodiscard]]
+    bool hasTargetCurve() const override { return targetCurve.isLoaded(); }
+
+    void setTargetCurveVisible(const bool visible) override {
+        targetCurveVisible = visible;
+        repaint();
+    }
+
+    [[nodiscard]]
+    bool isTargetCurveVisible() const override { return targetCurveVisible; }
 
     //==============================================================================
     // ISpectrumDisplaySettings implementation
@@ -337,6 +358,10 @@ public:
 
     bool frozen = false;
 
+    // Target curve overlay (loaded from file)
+    TargetCurve targetCurve;
+    bool targetCurveVisible = true;
+
     // Infinite peak hold (needs to be accessible to some methods)
     PeakHold peakHold;
     int peakHoldThrottleCounter = 0;
@@ -404,5 +429,8 @@ public:
     HoverRegion hoverRegion = HoverRegion::None; // tracks previous region to avoid per-frame hint updates
 
     //==============================================================================
+    // Async file chooser (must outlive the callback)
+    std::unique_ptr<juce::FileChooser> chooser;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrumAnalyzer)
 };

@@ -142,6 +142,12 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
                    playRef ? refSecondaryColour : secondaryColour,
                    playRef ? primaryColour : refPrimaryColour,
                    playRef ? secondaryColour : refSecondaryColour);
+    if (targetCurve.isLoaded() && targetCurveVisible) {
+        targetCurve.buildPaths(range, spectrumArea.getWidth(), spectrumArea.getHeight());
+        targetCurve.paint(g, spectrumArea, showPrimary, showSecondary,
+                          playRef ? primaryColour : refPrimaryColour,
+                          playRef ? secondaryColour : refSecondaryColour);
+    }
     paintAuditFilter(g);
     paintSelectedBand(g);
     tooltip.paintTooltip(g, spectrumArea, range, fftSize, numBins,
@@ -630,6 +636,81 @@ void SpectrumAnalyzer::buildPath(juce::Path &path,
 void SpectrumAnalyzer::setInfinitePeak(const bool enabled) {
     peakHold.setEnabled(enabled);
     clearAllCurves();
+}
+
+void SpectrumAnalyzer::savePeakHoldCurve() {
+    if (!peakHold.isEnabled() || peakHold.getPrimaryDb().empty())
+        return;
+
+    const auto &primaryDb = peakHold.getPrimaryDb();
+    const auto &secondaryDb = peakHold.getSecondaryDb();
+    const double sr = getSampleRate() > 0 ? getSampleRate() : 44100.0;
+
+    // Build JSON object
+    auto *obj = new juce::DynamicObject();
+    obj->setProperty("version", 1);
+    obj->setProperty("type", "target_curve");
+    obj->setProperty("fftSize", fftSize);
+    obj->setProperty("numBins", numBins);
+    obj->setProperty("sampleRate", sr);
+    obj->setProperty("minDb", static_cast<double>(range.minDb));
+    obj->setProperty("maxDb", static_cast<double>(range.maxDb));
+    obj->setProperty("minFreq", static_cast<double>(range.minFreq));
+    obj->setProperty("maxFreq", static_cast<double>(range.maxFreq));
+    obj->setProperty("channelMode", channelModeToString(channelMode));
+
+    juce::Array<juce::var> primaryArr, secondaryArr;
+    primaryArr.ensureStorageAllocated(numBins);
+    secondaryArr.ensureStorageAllocated(numBins);
+    for (int i = 0; i < numBins; ++i) {
+        primaryArr.add(static_cast<double>(primaryDb[static_cast<size_t>(i)]));
+        secondaryArr.add(static_cast<double>(secondaryDb[static_cast<size_t>(i)]));
+    }
+    obj->setProperty("primaryDb", primaryArr);
+    obj->setProperty("secondaryDb", secondaryArr);
+
+    const juce::var json(obj);
+    const auto jsonString = juce::JSON::toString(json);
+
+    chooser = std::make_unique<juce::FileChooser>(
+        "Save Target Curve", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.json");
+
+    chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                         [jsonString](const juce::FileChooser &fc) {
+                             auto file = fc.getResult();
+                             if (file == juce::File())
+                                 return;
+                             if (!file.hasFileExtension(".json"))
+                                 file = file.withFileExtension("json");
+                             file.replaceWithText(jsonString);
+                         });
+}
+
+void SpectrumAnalyzer::loadTargetCurve(std::function<void(bool)> onLoaded) {
+    chooser = std::make_unique<juce::FileChooser>(
+        "Load Target Curve", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.json");
+
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                         [this, callback = std::move(onLoaded)](const juce::FileChooser &fc) {
+                             const auto file = fc.getResult();
+                             if (file == juce::File()) {
+                                 if (callback) callback(false);
+                                 return;
+                             }
+                             const bool ok = targetCurve.loadFromFile(file);
+                             if (ok) {
+                                 targetCurve.buildPaths(range, spectrumArea.getWidth(), spectrumArea.getHeight());
+                                 repaint();
+                             }
+                             if (callback) callback(ok);
+                         });
+}
+
+void SpectrumAnalyzer::clearTargetCurve() {
+    targetCurve.clear();
+    repaint();
 }
 
 void SpectrumAnalyzer::clearAllCurves() {

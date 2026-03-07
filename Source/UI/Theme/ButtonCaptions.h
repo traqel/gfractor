@@ -17,6 +17,9 @@ namespace ButtonCaptions {
     inline constexpr auto secondary = "SIDE";
     inline constexpr auto infinite = "HOLD";
     inline constexpr auto meters = "STEREO";
+    inline constexpr auto target = "TARGET";
+    inline constexpr auto saveTarget = "SAVE";
+    inline constexpr auto loadTarget = "LOAD";
     inline constexpr auto primaryLeft = "LEFT";
     inline constexpr auto secondaryRight = "RIGHT";
     inline constexpr auto primaryTrans = "TRANS";

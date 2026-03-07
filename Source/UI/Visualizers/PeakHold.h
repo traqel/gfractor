@@ -20,6 +20,12 @@ public:
     [[nodiscard]]
     bool isEnabled() const { return enabled; }
 
+    [[nodiscard]]
+    const std::vector<float> &getPrimaryDb() const { return peakPrimaryDb; }
+
+    [[nodiscard]]
+    const std::vector<float> &getSecondaryDb() const { return peakSecondaryDb; }
+
     void reset(int numBins, float minDb);
 
     bool accumulate(const std::vector<float> &primaryDb, const std::vector<float> &secondaryDb, int numBins);

@@ -83,13 +83,49 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     };
     addAndMakeVisible(freezePill);
 
+    addAndMakeVisible(holdDivider);
+
     // Infinite peak pill
     infinitePill.setLeftIcon(Icons::hold, false, Layout::PillButton::normalIconSize);
     infinitePill.setToggleState(false, juce::dontSendNotification);
     infinitePill.onClick = [this] {
-        controlsRef.setInfinitePeak(infinitePill.getToggleState());
+        const bool on = infinitePill.getToggleState();
+        controlsRef.setInfinitePeak(on);
+        saveTargetPill.setEnabled(on);
     };
     addAndMakeVisible(infinitePill);
+
+    // Save target pill — saves peak hold curves to file
+    saveTargetPill.setLeftIcon(Icons::save, false, Layout::PillButton::normalIconSize);
+    saveTargetPill.setClickingTogglesState(false);
+    saveTargetPill.setEnabled(false);
+    saveTargetPill.onClick = [this] {
+        controlsRef.savePeakHoldCurve();
+    };
+    addAndMakeVisible(saveTargetPill);
+
+    // Load target pill — opens file chooser to load a target curve
+    loadTargetPill.setLeftIcon(Icons::load, false, Layout::PillButton::normalIconSize);
+    loadTargetPill.setClickingTogglesState(false);
+    loadTargetPill.onClick = [this] {
+        controlsRef.loadTargetCurve([this](bool loaded) {
+            if (loaded) {
+                targetPill.setEnabled(true);
+                targetPill.setToggleState(true, juce::dontSendNotification);
+                controlsRef.setTargetCurveVisible(true);
+            }
+        });
+    };
+    addAndMakeVisible(loadTargetPill);
+
+    // Target curve pill — toggles visibility of loaded curve
+    targetPill.setLeftIcon(Icons::target, false, Layout::PillButton::normalIconSize);
+    targetPill.setToggleState(false, juce::dontSendNotification);
+    targetPill.setEnabled(false);
+    targetPill.onClick = [this] {
+        controlsRef.setTargetCurveVisible(targetPill.getToggleState());
+    };
+    addAndMakeVisible(targetPill);
 
     applyTheme();
 
@@ -113,6 +149,9 @@ void FooterBar::applyTheme() {
     secondaryPill.setActiveColour(juce::Colour(ColorPalette::secondaryAmber));
     freezePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     infinitePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    saveTargetPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    loadTargetPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    targetPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     metersPill.setActiveColour(juce::Colour(ColorPalette::primaryGreen));
     repaint();
 }
@@ -152,7 +191,15 @@ void FooterBar::resized() {
     constexpr auto bww = static_cast<float>(Layout::PillButton::buttonWidthWide);
     fb.items.add(Item(freezePill).withWidth(bww).withHeight(ph));
     fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(holdDivider).withWidth(gl).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
     fb.items.add(Item(infinitePill).withWidth(bww).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(saveTargetPill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(loadTargetPill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(targetPill).withWidth(bww).withHeight(ph));
 
     // Spacer — pushes Meters + Settings to the right
     fb.items.add(Item().withFlex(1.0f));
@@ -173,7 +220,7 @@ void FooterBar::setHintManager(HintManager &hm) {
     Component *pills[] = {
         &referencePill, &ghostPill, &primaryPill,
         &secondaryPill, &freezePill, &infinitePill,
-        &metersPill
+        &saveTargetPill, &loadTargetPill, &targetPill, &metersPill
     };
     for (auto *c: pills)
         c->addMouseListener(this, false);
@@ -207,6 +254,15 @@ void FooterBar::mouseEnter(const juce::MouseEvent &e) {
     } else if (c == &infinitePill) {
         title = "CLICK | KEY H";
         hint = "Infinite peak hold";
+    } else if (c == &saveTargetPill) {
+        title = "CLICK";
+        hint = "Save peak hold as target curve";
+    } else if (c == &loadTargetPill) {
+        title = "CLICK";
+        hint = "Load target curve from file";
+    } else if (c == &targetPill) {
+        title = "CLICK";
+        hint = "Show / hide target curve";
     } else if (c == &metersPill) {
         title = "CLICK";
         hint = "Stereo metering panel";

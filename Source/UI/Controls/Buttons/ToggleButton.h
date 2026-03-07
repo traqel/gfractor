@@ -130,7 +130,7 @@ protected:
                               glowRadius * 2.0f, glowRadius * 2.0f);
             }
 
-            if (leftIconColoredMode && on && leftIconOriginal != nullptr) {
+            if (leftIconColoredMode && on && isEnabled() && leftIconOriginal != nullptr) {
                 leftIconOriginal->drawWithin(g, iconBounds, juce::RectanglePlacement::centred, 1.0f);
             } else {
                 leftIcon->replaceColour(lastLeftIconColour, iconColour);

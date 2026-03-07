@@ -13,6 +13,8 @@ HeaderBar::HeaderBar(std::function<void()> settingsCallback) {
     presetPill.onClick = [this] { showPresetMenu(); };
     addAndMakeVisible(presetPill);
 
+    addAndMakeVisible(settingsDivider);
+
     // Settings button - non-toggle
     settingsPill.setIcon(Icons::settings);
     settingsPill.setClickingTogglesState(false);
@@ -179,7 +181,7 @@ void HeaderBar::resized() {
 
     fb.items.add(Item(logo).withFlex(1.0f).withHeight(bs));
     fb.items.add(Item(presetPill).withWidth(presetW).withHeight(bs));
-    fb.items.add(Item().withWidth(Spacing::gapM).withHeight(bs));
+    fb.items.add(Item(settingsDivider).withWidth(static_cast<float>(Spacing::gapL)).withHeight(bs));
     fb.items.add(Item(settingsPill).withWidth(bs).withHeight(bs));
     fb.items.add(Item().withWidth(Spacing::gapM).withHeight(bs));
     fb.items.add(Item(helpPill).withWidth(bs).withHeight(bs));

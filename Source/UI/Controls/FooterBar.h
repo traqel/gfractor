@@ -66,7 +66,11 @@ private:
     ToggleButton ghostPill{ButtonCaptions::ghost, juce::Colour(ColorPalette::refPrimaryBlue)};
     VerticalDivider freezeDivider;
     ToggleButton freezePill{ButtonCaptions::freeze, juce::Colour(ColorPalette::blueAccent)};
-    ToggleButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent),};
+    VerticalDivider holdDivider;
+    ToggleButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton targetPill{ButtonCaptions::target, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton loadTargetPill{ButtonCaptions::loadTarget, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton saveTargetPill{ButtonCaptions::saveTarget, juce::Colour(ColorPalette::blueAccent)};
     ToggleButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::primaryGreen)};
 
     // Mouse listener overrides — receive forwarded events from pill children

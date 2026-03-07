@@ -59,4 +59,33 @@ namespace Icons {
 </svg>
 )svg";
 
+    // Down-arrow-to-tray save icon (strokes in black; button recolors at paint time)
+    inline constexpr auto save = R"svg(
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+  <line x1="6" y1="1" x2="6" y2="7.5" stroke="#000000" stroke-width="1.3" stroke-linecap="round"/>
+  <polyline points="3.5,5.5 6,8 8.5,5.5" fill="none" stroke="#000000" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1.5,8 V10.5 H10.5 V8" fill="none" stroke="#000000" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+)svg";
+
+    // Folder-open load icon (fill in black; button recolors at paint time)
+    inline constexpr auto load = R"svg(
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+  <path d="M1,2 H5 L6.5,3.5 H11 V4.5 H2.5 L1,10 V2 Z" fill="#000000"/>
+  <path d="M2.5,4.5 H11.5 L10,10 H1 Z" fill="#000000"/>
+</svg>
+)svg";
+
+    // Crosshair target icon (strokes in black; button recolors at paint time)
+    inline constexpr auto target = R"svg(
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+  <circle cx="6" cy="6" r="4.5" fill="none" stroke="#000000" stroke-width="1.2"/>
+  <circle cx="6" cy="6" r="1.8" fill="none" stroke="#000000" stroke-width="1.2"/>
+  <line x1="6" y1="0" x2="6" y2="2.5" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="6" y1="9.5" x2="6" y2="12" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="0" y1="6" x2="2.5" y2="6" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="9.5" y1="6" x2="12" y2="6" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+</svg>
+)svg";
+
 } // namespace Icons

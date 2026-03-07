@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "Buttons/PillButton.h"
+#include "Buttons/VerticalDivider.h"
 #include "Logo.h"
 #include "../Theme/ButtonCaptions.h"
 #include "../HintManager.h"
@@ -57,6 +58,7 @@ private:
 
     Logo logo;
     PillButton presetPill { "Init", juce::Colour(ColorPalette::textDimmed) };
+    VerticalDivider settingsDivider;
     PillButton settingsPill { ButtonCaptions::settings, juce::Colour(ColorPalette::textDimmed) };
     PillButton helpPill { ButtonCaptions::help, juce::Colour(ColorPalette::textDimmed) };
 
