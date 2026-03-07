@@ -5,7 +5,7 @@
 | Property | Value |
 |---|---|
 | **Name** | gFractor |
-| **Type** | Mid/Side Spectrum Analyzer (audio effect plugin) |
+| **Type** | Multi-mode Spectrum Analyzer (audio effect plugin) |
 | **Company** | GrowlAudio |
 | **Formats** | VST3, AU (macOS), Standalone |
 | **Framework** | JUCE (C++17) |
@@ -35,16 +35,16 @@
 
 | Token | Hex | Usage |
 |---|---|---|
-| `midGreen` | `#3DCC6E` | Mid channel — spectrum curve, pill button |
-| `sideAmber` | `#C8A820` | Side channel — spectrum curve, pill button |
+| `primaryGreen` | `#3DCC6E` | Primary channel — spectrum curve, pill button |
+| `sideAmber` | `#C8A820` | Secondary channel — spectrum curve, pill button |
 | `blueAccent` | `#1E6ECC` | Primary accent — knobs, sliders, active pills |
 
 ### Accents (Reference Mode)
 
 | Token | Hex | Usage |
 |---|---|---|
-| `refMidBlue` | `#4499FF` | Reference mid channel curve |
-| `refSidePink` | `#FF66AA` | Reference side channel curve |
+| `refPrimaryBlue` | `#4499FF` | Reference primary channel curve |
+| `refSecondaryPink` | `#FF66AA` | Reference secondary channel curve |
 
 ### Text
 
@@ -68,6 +68,7 @@
 ---
 
 ## 3. Spacing System (`Source/UI/Theme/Spacing.h`)
+<!-- Note: Utility types (ChannelMode, DisplayRange, SpectrumAnalyzerDefaults) are in Source/Utility/ -->
 
 ### Padding (internal)
 
@@ -126,19 +127,22 @@
 ```
 +------------------------------------------------------+
 |  HeaderBar (40px)                                     |
-|  [g Fractor]  MID . SIDE SPECTRUM ANALYZER     v1.0  |
+|  [g Fractor]  PRIMARY / SECONDARY SPECTRUM ANALYZER     v1.0  |
 +------------------------------------------------------+
 |                                                |      |
 |  SpectrumAnalyzer                              | Mtr  |
 |  (fills remaining space)                       | Pnl  |
-|  - Left margin: 40px (dB labels)               | 180  |
-|  - Top margin: 24px                            | px   |
-|  - Right margin: 22px (M/S meters)             |      |
+|  - Left margin: 40px (dB labels)               |      |
+|  - Top margin: 24px                            |      |
+|  - Right margin: 22px (primary/secondary meters) |      |
 |  - Bottom margin: 26px (freq labels)           |      |
 |                                                |      |
 +------------------------------------------------------+
 |  FooterBar (52px)                                     |
-|  [Ref][Ghost][Spec][Sono][Mid][Side][L+R] ... pills   |
+|  [Ref][Ghost][Spec][Sono][Pri][Sec][M/S] ... pills   |
++------------------------------------------------------+
+|  FooterBar (52px)                                     |
+|  [Ref][Ghost][Spec][Sono][Mid][Side][L+R][T/T] ... pills |
 +------------------------------------------------------+
 ```
 
@@ -151,7 +155,7 @@
 | Max size | 1200 x 600 |
 | Resizable | Yes (corner handle) |
 
-### Metering Panel (collapsible, right side)
+### StereoMeteringPanel (collapsible, right side)
 
 | Property | Value |
 |---|---|
@@ -180,22 +184,26 @@ Rounded-rectangle toggle button used throughout the footer.
 | Button | Active Color | Style |
 |---|---|---|
 | Reference | `blueAccent` | Outline-only |
-| Ghost | `refMidBlue` | Outline-only |
+| Ghost | `refPrimaryBlue` | Outline-only |
 | Spectrum | `blueAccent` | Filled |
 | Sonogram | `blueAccent` | Filled |
-| Mid | `midGreen` | Outline-only |
-| Side | `sideAmber` | Outline-only |
-| L+R | `blueAccent` | Outline-only |
+| Primary | `primaryGreen` | Outline-only (label changes: Mid/Left/Trans) |
+| Secondary | `sideAmber` | Outline-only (label changes: Side/Right/Tonal) |
 | Meters | `blueAccent` | Outline-only |
 | Freeze | `blueAccent` | Outline-only |
 | Infinite | `blueAccent` | Outline-only |
 | Help | `textDimmed` | Filled |
 | Settings | `textDimmed` | Filled |
 
+**Channel Mode Dropdown** (below Primary/Secondary):
+- **M/S** — Primary = Mid, Secondary = Side
+- **L/R** — Primary = Left, Secondary = Right
+- **T/T** — Primary = Transient, Secondary = Tonal |
+
 ### SpectrumAnalyzer
 
 - **Display modes**: Spectrum (path curves), Sonogram (waterfall)
-- **Channel modes**: Mid/Side, L+R
+- **Channel modes**: M/S (Mid/Side), L/R (Left/Right), T/T (Tonal/Transient)
 - **FFT**: Configurable 2048–16384 points (order 11–14, default 13 = 8192)
 - **Smoothing**: None, 1/3 oct, 1/6 oct, 1/12 oct
 - **Slope tilt**: -9 to +9 dB
@@ -205,18 +213,18 @@ Rounded-rectangle toggle button used throughout the footer.
 - **Interaction**: Crosshair tooltip (freq/dB/note), right-click audition bell filter (Q: 0.5–10)
 - **Features**: Ghost overlay, reference mode, infinite peak hold, freeze
 
-### MeteringPanel (right side, collapsible)
+### StereoMeteringPanel (right side, collapsible)
 
 Three instruments stacked vertically:
 
 1. **Goniometer** — Lissajous display with phosphor persistence
 2. **Correlation meter** — L/R phase correlation bar (-1 to +1)
-3. **Width/Octave** — M/S energy ratio across 10 octave bands
+3. **Width/Octave** — Primary/Secondary energy ratio across 10 octave bands
 
 ### SpectrumTooltip
 
 - Crosshair cursor overlay
-- Glow dots at cursor frequency on mid/side curves
+- Glow dots at cursor frequency on primary/secondary curves
 - Tooltip box: frequency, dB, musical note
 - Dot history (20 samples) for range bars
 
@@ -238,7 +246,7 @@ Read-only keyboard shortcut and mouse hint reference. Dismissed via backdrop cli
 
 - Vertical drag handle between analyzer and metering panel
 - Cursor: left-right resize
-- Hover/drag highlight: `midGreen` @ 45% alpha
+- Hover/drag highlight: `primaryGreen` @ 45% alpha
 
 ---
 
@@ -255,13 +263,13 @@ Extends `LookAndFeel_V4` with:
 
 ## 8. Interfaces (Decoupled Architecture)
 
-| Interface | Purpose |
-|---|---|
-| `IAudioDataSink` | Push stereo audio from processor to UI components |
-| `IGhostDataSink` | Push ghost/reference audio data |
-| `IPeakLevelSource` | Read peak mid/side dB levels |
-| `ISpectrumControls` | Control spectrum visibility, modes, freeze, peak |
-| `ISpectrumDisplaySettings` | Configure dB/freq range, colors, FFT, smoothing, slope |
+| Interface | Location | Purpose |
+|---|---|---|
+| `IAudioDataSink` | `Source/DSP/` | Push stereo audio from processor to UI components |
+| `IGhostDataSink` | `Source/DSP/` | Push ghost/reference audio data |
+| `IPeakLevelSource` | `Source/DSP/` | Read peak primary/secondary dB levels |
+| `ISpectrumControls` | `Source/UI/` | Control spectrum visibility, modes, freeze, peak |
+| `ISpectrumDisplaySettings` | `Source/UI/` | Configure dB/freq range, colors, FFT, smoothing, slope |
 
 ---
 
@@ -272,18 +280,22 @@ Extends `LookAndFeel_V4` with:
 | `gain` | -60 to +12 dB | 0 dB | Output gain |
 | `dryWet` | 0–100% | 100% | Dry/wet mix |
 | `bypass` | on/off | off | Plugin bypass |
-| `outputMidEnable` | on/off | on | Mid channel output enable |
-| `outputSideEnable` | on/off | on | Side channel output enable |
+| `outputPrimaryEnable` | on/off | on | Primary channel output enable |
+| `outputSecondaryEnable` | on/off | on | Secondary channel output enable |
+| `transientLength` | 0.1–10.0 ms | 1.0 ms | Transient detection length |
 
 ---
 
 ## 10. DSP Features
 
-- Mid/Side encoding/decoding from stereo input
+- **Channel modes**: 
+  - **M/S** (Mid/Side): Mid = Primary, Side = Secondary
+  - **L/R** (Left/Right): Left = Primary, Right = Secondary (primary/secondary enables filter individual channels)
+  - **T/T** (Tonal/Transient): Transient = Primary, Tonal = Secondary
+- Primary/Secondary encoding/decoding from stereo input
 - Gain with `SmoothedValue` (zipper-free)
 - Dry/wet mixing via `juce::dsp::DryWetMixer`
 - 4th-order audition bell filter (two cascaded IIR BPFs)
-- L+R mode (stereo pass-through, M/S display only)
 - Reference mode (analyzes sidechain input)
-- Atomic peak level metering (mid + side)
+- Atomic peak level metering (primary + secondary)
 - Debug-only performance profiling (avg/max process time, CPU load)

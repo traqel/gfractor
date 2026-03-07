@@ -2,18 +2,21 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
-#include "UI/Components/SpectrumAnalyzer.h"
-#include "UI/Components/HeaderBar.h"
-#include "UI/Components/FooterBar.h"
-#include "UI/Components/MeteringPanel.h"
-#include "UI/Components/PreferencePanel.h"
-#include "UI/Components/HelpPanel.h"
+#include "UI/Visualizers/SpectrumAnalyzer.h"
+#include "UI/Controls/HeaderBar.h"
+#include "UI/Controls/FooterBar.h"
+#include "UI/HintManager.h"
+#include "UI/Controls/HintBar.h"
+#include "UI/Panels/StereoMeteringPanel.h"
+#include "UI/Panels/PreferencePanel.h"
 #include "UI/LookAndFeel/gFractorLookAndFeel.h"
+#include "State/PresetManager.h"
 #include "UI/Theme/ColorPalette.h"
+#include "UI/UIController.h"
+#include "UI/Controls/PanelDivider.h"
+#include "UI/Controls/PanelBackdrop.h"
 
-#if JUCE_DEBUG
-#include "UI/Components/PerformanceDisplay.h"
-#endif
+#include "UI/Controls/PerformanceDisplay.h"
 
 /**
  * Main AudioProcessorEditor class for the gFractor plugin
@@ -52,6 +55,10 @@ private:
     gFractorAudioProcessor &audioProcessor;
 
     //==============================================================================
+    // UI Controller - handles timer callbacks and keyboard shortcuts (GRASP: Controller)
+    UIController uiController;
+
+    //==============================================================================
     // Custom LookAndFeel — declared before all Component members so it outlives
     // them (C++ destroys members in reverse declaration order).
     gFractorLookAndFeel gFractorLnf;
@@ -63,99 +70,63 @@ private:
     SpectrumAnalyzer spectrumAnalyzer;
 
     // M/S metering panel (goniometer, correlation, width-per-octave)
-    MeteringPanel meteringPanel;
+    StereoMeteringPanel meteringPanel;
     bool metersVisible = false;
     int meteringPanelW = 180;
+
     static constexpr int kMinPanelW = 120;
     static constexpr int kMaxPanelW = 320;
 
-    // Header bar (logo, subtitle, version)
-    HeaderBar headerBar;
+    // Preset manager — owns current preset name & dirty state
+    PresetManager presetManager;
+
+    // Header bar (logo, subtitle, settings, help)
+    std::unique_ptr<HeaderBar> headerBar;
 
     // Footer bar (pill buttons, peak readouts, settings)
     FooterBar footerBar;
 
-    // Preference panel overlay + click-outside backdrop
-    struct PanelBackdrop : Component {
-        std::function<void()> onMouseDown;
-        void mouseDown(const juce::MouseEvent &) override { if (onMouseDown) onMouseDown(); }
-    };
+    // Hint manager — priority-based coordinator for HintBar text
+    HintManager hintManager;
 
-    struct PanelDivider : juce::Component {
-        std::function<void(int)> onDrag;
-        PanelDivider() { setMouseCursor(juce::MouseCursor::LeftRightResizeCursor); }
-
-        void paint(juce::Graphics &g) override {
-            const auto col = (isHovered || isDragging)
-                                 ? juce::Colour(ColorPalette::midGreen).withAlpha(0.45f)
-                                 : juce::Colour(ColorPalette::border);
-            g.setColour(col);
-            g.drawVerticalLine(getWidth() / 2, 0.0f, static_cast<float>(getHeight()));
-        }
-
-        void mouseEnter(const juce::MouseEvent &) override {
-            isHovered = true;
-            repaint();
-        }
-
-        void mouseExit(const juce::MouseEvent &) override {
-            isHovered = false;
-            repaint();
-        }
-
-        void mouseDown(const juce::MouseEvent &e) override {
-            isDragging = true;
-            lastX = e.getScreenX();
-            repaint();
-        }
-
-        void mouseUp(const juce::MouseEvent &) override {
-            isDragging = false;
-            repaint();
-        }
-
-        void mouseDrag(const juce::MouseEvent &e) override {
-            if (onDrag) onDrag(lastX - e.getScreenX());
-            lastX = e.getScreenX();
-        }
-
-    private:
-        int lastX = 0;
-        bool isHovered = false;
-        bool isDragging = false;
-    };
+    // Hint bar (context-dependent hints at bottom of screen)
+    HintBar hintBar;
 
     std::unique_ptr<PreferencePanel> preferencePanel;
-    std::unique_ptr<HelpPanel> helpPanel;
     std::unique_ptr<PanelBackdrop> panelBackdrop;
     PanelDivider panelDivider;
 
-#if JUCE_DEBUG
     // Performance display (debug builds only, toggled with Ctrl+Shift+P)
     PerformanceDisplay performanceDisplay;
     bool performanceDisplayVisible = false;
 
+    void wireHintBarPills();
+
     void togglePerformanceDisplay();
-#endif
+
+    void setSpectrumFullscreen(bool fullscreen);
 
     //==============================================================================
     // Resize support
     juce::ComponentBoundsConstrainer resizeConstraints;
-    std::unique_ptr<juce::ResizableCornerComponent> resizeCorner;
 
     // Default and constrained sizes
-    static constexpr int defaultWidth = 600;
-    static constexpr int defaultHeight = 300;
-    static constexpr int minWidth = 400;
-    static constexpr int minHeight = 200;
-    static constexpr int maxWidth = 1200;
-    static constexpr int maxHeight = 600;
+    static constexpr int minWidth = 1100;
+    static constexpr int minHeight = 600;
+    static constexpr int maxWidth = 2200;
+    static constexpr int maxHeight = 1200;
+
+    //==============================================================================
+    // Fullscreen spectrum mode
+    bool spectrumFullscreen = false;
 
     //==============================================================================
     // Control-key reference toggle
     bool controlHeld = false;
 
     void setReferenceMode(bool on);
+
+    void applyTheme();
 
     void timerCallback() override;
 

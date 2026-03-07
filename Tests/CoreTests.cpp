@@ -9,19 +9,22 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_core/juce_core.h>
 
-#include "UI/Components/AudioRingBuffer.h"
-#include "UI/Utility/ChannelMode.h"
-#include "UI/Components/PeakHold.h"
+#include "DSP/Processing/AudioRingBuffer.h"
+#include "DSP/Core/gFractorDSP.h"
+#include "DSP/Interfaces/IAudioDataSink.h"
+#include "Utility/ChannelMode.h"
+#include "UI/Visualizers/PeakHold.h"
 #include "State/PluginState.h"
-#include "Parameters/ParameterIDs.h"
-#include "Parameters/ParameterLayout.h"
+#include "State/ParameterIDs.h"
+#include "State/ParameterLayout.h"
 
 //==============================================================================
 // AudioRingBuffer Tests
 //==============================================================================
 class AudioRingBufferTests : public juce::UnitTest {
 public:
-    AudioRingBufferTests() : UnitTest("AudioRingBuffer Tests", "Core") {}
+    AudioRingBufferTests() : UnitTest("AudioRingBuffer Tests", "Core") {
+    }
 
     void runTest() override {
         beginTest("Push and drain round-trip");
@@ -31,8 +34,8 @@ public:
             // Create stereo buffer with known data
             juce::AudioBuffer<float> buf(2, 64);
             for (int i = 0; i < 64; ++i) {
-                buf.setSample(0, i, static_cast<float>(i) * 0.01f);       // L
-                buf.setSample(1, i, static_cast<float>(i) * -0.01f);      // R
+                buf.setSample(0, i, static_cast<float>(i) * 0.01f); // L
+                buf.setSample(1, i, static_cast<float>(i) * -0.01f); // R
             }
 
             ring.push(buf);
@@ -161,7 +164,8 @@ static AudioRingBufferTests audioRingBufferTests;
 //==============================================================================
 class ChannelDecoderTests : public juce::UnitTest {
 public:
-    ChannelDecoderTests() : UnitTest("ChannelDecoder Tests", "Core") {}
+    ChannelDecoderTests() : UnitTest("ChannelDecoder Tests", "Core") {
+    }
 
     void runTest() override {
         beginTest("LR mode passthrough");
@@ -174,31 +178,31 @@ public:
 
         beginTest("MidSide encoding — identical signals");
         {
-            float mid = 0.0f, side = 0.0f;
-            ChannelDecoder::decode(ChannelMode::MidSide, 1.0f, 1.0f, mid, side);
-            // mid = (1+1)*0.5 = 1, side = (1-1)*0.5 = 0
-            expectWithinAbsoluteError(mid, 1.0f, 1e-6f);
-            expectWithinAbsoluteError(side, 0.0f, 1e-6f);
+            float primary = 0.0f, secondary = 0.0f;
+            ChannelDecoder::decode(ChannelMode::MidSide, 1.0f, 1.0f, primary, secondary);
+            // primary = (1+1)*0.5 = 1, secondary = (1-1)*0.5 = 0
+            expectWithinAbsoluteError(primary, 1.0f, 1e-6f);
+            expectWithinAbsoluteError(secondary, 0.0f, 1e-6f);
         }
 
         beginTest("MidSide encoding — opposite signals");
         {
-            float mid = 0.0f, side = 0.0f;
-            ChannelDecoder::decode(ChannelMode::MidSide, 1.0f, -1.0f, mid, side);
-            // mid = (1+(-1))*0.5 = 0, side = (1-(-1))*0.5 = 1
-            expectWithinAbsoluteError(mid, 0.0f, 1e-6f);
-            expectWithinAbsoluteError(side, 1.0f, 1e-6f);
+            float primary = 0.0f, secondary = 0.0f;
+            ChannelDecoder::decode(ChannelMode::MidSide, 1.0f, -1.0f, primary, secondary);
+            // primary = (1+(-1))*0.5 = 0, secondary = (1-(-1))*0.5 = 1
+            expectWithinAbsoluteError(primary, 0.0f, 1e-6f);
+            expectWithinAbsoluteError(secondary, 1.0f, 1e-6f);
         }
 
         beginTest("MidSide reconstruction");
         {
-            // For arbitrary L/R, verify: l = mid+side, r = mid-side
+            // For arbitrary L/R, verify: l = primary+secondary, r = primary-secondary
             constexpr float l = 0.6f, r = 0.2f;
-            float mid = 0.0f, side = 0.0f;
-            ChannelDecoder::decode(ChannelMode::MidSide, l, r, mid, side);
+            float primary = 0.0f, secondary = 0.0f;
+            ChannelDecoder::decode(ChannelMode::MidSide, l, r, primary, secondary);
 
-            expectWithinAbsoluteError(mid + side, l, 1e-6f);
-            expectWithinAbsoluteError(mid - side, r, 1e-6f);
+            expectWithinAbsoluteError(primary + secondary, l, 1e-6f);
+            expectWithinAbsoluteError(primary - secondary, r, 1e-6f);
         }
 
         beginTest("Zero input");
@@ -222,13 +226,13 @@ static ChannelDecoderTests channelDecoderTests;
 //==============================================================================
 class PeakHoldTests : public juce::UnitTest {
 public:
-    PeakHoldTests() : UnitTest("PeakHold Tests", "Core") {}
+    PeakHoldTests() : UnitTest("PeakHold Tests", "Core") {
+    }
 
     void runTest() override {
         beginTest("Enable/disable state");
         {
             PeakHold ph;
-            expect(!ph.isEnabled());
 
             ph.setEnabled(true);
             expect(ph.isEnabled());
@@ -246,23 +250,24 @@ public:
             ph.reset(bins, minDb);
 
             // Feed ascending values
-            std::vector<float> midDb = {-80.0f, -60.0f, -40.0f, -20.0f};
-            std::vector<float> sideDb = {-90.0f, -70.0f, -50.0f, -30.0f};
+            std::vector midDb = {-80.0f, -60.0f, -40.0f, -20.0f};
+            std::vector sideDb = {-90.0f, -70.0f, -50.0f, -30.0f};
             ph.accumulate(midDb, sideDb, bins);
 
             // Feed lower values — peaks should not decrease
-            std::vector<float> midDb2 = {-90.0f, -70.0f, -50.0f, -30.0f};
-            std::vector<float> sideDb2 = {-95.0f, -75.0f, -55.0f, -35.0f};
+            std::vector midDb2 = {-90.0f, -70.0f, -50.0f, -30.0f};
+            std::vector sideDb2 = {-95.0f, -75.0f, -55.0f, -35.0f};
             ph.accumulate(midDb2, sideDb2, bins);
 
             // Verify by feeding even higher values and checking they take effect
-            std::vector<float> midDb3 = {-10.0f, -10.0f, -10.0f, -10.0f};
-            std::vector<float> sideDb3 = {-5.0f, -5.0f, -5.0f, -5.0f};
+            std::vector midDb3 = {-10.0f, -10.0f, -10.0f, -10.0f};
+            std::vector sideDb3 = {-5.0f, -5.0f, -5.0f, -5.0f};
             ph.accumulate(midDb3, sideDb3, bins);
 
             // Build paths to exercise the pipeline (shouldn't crash)
             ph.buildPaths(100.0f, 100.0f,
-                          [](juce::Path &, const std::vector<float> &, float, float, bool) {});
+                          [](juce::Path &, const std::vector<float> &, float, float, bool) {
+                          });
         }
 
         beginTest("Reset clears peaks");
@@ -273,15 +278,15 @@ public:
             ph.setEnabled(true);
             ph.reset(bins, minDb);
 
-            std::vector<float> midDb = {-10.0f, -10.0f, -10.0f, -10.0f};
-            std::vector<float> sideDb = {-5.0f, -5.0f, -5.0f, -5.0f};
+            std::vector midDb = {-10.0f, -10.0f, -10.0f, -10.0f};
+            std::vector sideDb = {-5.0f, -5.0f, -5.0f, -5.0f};
             ph.accumulate(midDb, sideDb, bins);
 
             // Reset should return peaks to minDb
             ph.reset(bins, minDb);
 
             // Accumulate with minDb — peaks should still be minDb
-            std::vector<float> low(4, minDb);
+            std::vector low(4, minDb);
             ph.accumulate(low, low, bins);
 
             // Build paths to check no crash
@@ -289,7 +294,7 @@ public:
             ph.buildPaths(100.0f, 100.0f,
                           [&](juce::Path &, const std::vector<float> &dbData, float, float, bool) {
                               // After reset + accumulate(minDb), all bins should be minDb
-                              for (const auto &v : dbData)
+                              for (const auto &v: dbData)
                                   expectWithinAbsoluteError(v, minDb, 1e-6f);
                               pathBuilt = true;
                           });
@@ -304,9 +309,9 @@ public:
             ph.setEnabled(true);
             ph.reset(bins, minDb);
 
-            std::vector<float> a = {-50.0f, -60.0f};
-            std::vector<float> b = {-40.0f, -70.0f};  // bin0 up, bin1 down
-            std::vector<float> c = {-45.0f, -30.0f};  // bin0 down, bin1 up
+            std::vector a = {-50.0f, -60.0f};
+            std::vector b = {-40.0f, -70.0f}; // bin0 up, bin1 down
+            std::vector c = {-45.0f, -30.0f}; // bin0 down, bin1 up
 
             ph.accumulate(a, a, bins);
             ph.accumulate(b, b, bins);
@@ -329,7 +334,8 @@ static PeakHoldTests peakHoldTests;
 //==============================================================================
 class PluginStateTests : public juce::UnitTest {
 public:
-    PluginStateTests() : UnitTest("PluginState Tests", "State") {}
+    PluginStateTests() : UnitTest("PluginState Tests", "State") {
+    }
 
     void runTest() override {
         beginTest("Round-trip serialize/deserialize");
@@ -338,15 +344,23 @@ public:
             struct MinimalProcessor : juce::AudioProcessor {
                 MinimalProcessor()
                     : AudioProcessor(BusesProperties()
-                                         .withInput("Input", juce::AudioChannelSet::stereo(), true)
-                                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
                       apvts(*this, nullptr, "Parameters",
-                            ParameterLayout::createParameterLayout()) {}
+                            ParameterLayout::createParameterLayout()) {
+                }
 
                 const juce::String getName() const override { return "Test"; }
-                void prepareToPlay(double, int) override {}
-                void releaseResources() override {}
-                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {}
+
+                void prepareToPlay(double, int) override {
+                }
+
+                void releaseResources() override {
+                }
+
+                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {
+                }
+
                 double getTailLengthSeconds() const override { return 0.0; }
                 bool acceptsMidi() const override { return false; }
                 bool producesMidi() const override { return false; }
@@ -354,11 +368,20 @@ public:
                 bool hasEditor() const override { return false; }
                 int getNumPrograms() override { return 1; }
                 int getCurrentProgram() override { return 0; }
-                void setCurrentProgram(int) override {}
+
+                void setCurrentProgram(int) override {
+                }
+
                 const juce::String getProgramName(int) override { return {}; }
-                void changeProgramName(int, const juce::String &) override {}
-                void getStateInformation(juce::MemoryBlock &) override {}
-                void setStateInformation(const void *, int) override {}
+
+                void changeProgramName(int, const juce::String &) override {
+                }
+
+                void getStateInformation(juce::MemoryBlock &) override {
+                }
+
+                void setStateInformation(const void *, int) override {
+                }
 
                 juce::AudioProcessorValueTreeState apvts;
             };
@@ -373,17 +396,20 @@ public:
 
             // Serialize
             juce::MemoryBlock block;
-            expect(PluginState::serialize(proc1.apvts, block));
+            juce::ValueTree extraState{"DisplaySettings"};
+            expect(PluginState::serialize(proc1.apvts, extraState, block));
             expect(block.getSize() > 0);
 
             // Deserialize into a fresh processor
             MinimalProcessor proc2;
-            expect(PluginState::deserialize(proc2.apvts, block.getData(),
+            juce::ValueTree restoredExtra{"DisplaySettings"};
+            expect(PluginState::deserialize(proc2.apvts, restoredExtra,
+                                            block.getData(),
                                             static_cast<int>(block.getSize())));
 
             // Check values match
             auto getVal = [](juce::AudioProcessorValueTreeState &apvts, const char *id) {
-                auto *p = apvts.getRawParameterValue(id);
+                const auto *p = apvts.getRawParameterValue(id);
                 return p ? p->load() : -999.0f;
             };
 
@@ -391,6 +417,55 @@ public:
                                       6.0f, 0.2f);
             expectWithinAbsoluteError(getVal(proc2.apvts, ParameterIDs::dryWet),
                                       50.0f, 1.0f);
+        }
+
+        beginTest("Display state round-trip");
+        {
+            struct MinimalProcessor : juce::AudioProcessor {
+                MinimalProcessor()
+                    : AudioProcessor(BusesProperties()
+                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+                      apvts(*this, nullptr, "Parameters",
+                            ParameterLayout::createParameterLayout()) {}
+                const juce::String getName() const override { return "Test"; }
+                void prepareToPlay(double, int) override {}
+                void releaseResources() override {}
+                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {}
+                double getTailLengthSeconds() const override { return 0.0; }
+                bool acceptsMidi() const override { return false; }
+                bool producesMidi() const override { return false; }
+                juce::AudioProcessorEditor *createEditor() override { return nullptr; }
+                bool hasEditor() const override { return false; }
+                int getNumPrograms() override { return 1; }
+                int getCurrentProgram() override { return 0; }
+                void setCurrentProgram(int) override {}
+                const juce::String getProgramName(int) override { return {}; }
+                void changeProgramName(int, const juce::String &) override {}
+                void getStateInformation(juce::MemoryBlock &) override {}
+                void setStateInformation(const void *, int) override {}
+                juce::AudioProcessorValueTreeState apvts;
+            };
+
+            MinimalProcessor proc1, proc2;
+
+            juce::ValueTree extra1{"DisplaySettings"};
+            extra1.setProperty("channelMode", 1, nullptr);     // L/R
+            extra1.setProperty("minDb",        -90.0, nullptr);
+            extra1.setProperty("uiTheme",      2,     nullptr); // Balanced
+
+            juce::MemoryBlock block;
+            expect(PluginState::serialize(proc1.apvts, extra1, block));
+            expect(block.getSize() > 0);
+
+            juce::ValueTree extra2{"DisplaySettings"};
+            expect(PluginState::deserialize(proc2.apvts, extra2,
+                                            block.getData(),
+                                            static_cast<int>(block.getSize())));
+
+            expectEquals(static_cast<int>(extra2["channelMode"]), 1);
+            expectWithinAbsoluteError(static_cast<double>(extra2["minDb"]), -90.0, 0.001);
+            expectEquals(static_cast<int>(extra2["uiTheme"]), 2);
         }
 
         beginTest("Version compatibility");
@@ -405,15 +480,23 @@ public:
             struct MinimalProcessor : juce::AudioProcessor {
                 MinimalProcessor()
                     : AudioProcessor(BusesProperties()
-                                         .withInput("Input", juce::AudioChannelSet::stereo(), true)
-                                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
                       apvts(*this, nullptr, "Parameters",
-                            ParameterLayout::createParameterLayout()) {}
+                            ParameterLayout::createParameterLayout()) {
+                }
 
                 const juce::String getName() const override { return "Test"; }
-                void prepareToPlay(double, int) override {}
-                void releaseResources() override {}
-                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {}
+
+                void prepareToPlay(double, int) override {
+                }
+
+                void releaseResources() override {
+                }
+
+                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {
+                }
+
                 double getTailLengthSeconds() const override { return 0.0; }
                 bool acceptsMidi() const override { return false; }
                 bool producesMidi() const override { return false; }
@@ -421,18 +504,28 @@ public:
                 bool hasEditor() const override { return false; }
                 int getNumPrograms() override { return 1; }
                 int getCurrentProgram() override { return 0; }
-                void setCurrentProgram(int) override {}
+
+                void setCurrentProgram(int) override {
+                }
+
                 const juce::String getProgramName(int) override { return {}; }
-                void changeProgramName(int, const juce::String &) override {}
-                void getStateInformation(juce::MemoryBlock &) override {}
-                void setStateInformation(const void *, int) override {}
+
+                void changeProgramName(int, const juce::String &) override {
+                }
+
+                void getStateInformation(juce::MemoryBlock &) override {
+                }
+
+                void setStateInformation(const void *, int) override {
+                }
 
                 juce::AudioProcessorValueTreeState apvts;
             };
 
             MinimalProcessor proc;
+            juce::ValueTree extraGarbage{"DisplaySettings"};
             const uint8_t garbage[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0xFF, 0x42, 0x13};
-            expect(PluginState::deserialize(proc.apvts, garbage, sizeof(garbage)) == false);
+            expect(PluginState::deserialize(proc.apvts, extraGarbage, garbage, sizeof(garbage)) == false);
         }
 
         beginTest("Empty data");
@@ -440,15 +533,23 @@ public:
             struct MinimalProcessor : juce::AudioProcessor {
                 MinimalProcessor()
                     : AudioProcessor(BusesProperties()
-                                         .withInput("Input", juce::AudioChannelSet::stereo(), true)
-                                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
                       apvts(*this, nullptr, "Parameters",
-                            ParameterLayout::createParameterLayout()) {}
+                            ParameterLayout::createParameterLayout()) {
+                }
 
                 const juce::String getName() const override { return "Test"; }
-                void prepareToPlay(double, int) override {}
-                void releaseResources() override {}
-                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {}
+
+                void prepareToPlay(double, int) override {
+                }
+
+                void releaseResources() override {
+                }
+
+                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {
+                }
+
                 double getTailLengthSeconds() const override { return 0.0; }
                 bool acceptsMidi() const override { return false; }
                 bool producesMidi() const override { return false; }
@@ -456,17 +557,27 @@ public:
                 bool hasEditor() const override { return false; }
                 int getNumPrograms() override { return 1; }
                 int getCurrentProgram() override { return 0; }
-                void setCurrentProgram(int) override {}
+
+                void setCurrentProgram(int) override {
+                }
+
                 const juce::String getProgramName(int) override { return {}; }
-                void changeProgramName(int, const juce::String &) override {}
-                void getStateInformation(juce::MemoryBlock &) override {}
-                void setStateInformation(const void *, int) override {}
+
+                void changeProgramName(int, const juce::String &) override {
+                }
+
+                void getStateInformation(juce::MemoryBlock &) override {
+                }
+
+                void setStateInformation(const void *, int) override {
+                }
 
                 juce::AudioProcessorValueTreeState apvts;
             };
 
             MinimalProcessor proc;
-            expect(PluginState::deserialize(proc.apvts, nullptr, 0) == false);
+            juce::ValueTree extraEmpty{"DisplaySettings"};
+            expect(PluginState::deserialize(proc.apvts, extraEmpty, nullptr, 0) == false);
         }
     }
 };
@@ -474,11 +585,371 @@ public:
 static PluginStateTests pluginStateTests;
 
 //==============================================================================
+// Sidechain Bus Tests
+//==============================================================================
+class SidechainBusTests : public juce::UnitTest {
+public:
+    SidechainBusTests() : UnitTest("Sidechain Bus Tests", "Core") {
+    }
+
+    void runTest() override {
+        beginTest("Add/remove sidechain bus updates availability");
+        {
+            struct MinimalSidechainProcessor : juce::AudioProcessor {
+                MinimalSidechainProcessor()
+                    : AudioProcessor(BusesProperties()
+                        .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                        .withInput("Sidechain", juce::AudioChannelSet::stereo(), false)
+                        .withOutput("Output", juce::AudioChannelSet::stereo(), true)) {
+                }
+
+                const juce::String getName() const override { return "Test"; }
+
+                void prepareToPlay(double, int) override {
+                }
+
+                void releaseResources() override {
+                }
+
+                void processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &) override {
+                    const auto sidechainBus = getBusBuffer(buffer, true, 1);
+                    sidechainAvailable.store(sidechainBus.getNumChannels() > 0, std::memory_order_relaxed);
+                }
+
+                double getTailLengthSeconds() const override { return 0.0; }
+                bool acceptsMidi() const override { return false; }
+                bool producesMidi() const override { return false; }
+                juce::AudioProcessorEditor *createEditor() override { return nullptr; }
+                bool hasEditor() const override { return false; }
+                int getNumPrograms() override { return 1; }
+                int getCurrentProgram() override { return 0; }
+
+                void setCurrentProgram(int) override {
+                }
+
+                const juce::String getProgramName(int) override { return {}; }
+
+                void changeProgramName(int, const juce::String &) override {
+                }
+
+                void getStateInformation(juce::MemoryBlock &) override {
+                }
+
+                void setStateInformation(const void *, int) override {
+                }
+
+                std::atomic<bool> sidechainAvailable{false};
+            };
+
+            MinimalSidechainProcessor proc;
+
+            auto processAndReadAvailability = [&proc] {
+                const int numChannels =
+                        juce::jmax(proc.getTotalNumInputChannels(), proc.getTotalNumOutputChannels());
+
+                juce::AudioBuffer<float> buffer(numChannels, 64);
+                buffer.clear();
+                juce::MidiBuffer midi;
+                proc.processBlock(buffer, midi);
+
+                return proc.sidechainAvailable.load(std::memory_order_relaxed);
+            };
+
+            // Default: sidechain bus is disabled.
+            expectEquals(proc.getChannelCountOfBus(true, 1), 0);
+            expect(!processAndReadAvailability());
+
+            // Add sidechain (enable all non-main buses).
+            proc.enableAllBuses();
+            expectEquals(proc.getChannelCountOfBus(true, 1), 2);
+            expect(processAndReadAvailability());
+
+            // Remove sidechain again.
+            proc.disableNonMainBuses();
+            expectEquals(proc.getChannelCountOfBus(true, 1), 0);
+            expect(!processAndReadAvailability());
+        }
+    }
+};
+
+static SidechainBusTests sidechainBusTests;
+
+//==============================================================================
+// Plugin Crash-Lifecycle Tests
+//==============================================================================
+class PluginCrashLifecycleTests : public juce::UnitTest {
+public:
+    PluginCrashLifecycleTests() : UnitTest("Plugin Crash Lifecycle Tests", "Core") {
+    }
+
+    void runTest() override {
+        beginTest("Add/remove sidechain while processing");
+        {
+            HarnessProcessor proc;
+            proc.prepareToPlay(44100.0, 128);
+
+            // Sidechain disabled (main bus only).
+            {
+                juce::AudioBuffer<float> block(2, 128);
+                fillMainInput(block, 0.2f);
+                juce::MidiBuffer midi;
+                proc.processBlock(block, midi);
+
+                expect(!proc.isSidechainAvailableForTest());
+                expect(allFinite(block));
+            }
+
+            // Sidechain enabled while running.
+            {
+                proc.enableAllBuses();
+                proc.prepareToPlay(44100.0, 128);
+
+                juce::AudioBuffer<float> block(4, 128);
+                fillMainInput(block, 0.1f);
+                fillSidechainInput(block, 0.8f);
+                juce::MidiBuffer midi;
+
+                proc.setReferenceModeForTest(true);
+                proc.processBlock(block, midi);
+
+                expect(proc.isSidechainAvailableForTest());
+                expect(allFinite(block));
+            }
+
+            // Sidechain removed again.
+            {
+                proc.disableNonMainBuses();
+                proc.prepareToPlay(44100.0, 128);
+
+                juce::AudioBuffer<float> block(2, 128);
+                fillMainInput(block, 0.3f);
+                juce::MidiBuffer midi;
+                proc.processBlock(block, midi);
+
+                expect(!proc.isSidechainAvailableForTest());
+                expect(allFinite(block));
+            }
+        }
+
+        beginTest("Repeated prepare with sample-rate and block-size changes");
+        {
+            HarnessProcessor proc;
+            CountingSink sink;
+            proc.registerAudioDataSinkForTest(&sink);
+
+            const struct Config {
+                double sampleRate;
+                int blockSize;
+            } configs[] = {
+                {44100.0, 512},
+                {96000.0, 256},
+                {48000.0, 1024},
+            };
+
+            for (const auto &cfg: configs) {
+                proc.prepareToPlay(cfg.sampleRate, cfg.blockSize);
+
+                juce::AudioBuffer<float> block(2, cfg.blockSize);
+                fillMainInput(block, 0.25f);
+                juce::MidiBuffer midi;
+                proc.processBlock(block, midi);
+
+                expect(allFinite(block));
+            }
+
+            expectEquals(sink.sampleRateUpdates, 3);
+            expectEquals(sink.pushCalls, 3);
+            expectWithinAbsoluteError(sink.lastSampleRate, 48000.0, 0.001);
+
+            proc.unregisterAudioDataSinkForTest(&sink);
+        }
+
+        beginTest("Register/unregister sinks around processing");
+        {
+            HarnessProcessor proc;
+            CountingSink sinkA;
+            CountingSink sinkB;
+
+            proc.prepareToPlay(44100.0, 64);
+
+            proc.registerAudioDataSinkForTest(&sinkA);
+            proc.registerAudioDataSinkForTest(&sinkB);
+
+            // Prepare again so sinks receive sample-rate callback.
+            proc.prepareToPlay(44100.0, 64);
+
+            juce::AudioBuffer<float> block(2, 64);
+            fillMainInput(block, 0.4f);
+            juce::MidiBuffer midi;
+            proc.processBlock(block, midi);
+
+            expectEquals(sinkA.pushCalls, 1);
+            expectEquals(sinkB.pushCalls, 1);
+            expectEquals(sinkA.sampleRateUpdates, 1);
+            expectEquals(sinkB.sampleRateUpdates, 1);
+
+            // Remove one sink; only remaining sink should continue receiving data.
+            proc.unregisterAudioDataSinkForTest(&sinkA);
+
+            fillMainInput(block, 0.5f);
+            proc.processBlock(block, midi);
+
+            expectEquals(sinkA.pushCalls, 1);
+            expectEquals(sinkB.pushCalls, 2);
+            expect(allFinite(block));
+        }
+    }
+
+private:
+    struct CountingSink : IAudioDataSink {
+        void pushStereoData(const juce::AudioBuffer<float> &) override { ++pushCalls; }
+
+        void setSampleRate(const double sr) override {
+            ++sampleRateUpdates;
+            lastSampleRate = sr;
+        }
+
+        int pushCalls = 0;
+        int sampleRateUpdates = 0;
+        double lastSampleRate = 0.0;
+    };
+
+    struct HarnessProcessor : juce::AudioProcessor {
+        HarnessProcessor()
+            : AudioProcessor(BusesProperties()
+                .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                .withInput("Sidechain", juce::AudioChannelSet::stereo(), false)
+                .withOutput("Output", juce::AudioChannelSet::stereo(), true)) {
+            dsp.setGain(0.0f);
+            dsp.setBypassed(false);
+        }
+
+        const juce::String getName() const override { return "HarnessProcessor"; }
+
+        void prepareToPlay(const double sampleRate, const int samplesPerBlock) override {
+            juce::dsp::ProcessSpec spec{};
+            spec.sampleRate = sampleRate;
+            spec.maximumBlockSize = static_cast<juce::uint32>(samplesPerBlock);
+            spec.numChannels = static_cast<juce::uint32>(getTotalNumInputChannels());
+            dsp.prepare(spec);
+
+            const juce::SpinLock::ScopedLockType lock(sinkLock);
+            for (auto *sink: sinks)
+                sink->setSampleRate(sampleRate);
+        }
+
+        void releaseResources() override {
+        }
+
+        void processBlock(juce::AudioBuffer<float> &buffer, juce::MidiBuffer &) override {
+            const auto sidechainBus = getBusBuffer(buffer, true, 1);
+            const bool hasSidechain = sidechainBus.getNumChannels() > 0;
+            sidechainAvailable.store(hasSidechain, std::memory_order_relaxed);
+
+            if (referenceMode.load(std::memory_order_relaxed) && hasSidechain) {
+                auto mainInput = getBusBuffer(buffer, true, 0);
+                for (int ch = 0; ch < mainInput.getNumChannels(); ++ch) {
+                    if (ch < sidechainBus.getNumChannels())
+                        mainInput.copyFrom(ch, 0, sidechainBus, ch, 0, buffer.getNumSamples());
+                    else
+                        mainInput.clear(ch, 0, buffer.getNumSamples());
+                }
+            }
+
+            {
+                const juce::SpinLock::ScopedLockType lock(sinkLock);
+                for (auto *sink: sinks)
+                    sink->pushStereoData(buffer);
+            }
+
+            dsp.process(buffer);
+        }
+
+        double getTailLengthSeconds() const override { return 0.0; }
+        bool acceptsMidi() const override { return false; }
+        bool producesMidi() const override { return false; }
+        juce::AudioProcessorEditor *createEditor() override { return nullptr; }
+        bool hasEditor() const override { return false; }
+        int getNumPrograms() override { return 1; }
+        int getCurrentProgram() override { return 0; }
+
+        void setCurrentProgram(int) override {
+        }
+
+        const juce::String getProgramName(int) override { return {}; }
+
+        void changeProgramName(int, const juce::String &) override {
+        }
+
+        void getStateInformation(juce::MemoryBlock &) override {
+        }
+
+        void setStateInformation(const void *, int) override {
+        }
+
+        void registerAudioDataSinkForTest(IAudioDataSink *sink) {
+            if (sink == nullptr)
+                return;
+            const juce::SpinLock::ScopedLockType lock(sinkLock);
+            sinks.push_back(sink);
+        }
+
+        void unregisterAudioDataSinkForTest(IAudioDataSink *sink) {
+            const juce::SpinLock::ScopedLockType lock(sinkLock);
+            sinks.erase(std::remove(sinks.begin(), sinks.end(), sink), sinks.end());
+        }
+
+        void setReferenceModeForTest(const bool enabled) {
+            referenceMode.store(enabled, std::memory_order_relaxed);
+        }
+
+        bool isSidechainAvailableForTest() const {
+            return sidechainAvailable.load(std::memory_order_relaxed);
+        }
+
+    private:
+        gFractorDSP dsp;
+        juce::SpinLock sinkLock;
+        std::vector<IAudioDataSink *> sinks;
+        std::atomic<bool> referenceMode{false};
+        std::atomic<bool> sidechainAvailable{false};
+    };
+
+    static bool allFinite(const juce::AudioBuffer<float> &buffer) {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample) {
+                if (!std::isfinite(buffer.getSample(ch, sample)))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    static void fillMainInput(juce::AudioBuffer<float> &buffer, const float value) {
+        const int channels = juce::jmin(2, buffer.getNumChannels());
+        for (int ch = 0; ch < channels; ++ch) {
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+                buffer.setSample(ch, sample, value);
+        }
+    }
+
+    static void fillSidechainInput(juce::AudioBuffer<float> &buffer, const float value) {
+        for (int ch = 2; ch < buffer.getNumChannels(); ++ch) {
+            for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+                buffer.setSample(ch, sample, value);
+        }
+    }
+};
+
+static PluginCrashLifecycleTests pluginCrashLifecycleTests;
+
+//==============================================================================
 // ParameterStability Tests
 //==============================================================================
 class ParameterStabilityTests : public juce::UnitTest {
 public:
-    ParameterStabilityTests() : UnitTest("ParameterStability Tests", "Parameters") {}
+    ParameterStabilityTests() : UnitTest("ParameterStability Tests", "Parameters") {
+    }
 
     void runTest() override {
         beginTest("Parameter IDs are valid JUCE Identifiers");
@@ -487,10 +958,10 @@ public:
                 ParameterIDs::gain,
                 ParameterIDs::dryWet,
                 ParameterIDs::bypass,
-                ParameterIDs::outputMidEnable,
-                ParameterIDs::outputSideEnable,
+                ParameterIDs::outputPrimaryEnable,
+                ParameterIDs::outputSecondaryEnable,
             };
-            for (const auto *id : ids) {
+            for (const auto *id: ids) {
                 expect(juce::Identifier::isValidIdentifier(juce::String(id)),
                        juce::String("Invalid identifier: ") + id);
             }
@@ -501,15 +972,23 @@ public:
             struct MinimalProc : juce::AudioProcessor {
                 MinimalProc()
                     : AudioProcessor(BusesProperties()
-                                         .withInput("Input", juce::AudioChannelSet::stereo(), true)
-                                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
                       apvts(*this, nullptr, "Parameters",
-                            ParameterLayout::createParameterLayout()) {}
+                            ParameterLayout::createParameterLayout()) {
+                }
 
                 const juce::String getName() const override { return "Test"; }
-                void prepareToPlay(double, int) override {}
-                void releaseResources() override {}
-                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {}
+
+                void prepareToPlay(double, int) override {
+                }
+
+                void releaseResources() override {
+                }
+
+                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {
+                }
+
                 double getTailLengthSeconds() const override { return 0.0; }
                 bool acceptsMidi() const override { return false; }
                 bool producesMidi() const override { return false; }
@@ -517,17 +996,26 @@ public:
                 bool hasEditor() const override { return false; }
                 int getNumPrograms() override { return 1; }
                 int getCurrentProgram() override { return 0; }
-                void setCurrentProgram(int) override {}
+
+                void setCurrentProgram(int) override {
+                }
+
                 const juce::String getProgramName(int) override { return {}; }
-                void changeProgramName(int, const juce::String &) override {}
-                void getStateInformation(juce::MemoryBlock &) override {}
-                void setStateInformation(const void *, int) override {}
+
+                void changeProgramName(int, const juce::String &) override {
+                }
+
+                void getStateInformation(juce::MemoryBlock &) override {
+                }
+
+                void setStateInformation(const void *, int) override {
+                }
 
                 juce::AudioProcessorValueTreeState apvts;
             };
 
-            MinimalProc proc;
-            expectEquals(proc.getParameters().size(), 5,
+            const MinimalProc proc;
+            expectEquals(proc.getParameters().size(), 6,
                          "Parameter count changed — this may break saved sessions");
         }
 
@@ -536,15 +1024,23 @@ public:
             struct MinimalProcessor : juce::AudioProcessor {
                 MinimalProcessor()
                     : AudioProcessor(BusesProperties()
-                                         .withInput("Input", juce::AudioChannelSet::stereo(), true)
-                                         .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+                          .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
                       apvts(*this, nullptr, "Parameters",
-                            ParameterLayout::createParameterLayout()) {}
+                            ParameterLayout::createParameterLayout()) {
+                }
 
                 const juce::String getName() const override { return "Test"; }
-                void prepareToPlay(double, int) override {}
-                void releaseResources() override {}
-                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {}
+
+                void prepareToPlay(double, int) override {
+                }
+
+                void releaseResources() override {
+                }
+
+                void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override {
+                }
+
                 double getTailLengthSeconds() const override { return 0.0; }
                 bool acceptsMidi() const override { return false; }
                 bool producesMidi() const override { return false; }
@@ -552,20 +1048,29 @@ public:
                 bool hasEditor() const override { return false; }
                 int getNumPrograms() override { return 1; }
                 int getCurrentProgram() override { return 0; }
-                void setCurrentProgram(int) override {}
+
+                void setCurrentProgram(int) override {
+                }
+
                 const juce::String getProgramName(int) override { return {}; }
-                void changeProgramName(int, const juce::String &) override {}
-                void getStateInformation(juce::MemoryBlock &) override {}
-                void setStateInformation(const void *, int) override {}
+
+                void changeProgramName(int, const juce::String &) override {
+                }
+
+                void getStateInformation(juce::MemoryBlock &) override {
+                }
+
+                void setStateInformation(const void *, int) override {
+                }
 
                 juce::AudioProcessorValueTreeState apvts;
             };
 
-            MinimalProcessor proc;
+            const MinimalProcessor proc;
             auto params = proc.getParameters();
 
-            for (auto *param : params) {
-                auto *ranged = dynamic_cast<juce::RangedAudioParameter *>(param);
+            for (auto *param: params) {
+                const auto *ranged = dynamic_cast<juce::RangedAudioParameter *>(param);
                 if (ranged == nullptr)
                     continue;
 

@@ -423,6 +423,18 @@ Profile and optimize the processBlock implementation.
 
 ---
 
+## Related Documentation
+
+This guide covers testing procedures. For conceptual knowledge, see:
+
+- **[/skill dsp-cookbook]** - DSP testing patterns, algorithm validation
+- **[/skill juce-best-practices]** - Realtime safety, thread safety testing
+- **[/skill daw-compatibility-guide]** - DAW-specific testing requirements
+- **[/run-pluginval]** - Plugin validation command
+- **[/run-daw-tests]** - DAW testing command
+
+---
+
 ## Summary
 
 **Test Continuously:**

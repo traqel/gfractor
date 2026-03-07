@@ -54,7 +54,7 @@ juce_add_plugin(${PLUGIN_NAME}
     NEEDS_MIDI_INPUT FALSE                  # Set TRUE if you need MIDI input
     NEEDS_MIDI_OUTPUT FALSE                 # Set TRUE if you need MIDI output
     IS_MIDI_EFFECT FALSE                    # Set TRUE for MIDI-only effects
-    EDITOR_WANTS_KEYBOARD_FOCUS FALSE       # Set TRUE if editor needs keyboard
+    EDITOR_WANTS_KEYBOARD_FOCUS TRUE        # Editor registers key listeners for shortcuts (f/m/s/r/p)
 
     # macOS audio permissions
     MICROPHONE_PERMISSION_ENABLED TRUE
@@ -85,7 +85,7 @@ target_include_directories(${PLUGIN_NAME}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/DSP
-        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Parameters
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Utility
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/State
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/UI
 )
@@ -117,15 +117,25 @@ target_compile_definitions(${PLUGIN_NAME}
 
 # Platform-specific settings
 if(APPLE)
-    # macOS deployment target
+    # macOS deployment target (applies across generators, including Ninja)
+    if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum macOS deployment target" FORCE)
+    endif()
+
     set_target_properties(${PLUGIN_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET "10.13"
+        MACOSX_DEPLOYMENT_TARGET "${CMAKE_OSX_DEPLOYMENT_TARGET}"
     )
 endif()
 
 if(MSVC)
     # Windows-specific compiler flags
-    target_compile_options(${PLUGIN_NAME} PRIVATE /W4)
+    # Note: /W4 is already set by juce_recommended_warning_flags
+    target_compile_options(${PLUGIN_NAME} PRIVATE
+        /bigobj          # Required for juce_dsp large translation units
+        /wd4244          # Suppress conversion warnings from JUCE internals
+        /wd4267          # Suppress size_t to int warnings from JUCE internals
+        /wd4458          # Suppress member hides class member warnings from JUCE
+    )
 else()
     # GCC/Clang compiler flags
     target_compile_options(${PLUGIN_NAME} PRIVATE -Wall -Wextra -Wpedantic)
@@ -160,6 +170,29 @@ install(TARGETS ${PLUGIN_NAME}
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
 )
+
+# Linux .deb packaging via CPack
+if(UNIX AND NOT APPLE)
+    # Install VST3 bundle to system VST3 path
+    install(DIRECTORY
+        "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_NAME}_artefacts/$<CONFIG>/VST3/${PLUGIN_NAME}.vst3"
+        DESTINATION "lib/vst3"
+    )
+
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_PACKAGE_NAME "${PLUGIN_NAME}")
+    set(CPACK_PACKAGE_VENDOR "${PLUGIN_MANUFACTURER}")
+    set(CPACK_PACKAGE_VERSION "${PLUGIN_VERSION}")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PLUGIN_DESCRIPTION}")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${PLUGIN_MANUFACTURER} <contact@growlaudio.com>")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS
+        "libasound2 | libasound2t64, libfreetype6 | libfreetype6t64, libx11-6, libxext6, libxinerama1, libxrandr2, libxcursor1, libgl1"
+    )
+    set(CPACK_PACKAGE_FILE_NAME "${PLUGIN_NAME}-${PLUGIN_VERSION}-Linux")
+    include(CPack)
+endif()
 
 # Print configuration summary
 message(STATUS "========================================")

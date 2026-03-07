@@ -5,7 +5,7 @@ Get the gFractor plugin building in 5 minutes.
 ## Step 1: Add JUCE Submodule
 
 ```bash
-cd /Volumes/Data/Development/gFractor
+cd /Volumes/Data/Development/growl-audio/gFractor
 git submodule add -b master https://github.com/juce-framework/JUCE.git JUCE
 git submodule update --init --recursive
 ```

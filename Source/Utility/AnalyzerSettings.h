@@ -1,0 +1,212 @@
+#pragma once
+
+#include <juce_data_structures/juce_data_structures.h>
+#include "../UI/ISpectrumDisplaySettings.h"
+#include "../UI/Theme/ColorPalette.h"
+
+/**
+ * AnalyzerSettings
+ *
+ * Persists spectrum display preferences to a global properties file
+ * so they are shared across all plugin instances and sessions.
+ *
+ * File location: ~/Library/Application Support/GrowlAudio/gFractor.settings (macOS)
+ */
+struct AnalyzerSettings {
+    static void save(const ISpectrumDisplaySettings &settings) {
+        if (const auto props = getPropertiesFile()) {
+            props->setValue("minDb", settings.getMinDb());
+            props->setValue("maxDb", settings.getMaxDb());
+            props->setValue("minFreq", settings.getMinFreq());
+            props->setValue("maxFreq", settings.getMaxFreq());
+            props->setValue("midColour", static_cast<int>(settings.getPrimaryColour().getARGB()));
+            props->setValue("sideColour", static_cast<int>(settings.getSecondaryColour().getARGB()));
+            props->setValue("refMidColour", static_cast<int>(settings.getRefPrimaryColour().getARGB()));
+            props->setValue("refSideColour", static_cast<int>(settings.getRefSecondaryColour().getARGB()));
+            props->setValue("smoothingMode", static_cast<int>(settings.getSmoothing()));
+            props->setValue("fftOrder", settings.getFftOrder());
+            props->setValue("overlapFactor", settings.getOverlapFactor());
+            props->setValue("curveDecay", settings.getCurveDecay());
+            props->setValue("slopeDb", settings.getSlope());
+            props->saveIfNeeded();
+        }
+    }
+
+    static void load(ISpectrumDisplaySettings &settings) {
+        using D = Defaults;
+
+        if (const auto props = getPropertiesFile()) {
+            if (props->containsKey("minDb")) {
+                const auto minDb = static_cast<float>(props->getDoubleValue("minDb", D::minDb));
+                const auto maxDb = static_cast<float>(props->getDoubleValue("maxDb", D::maxDb));
+                settings.setDbRange(minDb, maxDb);
+            }
+
+            if (props->containsKey("minFreq")) {
+                const auto minFreq = static_cast<float>(props->getDoubleValue("minFreq", D::minFreq));
+                const auto maxFreq = static_cast<float>(props->getDoubleValue("maxFreq", D::maxFreq));
+                settings.setFreqRange(minFreq, maxFreq);
+            }
+
+            if (props->containsKey("midColour"))
+                settings.setPrimaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("midColour"))));
+            if (props->containsKey("sideColour"))
+                settings.setSecondaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("sideColour"))));
+            if (props->containsKey("refMidColour"))
+                settings.setRefPrimaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refMidColour"))));
+            if (props->containsKey("refSideColour"))
+                settings.setRefSecondaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refSideColour"))));
+            if (props->containsKey("smoothingMode"))
+                settings.setSmoothing(static_cast<SmoothingMode>(
+                    props->getIntValue("smoothingMode", static_cast<int>(D::smoothing))));
+            if (props->containsKey("fftOrder"))
+                settings.setFftOrder(props->getIntValue("fftOrder", D::fftOrder));
+            if (props->containsKey("overlapFactor"))
+                settings.setOverlapFactor(props->getIntValue("overlapFactor", D::overlapFactor));
+            if (props->containsKey("curveDecay"))
+                settings.setCurveDecay(static_cast<float>(props->getDoubleValue("curveDecay", D::curveDecay)));
+            if (props->containsKey("slopeDb"))
+                settings.setSlope(static_cast<float>(props->getDoubleValue("slopeDb", 0.0)));
+        }
+    }
+
+    //==========================================================================
+    // Per-project state (ValueTree-based, saved inside plugin state blob)
+
+    static void saveToValueTree(const ISpectrumDisplaySettings &settings,
+                                ColorPalette::Theme theme,
+                                juce::ValueTree &tree) {
+        tree.setProperty("minDb",         settings.getMinDb(),                                       nullptr);
+        tree.setProperty("maxDb",         settings.getMaxDb(),                                       nullptr);
+        tree.setProperty("minFreq",       settings.getMinFreq(),                                     nullptr);
+        tree.setProperty("maxFreq",       settings.getMaxFreq(),                                     nullptr);
+        tree.setProperty("midColour",     static_cast<int>(settings.getPrimaryColour().getARGB()),                        nullptr);
+        tree.setProperty("sideColour",    static_cast<int>(settings.getSecondaryColour().getARGB()),                      nullptr);
+        tree.setProperty("refMidColour",  static_cast<int>(settings.getRefPrimaryColour().getARGB()),                     nullptr);
+        tree.setProperty("refSideColour", static_cast<int>(settings.getRefSecondaryColour().getARGB()),                   nullptr);
+        tree.setProperty("smoothingMode", static_cast<int>(settings.getSmoothing()),                                      nullptr);
+        tree.setProperty("fftOrder",      settings.getFftOrder(),                                                         nullptr);
+        tree.setProperty("overlapFactor", settings.getOverlapFactor(),                                                    nullptr);
+        tree.setProperty("curveDecay",    settings.getCurveDecay(),                                  nullptr);
+        tree.setProperty("slopeDb",       settings.getSlope(),                                       nullptr);
+        tree.setProperty("uiTheme",       static_cast<int>(theme),                                                        nullptr);
+    }
+
+    static void loadFromValueTree(ISpectrumDisplaySettings &settings,
+                                  ColorPalette::Theme &theme,
+                                  const juce::ValueTree &tree) {
+        if (!tree.isValid()) return;
+
+        if (tree.hasProperty("minDb") && tree.hasProperty("maxDb"))
+            settings.setDbRange(static_cast<float>(static_cast<double>(tree["minDb"])),
+                                static_cast<float>(static_cast<double>(tree["maxDb"])));
+        if (tree.hasProperty("minFreq") && tree.hasProperty("maxFreq"))
+            settings.setFreqRange(static_cast<float>(static_cast<double>(tree["minFreq"])),
+                                  static_cast<float>(static_cast<double>(tree["maxFreq"])));
+        if (tree.hasProperty("midColour"))
+            settings.setPrimaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["midColour"]))));
+        if (tree.hasProperty("sideColour"))
+            settings.setSecondaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["sideColour"]))));
+        if (tree.hasProperty("refMidColour"))
+            settings.setRefPrimaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["refMidColour"]))));
+        if (tree.hasProperty("refSideColour"))
+            settings.setRefSecondaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["refSideColour"]))));
+        if (tree.hasProperty("smoothingMode"))
+            settings.setSmoothing(static_cast<SmoothingMode>(static_cast<int>(tree["smoothingMode"])));
+        if (tree.hasProperty("fftOrder"))
+            settings.setFftOrder(tree["fftOrder"]);
+        if (tree.hasProperty("overlapFactor"))
+            settings.setOverlapFactor(tree["overlapFactor"]);
+        if (tree.hasProperty("curveDecay"))
+            settings.setCurveDecay(static_cast<float>(static_cast<double>(tree["curveDecay"])));
+        if (tree.hasProperty("slopeDb"))
+            settings.setSlope(static_cast<float>(static_cast<double>(tree["slopeDb"])));
+        if (tree.hasProperty("uiTheme"))
+            theme = static_cast<ColorPalette::Theme>(static_cast<int>(tree["uiTheme"]));
+    }
+
+    //==========================================================================
+    // UI Layout persistence (separate from spectrum display settings)
+
+    static void saveMeteringState(const int panelW, const bool visible) {
+        if (const auto props = getPropertiesFile()) {
+            props->setValue("meteringPanelW", panelW);
+            props->setValue("meteringVisible", visible);
+            props->saveIfNeeded();
+        }
+    }
+
+    static void loadMeteringState(int &panelW, bool &visible,
+                                  const int defaultPanelW = 180) {
+        if (const auto props = getPropertiesFile()) {
+            panelW = props->getIntValue("meteringPanelW", defaultPanelW);
+            visible = props->getBoolValue("meteringVisible", false);
+        }
+    }
+
+    static void saveWindowSize(const int width, const int height) {
+        if (const auto props = getPropertiesFile()) {
+            props->setValue("editorWidth", width);
+            props->setValue("editorHeight", height);
+            props->saveIfNeeded();
+        }
+    }
+
+    static juce::Point<int> loadWindowSize(int defaultW, int defaultH) {
+        if (const auto props = getPropertiesFile()) {
+            return {
+                props->getIntValue("editorWidth", defaultW),
+                props->getIntValue("editorHeight", defaultH)
+            };
+        }
+        return {defaultW, defaultH};
+    }
+
+    static void saveTheme(const ColorPalette::Theme theme) {
+        if (const auto props = getPropertiesFile()) {
+            props->setValue("uiTheme", static_cast<int>(theme));
+            props->saveIfNeeded();
+        }
+    }
+
+    static ColorPalette::Theme loadTheme(const ColorPalette::Theme fallback = ColorPalette::Theme::Balanced) {
+        if (const auto props = getPropertiesFile()) {
+            const int stored = props->getIntValue("uiTheme", static_cast<int>(fallback));
+            switch (stored) {
+                case static_cast<int>(ColorPalette::Theme::Dark):
+                    return ColorPalette::Theme::Dark;
+                case static_cast<int>(ColorPalette::Theme::Light):
+                    return ColorPalette::Theme::Light;
+                case static_cast<int>(ColorPalette::Theme::Balanced):
+                    return ColorPalette::Theme::Balanced;
+                default:
+                    return fallback;
+            }
+        }
+        return fallback;
+    }
+
+    static void saveBandHints(const bool visible) {
+        if (const auto props = getPropertiesFile()) {
+            props->setValue("bandHints", visible);
+            props->saveIfNeeded();
+        }
+    }
+
+    static bool loadBandHints(const bool defaultVal = true) {
+        if (const auto props = getPropertiesFile())
+            return props->getBoolValue("bandHints", defaultVal);
+        return defaultVal;
+    }
+
+private:
+    static std::unique_ptr<juce::PropertiesFile> getPropertiesFile() {
+        juce::PropertiesFile::Options options;
+        options.applicationName = "gFractor";
+        options.folderName = "GrowlAudio/gFractor";
+        options.filenameSuffix = ".settings";
+        options.osxLibrarySubFolder = "Application Support";
+
+        return std::make_unique<juce::PropertiesFile>(options);
+    }
+};

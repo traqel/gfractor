@@ -13,9 +13,13 @@
 #include <cmath>
 #include <vector>
 
-#include "UI/Utility/DisplayRange.h"
-#include "UI/Utility/SpectrumAnalyzerDefaults.h"
-#include "UI/Components/FFTProcessor.h"
+#include "Utility/DisplayRange.h"
+#include "Utility/AnalyzerSettings.h"
+#include "Utility/SpectrumAnalyzerDefaults.h"
+#include "DSP/Processing/FFTProcessor.h"
+#include "UI/Visualizers/SpectrumAnalyzer.h"
+#include "UI/Theme/ColorPalette.h"
+#include "UI/Theme/Typography.h"
 
 class UIUtilityTests : public juce::UnitTest {
 public:
@@ -35,7 +39,12 @@ public:
         testFFTProcessorBinAccuracy();
         testFFTProcessorSlopeTilt();
         testFFTProcessorTemporalDecay();
+        testAnalyzerSettingsCorruption();
         testCorrelationCalculation();
+        testSpectrumAnalyzerBandLookup();
+        testSpectrumAnalyzerBandInfo();
+        testColorPaletteThemeSwitching();
+        testTypographyFontCreation();
     }
 
 private:
@@ -43,7 +52,7 @@ private:
     void testDisplayRangeFrequencyToX() {
         beginTest("DisplayRange::frequencyToX");
 
-        DisplayRange range;
+        const DisplayRange range;
         constexpr float width = 1000.0f;
 
         // Min frequency should map to x=0
@@ -73,7 +82,7 @@ private:
     void testDisplayRangeXToFrequency() {
         beginTest("DisplayRange::xToFrequency");
 
-        DisplayRange range;
+        const DisplayRange range;
         constexpr float width = 1000.0f;
 
         // x=0 should map to min frequency
@@ -92,13 +101,14 @@ private:
     void testDisplayRangeFrequencyRoundTrip() {
         beginTest("DisplayRange Frequency Round-Trip");
 
-        DisplayRange range;
-        constexpr float width = 800.0f;
-
         // Round-trip: freq -> x -> freq should give back original
-        const float testFreqs[] = {20.0f, 50.0f, 100.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 5000.0f, 10000.0f, 20000.0f};
+        constexpr float testFreqs[] = {
+            20.0f, 50.0f, 100.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 5000.0f, 10000.0f, 20000.0f
+        };
 
         for (const float freq: testFreqs) {
+            constexpr float width = 800.0f;
+            const DisplayRange range;
             const float x = range.frequencyToX(freq, width);
             const float roundTrip = range.xToFrequency(x, width);
             expectWithinAbsoluteError(roundTrip, freq, freq * 0.01f, // 1% tolerance
@@ -110,7 +120,7 @@ private:
     void testDisplayRangeDbToY() {
         beginTest("DisplayRange::dbToY");
 
-        DisplayRange range;
+        const DisplayRange range;
         constexpr float height = 500.0f;
 
         // minDb should map to y=height (bottom)
@@ -136,7 +146,7 @@ private:
     void testDisplayRangeYToDb() {
         beginTest("DisplayRange::yToDb");
 
-        DisplayRange range;
+        const DisplayRange range;
         constexpr float height = 500.0f;
 
         // y=height should map to minDb
@@ -155,13 +165,12 @@ private:
     void testDisplayRangeDbRoundTrip() {
         beginTest("DisplayRange dB Round-Trip");
 
-        DisplayRange range;
-        constexpr float height = 400.0f;
-
         // Round-trip: dB -> y -> dB
-        const float testDbs[] = {-70.0f, -60.0f, -40.0f, -20.0f, -10.0f, -3.0f, 0.0f, 3.0f};
+        constexpr float testDbs[] = {-70.0f, -60.0f, -40.0f, -20.0f, -10.0f, -3.0f, 0.0f, 3.0f};
 
         for (const float db: testDbs) {
+            constexpr float height = 400.0f;
+            const DisplayRange range;
             const float y = range.dbToY(db, height);
             const float roundTrip = range.yToDb(y, height);
             expectWithinAbsoluteError(roundTrip, db, 0.1f,
@@ -173,7 +182,7 @@ private:
     void testDisplayRangeEdgeCases() {
         beginTest("DisplayRange Edge Cases");
 
-        DisplayRange range;
+        const DisplayRange range;
 
         // Zero frequency should return 0 (guarded)
         expectEquals(range.frequencyToX(0.0f, 1000.0f), 0.0f);
@@ -212,10 +221,10 @@ private:
         expect(Defaults::fftOrder <= 14);
 
         // Verify colors are valid
-        expect(Defaults::midColour().isOpaque());
-        expect(Defaults::sideColour().isOpaque());
-        expect(Defaults::refMidColour().isOpaque());
-        expect(Defaults::refSideColour().isOpaque());
+        expect(Defaults::primaryColour().isOpaque());
+        expect(Defaults::secondaryColour().isOpaque());
+        expect(Defaults::refPrimaryColour().isOpaque());
+        expect(Defaults::refSecondaryColour().isOpaque());
     }
 
     //==============================================================================
@@ -246,7 +255,7 @@ private:
 
         const int fftSize = fft.getFftSize();
         const int numBins = fft.getNumBins();
-        const double sampleRate = 44100.0;
+        constexpr double sampleRate = 44100.0;
 
         // Bin center frequency = binIndex * sampleRate / fftSize
         // Bin 1 should be ~5.38 Hz
@@ -258,7 +267,8 @@ private:
         expectWithinAbsoluteError(bin100Freq, 538.0f, 1.0f);
 
         // Nyquist bin (numBins - 1) should be sampleRate / 2
-        const float nyquistBin = static_cast<float>(numBins - 1) * static_cast<float>(sampleRate) / static_cast<float>(fftSize);
+        const float nyquistBin = static_cast<float>(numBins - 1) * static_cast<float>(sampleRate) / static_cast<float>(
+                                     fftSize);
         expectWithinAbsoluteError(nyquistBin, static_cast<float>(sampleRate) / 2.0f, 10.0f);
 
         // Verify numBins calculation
@@ -336,8 +346,8 @@ private:
 
         // Identical signals should have correlation = 1.0
         {
-            std::vector<float> L = {0.5f, 0.3f, -0.2f, 0.8f};
-            std::vector<float> R = {0.5f, 0.3f, -0.2f, 0.8f};
+            const std::vector L = {0.5f, 0.3f, -0.2f, 0.8f};
+            const std::vector R = {0.5f, 0.3f, -0.2f, 0.8f};
 
             const float corr = computeCorrelation(L, R);
             expectWithinAbsoluteError(corr, 1.0f, 0.001f);
@@ -345,8 +355,8 @@ private:
 
         // Opposite signals should have correlation = -1.0
         {
-            std::vector<float> L = {0.5f, 0.3f, -0.2f, 0.8f};
-            std::vector<float> R = {-0.5f, -0.3f, 0.2f, -0.8f};
+            const std::vector L = {0.5f, 0.3f, -0.2f, 0.8f};
+            const std::vector R = {-0.5f, -0.3f, 0.2f, -0.8f};
 
             const float corr = computeCorrelation(L, R);
             expectWithinAbsoluteError(corr, -1.0f, 0.001f);
@@ -354,8 +364,8 @@ private:
 
         // Uncorrelated signals should have correlation near 0
         {
-            std::vector<float> L = {1.0f, 0.0f, 1.0f, 0.0f};
-            std::vector<float> R = {0.0f, 1.0f, 0.0f, 1.0f};
+            const std::vector L = {1.0f, 0.0f, 1.0f, 0.0f};
+            const std::vector R = {0.0f, 1.0f, 0.0f, 1.0f};
 
             const float corr = computeCorrelation(L, R);
             expectWithinAbsoluteError(corr, 0.0f, 0.1f);
@@ -363,8 +373,8 @@ private:
 
         // Partially correlated
         {
-            std::vector<float> L = {1.0f, 0.5f, 0.0f, -0.5f};
-            std::vector<float> R = {0.8f, 0.4f, 0.1f, -0.3f};
+            const std::vector L = {1.0f, 0.5f, 0.0f, -0.5f};
+            const std::vector R = {0.8f, 0.4f, 0.1f, -0.3f};
 
             const float corr = computeCorrelation(L, R);
             expectGreaterThan(corr, 0.9f); // Strong positive correlation
@@ -372,12 +382,245 @@ private:
 
         // Silence should return 0 (denominator near zero)
         {
-            std::vector<float> L(100, 0.0f);
-            std::vector<float> R(100, 0.0f);
+            const std::vector L(100, 0.0f);
+            const std::vector R(100, 0.0f);
 
             const float corr = computeCorrelation(L, R);
             expectWithinAbsoluteError(corr, 0.0f, 0.001f);
         }
+    }
+
+    //==============================================================================
+    void testAnalyzerSettingsCorruption() {
+        beginTest("AnalyzerSettings corruption fallback and recovery");
+
+        ScopedSettingsFileBackup backup;
+
+        const auto settingsFile = getSettingsFilePath();
+        settingsFile.getParentDirectory().createDirectory();
+
+        const bool wroteCorrupt = settingsFile.replaceWithText(
+            "this is not a valid settings file\n<broken><xml>",
+            false,
+            false,
+            "\n");
+        expect(wroteCorrupt);
+
+        const auto loadedDefaultSize = AnalyzerSettings::loadWindowSize(1200, 640);
+        expectEquals(loadedDefaultSize.x, 1200);
+        expectEquals(loadedDefaultSize.y, 640);
+
+        int panelW = 180;
+        bool visible = false;
+        AnalyzerSettings::loadMeteringState(panelW, visible, 180);
+        expectEquals(panelW, 180);
+        expect(!visible);
+
+        AnalyzerSettings::saveWindowSize(777, 333);
+        const auto loadedSavedSize = AnalyzerSettings::loadWindowSize(1200, 640);
+        expectEquals(loadedSavedSize.x, 777);
+        expectEquals(loadedSavedSize.y, 333);
+    }
+
+    //==============================================================================
+    void testSpectrumAnalyzerBandLookup() {
+        beginTest("SpectrumAnalyzer Band Lookup");
+
+        // Test finding band at various frequencies
+        // Band definitions:
+        // Sub: 20-80Hz, Low: 80-300Hz, Low-Mid: 300-600Hz, Mid: 600-2000Hz
+        // Hi-Mid: 2000-6000Hz, High: 6000-12000Hz, Air: 12000-20000Hz
+
+        // Test Sub band boundaries
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20.0f), 0); // Start of Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(50.0f), 0); // Middle of Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(79.99f), 0); // End of Sub
+
+        // Test Low band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(80.0f), 1); // Start of Low
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(200.0f), 1); // Middle of Low
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(299.99f), 1); // End of Low
+
+        // Test Low-Mid band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(300.0f), 2); // Start of Low-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(450.0f), 2); // Middle of Low-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(599.99f), 2); // End of Low-Mid
+
+        // Test Mid band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(600.0f), 3); // Start of Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(1000.0f), 3); // Middle of Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(1999.99f), 3); // End of Mid
+
+        // Test Hi-Mid band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(2000.0f), 4); // Start of Hi-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(4000.0f), 4); // Middle of Hi-Mid
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(5999.99f), 4); // End of Hi-Mid
+
+        // Test High band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(6000.0f), 5); // Start of High
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(9000.0f), 5); // Middle of High
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(11999.99f), 5); // End of High
+
+        // Test Air band
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(12000.0f), 6); // Start of Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(16000.0f), 6); // Middle of Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(19999.99f), 6); // End of Air
+        // Exactly at max returns -1 (upper bound is exclusive to avoid overlap)
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20000.0f), -1);
+
+        // Test out of range frequencies (should return -1)
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(19.99f), -1); // Below Sub
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(20001.0f), -1); // Above Air
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(0.0f), -1); // Zero
+        expectEquals(SpectrumAnalyzer::findBandAtFrequency(-100.0f), -1); // Negative
+    }
+
+    //==============================================================================
+    void testSpectrumAnalyzerBandInfo() {
+        beginTest("SpectrumAnalyzer Band Info Calculation");
+
+        // Test that band info is calculated correctly for each band
+
+        // Sub band (20-80Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(0);
+            expectEquals(info.lo, 20.0f);
+            expectEquals(info.hi, 80.0f);
+            expectWithinAbsoluteError(info.centerFreq, 50.0f, 0.1f); // (20+80)/2 = 50
+            expectWithinAbsoluteError(info.q, 50.0f / 60.0f, 0.01f); // center/width = 50/60
+        }
+
+        // Low band (80-300Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(1);
+            expectEquals(info.lo, 80.0f);
+            expectEquals(info.hi, 300.0f);
+            expectWithinAbsoluteError(info.centerFreq, 190.0f, 0.1f); // (80+300)/2 = 190
+            expectWithinAbsoluteError(info.q, 190.0f / 220.0f, 0.01f); // center/width = 190/220
+        }
+
+        // Low-Mid band (300-600Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(2);
+            expectEquals(info.lo, 300.0f);
+            expectEquals(info.hi, 600.0f);
+            expectWithinAbsoluteError(info.centerFreq, 450.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 450.0f / 300.0f, 0.01f);
+        }
+
+        // Mid-band (600-2000Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(3);
+            expectEquals(info.lo, 600.0f);
+            expectEquals(info.hi, 2000.0f);
+            expectWithinAbsoluteError(info.centerFreq, 1300.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 1300.0f / 1400.0f, 0.01f);
+        }
+
+        // Hi-Mid band (2000-6000Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(4);
+            expectEquals(info.lo, 2000.0f);
+            expectEquals(info.hi, 6000.0f);
+            expectWithinAbsoluteError(info.centerFreq, 4000.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 4000.0f / 4000.0f, 0.01f); // Q = 1.0
+        }
+
+        // High band (6000-12000Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(5);
+            expectEquals(info.lo, 6000.0f);
+            expectEquals(info.hi, 12000.0f);
+            expectWithinAbsoluteError(info.centerFreq, 9000.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 9000.0f / 6000.0f, 0.01f);
+        }
+
+        // Air band (12000-20000Hz)
+        {
+            const auto info = SpectrumAnalyzer::getBandInfo(6);
+            expectEquals(info.lo, 12000.0f);
+            expectEquals(info.hi, 20000.0f);
+            expectWithinAbsoluteError(info.centerFreq, 16000.0f, 0.1f);
+            expectWithinAbsoluteError(info.q, 16000.0f / 8000.0f, 0.01f); // Q = 2.0
+        }
+    }
+
+    //==============================================================================
+    void testColorPaletteThemeSwitching() {
+        beginTest("ColorPalette Theme Switching");
+
+        // Save original theme
+        const auto originalTheme = ColorPalette::getTheme();
+
+        // Test Dark theme
+        ColorPalette::setTheme(ColorPalette::Theme::Dark);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Dark));
+        // Verify colors are non-zero (valid ARGB)
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+        expect(ColorPalette::primaryGreen > 0);
+        expect(ColorPalette::secondaryAmber > 0);
+        expect(ColorPalette::blueAccent > 0);
+
+        // Test Light theme
+        ColorPalette::setTheme(ColorPalette::Theme::Light);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Light));
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+
+        // Test Balanced theme
+        ColorPalette::setTheme(ColorPalette::Theme::Balanced);
+        expect(static_cast<int>(ColorPalette::getTheme()) == static_cast<int>(ColorPalette::Theme::Balanced));
+        expect(ColorPalette::background > 0);
+        expect(ColorPalette::textBright > 0);
+
+        // Verify theme names
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Dark)), juce::String("Dark"));
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Light)), juce::String("Light"));
+        expectEquals(juce::String(ColorPalette::getThemeName(ColorPalette::Theme::Balanced)), juce::String("Balanced"));
+
+        // Restore original theme
+        ColorPalette::setTheme(originalTheme);
+    }
+
+    //==============================================================================
+    void testTypographyFontCreation() {
+        beginTest("Typography Font Creation");
+
+        // Test font creation with various sizes
+        {
+            const auto font = Typography::makeFont(14.0f);
+            expectGreaterThan(font.getHeight(), 0.0f);
+            expectGreaterThan(font.getHorizontalScale(), 0.0f);
+        }
+
+        {
+            const auto font = Typography::makeFont(24.0f);
+            expectEquals(font.getHeight(), 24.0f);
+        }
+
+        {
+            const auto font = Typography::makeFont(10.0f);
+            expectEquals(font.getHeight(), 10.0f);
+        }
+
+        // Test bold font creation
+        {
+            const auto boldFont = Typography::makeBoldFont(14.0f);
+            expectGreaterThan(boldFont.getHeight(), 0.0f);
+        }
+
+        // Verify font family is set
+        {
+            const auto font = Typography::makeFont(14.0f);
+            const juce::String typefaceName = font.getTypefaceName();
+            // Typeface name should not be empty
+            expectGreaterThan(typefaceName.length(), 0);
+        }
+
+        // Test constant values
+        expectEquals(Typography::mainFontSize, 14.0f);
+        expectEquals(Typography::smallFontSize, 12.0f);
     }
 
     //==============================================================================
@@ -393,6 +636,43 @@ private:
         const double denom = std::sqrt(sumL2 * sumR2);
         if (denom < 1.0e-10) return 0.0f;
         return juce::jlimit(-1.0f, 1.0f, static_cast<float>(sumLR / denom));
+    }
+
+    struct ScopedSettingsFileBackup {
+        ScopedSettingsFileBackup() {
+            originalFile = getSettingsFilePath();
+            backupFile = originalFile.getSiblingFile("gFractor.settings.testbackup");
+
+            if (originalFile.existsAsFile()) {
+                hadOriginal = true;
+                originalFile.copyFileTo(backupFile);
+            }
+        }
+
+        ~ScopedSettingsFileBackup() {
+            if (hadOriginal) {
+                backupFile.copyFileTo(originalFile);
+                backupFile.deleteFile();
+            } else {
+                originalFile.deleteFile();
+                backupFile.deleteFile();
+            }
+        }
+
+        juce::File originalFile;
+        juce::File backupFile;
+        bool hadOriginal = false;
+    };
+
+    static juce::File getSettingsFilePath() {
+        juce::PropertiesFile::Options options;
+        options.applicationName = "gFractor";
+        options.folderName = "GrowlAudio/gFractor";
+        options.filenameSuffix = ".settings";
+        options.osxLibrarySubFolder = "Application Support";
+
+        const juce::PropertiesFile props(options);
+        return props.getFile();
     }
 };
 

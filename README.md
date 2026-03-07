@@ -1,15 +1,15 @@
 # gFractor Audio Plugin
 
-A professional gFractor/template for JUCE audio effect plugins with modern C++, CMake build system, and production-ready architecture.
+A professional Mid/Side spectrum analyzer audio effect plugin built with JUCE (C++17).
 
 ## Features
 
-- **Clean Architecture** - Separated DSP, Parameters, UI, and State management
-- **APVTS Framework** - AudioProcessorValueTreeState for parameter management
+- **Mid/Side Spectrum Analyzer** - Real-time FFT visualization with configurable order, smoothing, and slope
+- **Clean Architecture** - Separated DSP, Utility, State, and UI layers
+- **Decoupled Design** - Interface-based audio-to-UI pipeline (lock-free FIFO)
 - **Realtime Safety** - No allocations or locks on the audio thread
-- **Cross-Platform** - VST3 and AU support with CMake
+- **Cross-Platform** - VST3, AU (macOS), and Standalone with CMake
 - **CI/CD Ready** - GitHub Actions workflows included
-- **Well Documented** - Comprehensive guides and architecture documentation
 
 ## Quick Start
 
@@ -55,26 +55,42 @@ Scripts\build.bat --release --test
 
 - ✅ **VST3** - Cross-platform (Windows, macOS, Linux)
 - ✅ **AU** - Audio Unit (macOS only)
-- ⚪ **AAX** - Pro Tools (requires Avid SDK - see docs)
 - ✅ **Standalone** - Desktop application
 
 ## Parameters
 
-- **Gain** - -60 to +12 dB (default: 0 dB)
-- **Dry/Wet** - 0 to 100% mix (default: 100%)
-- **Bypass** - On/off toggle
+| ID | Range | Default | Purpose |
+|---|---|---|---|
+| `gain` | -60 to +12 dB | 0 dB | Output gain |
+| `dryWet` | 0–100% | 100% | Dry/wet mix |
+| `bypass` | on/off | off | Plugin bypass |
+| `outputMidEnable` | on/off | on | Mid channel output |
+| `outputSideEnable` | on/off | on | Side channel output |
+
+## Project Structure
+
+```
+Source/
+├── DSP/          # DSP engine, FFT, ring buffer, audio interfaces
+├── Utility/      # Shared types (ChannelMode, DisplayRange, defaults)
+├── State/        # Parameters & state serialization
+└── UI/
+    ├── Visualizers/  # SpectrumAnalyzer, SonogramView, GhostSpectrum, etc.
+    ├── Panels/       # StereoMeteringPanel, PreferencePanel, HelpPanel
+    ├── Controls/     # HeaderBar, FooterBar, PillButton
+    ├── LookAndFeel/  # Custom theme
+    └── Theme/        # ColorPalette, Spacing
+```
 
 ## Documentation
 
 - **[Quick Start Guide](Docs/QUICK_START.md)** - Get up and running in 5 minutes
 - **[Build Guide](Docs/BUILD.md)** - Comprehensive build instructions
 - **[Architecture](Docs/ARCHITECTURE.md)** - Build system architecture
-
-## License
-
-[Add your license here]
+- **[Design Overview](Docs/overview.md)** - Complete design system reference
 
 ## Credits
 
 - Built with [JUCE Framework](https://juce.com/)
-- Created with [Claude Code JUCE Dev Team](https://github.com/yebots/rad-cc-plugins)
+- Company: GrowlAudio
+

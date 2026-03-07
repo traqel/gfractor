@@ -1,0 +1,447 @@
+#include "PreferencePanel.h"
+
+#include <utility>
+
+#include "../../Utility/AnalyzerSettings.h"
+#include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
+#include "../Theme/Spacing.h"
+#include "../Theme/Typography.h"
+#include "../Theme/UILabels.h"
+
+//==============================================================================
+PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
+                                 juce::AudioProcessorValueTreeState &apvts,
+                                 std::function<void()> themeChangedCallback)
+    : settingsRef(settings),
+      apvtsRef(apvts),
+      snapshot{
+          settings.getMinDb(), settings.getMaxDb(),
+          settings.getMinFreq(), settings.getMaxFreq(),
+          settings.getPrimaryColour(), settings.getSecondaryColour(),
+          settings.getRefPrimaryColour(), settings.getRefSecondaryColour(),
+          settings.getSmoothing(),
+          ColorPalette::getTheme(),
+          apvts.getRawParameterValue("transientLength")->load()
+      },
+      onThemeChanged(std::move(themeChangedCallback)) {
+    constexpr auto textBoxWidth = Layout::PreferencePanel::textBoxWidth;
+    setOpaque(true);
+
+    // --- dB range sliders ---
+    addAndMakeVisible(minDbSlider);
+    minDbSlider.setRange(-120.0, -12.0, 1.0);
+    minDbSlider.setValue(settings.getMinDb(), juce::dontSendNotification);
+    minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    minDbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    minDbSlider.onValueChange = [this] {
+        settingsRef.setDbRange(static_cast<float>(minDbSlider.getValue()),
+                               static_cast<float>(maxDbSlider.getValue()));
+    };
+
+    addAndMakeVisible(maxDbSlider);
+    maxDbSlider.setRange(-24.0, 12.0, 1.0);
+    maxDbSlider.setValue(settings.getMaxDb(), juce::dontSendNotification);
+    maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    maxDbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    maxDbSlider.onValueChange = [this] {
+        settingsRef.setDbRange(static_cast<float>(minDbSlider.getValue()),
+                               static_cast<float>(maxDbSlider.getValue()));
+    };
+
+    addAndMakeVisible(minDbLabel);
+    minDbLabel.setText("Min dB", juce::dontSendNotification);
+    minDbLabel.setJustificationType(juce::Justification::centredRight);
+
+    addAndMakeVisible(maxDbLabel);
+    maxDbLabel.setText("Max dB", juce::dontSendNotification);
+    maxDbLabel.setJustificationType(juce::Justification::centredRight);
+
+    // --- Frequency range sliders ---
+    addAndMakeVisible(minFreqSlider);
+    minFreqSlider.setRange(10.0, 200.0, 1.0);
+    minFreqSlider.setValue(settings.getMinFreq(), juce::dontSendNotification);
+    minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    minFreqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    minFreqSlider.setTextValueSuffix(" Hz");
+    minFreqSlider.onValueChange = [this] {
+        settingsRef.setFreqRange(static_cast<float>(minFreqSlider.getValue()),
+                                 static_cast<float>(maxFreqSlider.getValue()));
+    };
+
+    addAndMakeVisible(maxFreqSlider);
+    maxFreqSlider.setRange(5000.0, 24000.0, 100.0);
+    maxFreqSlider.setValue(settings.getMaxFreq(), juce::dontSendNotification);
+    maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
+    maxFreqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    maxFreqSlider.setTextValueSuffix(" Hz");
+    maxFreqSlider.onValueChange = [this] {
+        settingsRef.setFreqRange(static_cast<float>(minFreqSlider.getValue()),
+                                 static_cast<float>(maxFreqSlider.getValue()));
+    };
+
+    addAndMakeVisible(minFreqLabel);
+    minFreqLabel.setText("Min Hz", juce::dontSendNotification);
+    minFreqLabel.setJustificationType(juce::Justification::centredRight);
+
+    addAndMakeVisible(maxFreqLabel);
+    maxFreqLabel.setText("Max Hz", juce::dontSendNotification);
+    maxFreqLabel.setJustificationType(juce::Justification::centredRight);
+
+    // --- Color swatches ---
+    primarySwatch.colour = settings.getPrimaryColour();
+    secondarySwatch.colour = settings.getSecondaryColour();
+    refPrimarySwatch.colour = settings.getRefPrimaryColour();
+    refSecondarySwatch.colour = settings.getRefSecondaryColour();
+
+    primarySwatch.label = "Prim";
+    secondarySwatch.label = "Sec";
+    refPrimarySwatch.label = "Ref P";
+    refSecondarySwatch.label = "Ref S";
+
+    primarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setPrimaryColour(c); };
+    secondarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setSecondaryColour(c); };
+    refPrimarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefPrimaryColour(c); };
+    refSecondarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefSecondaryColour(c); };
+
+    addAndMakeVisible(primarySwatch);
+    addAndMakeVisible(secondarySwatch);
+    addAndMakeVisible(refPrimarySwatch);
+    addAndMakeVisible(refSecondarySwatch);
+
+    addAndMakeVisible(coloursLabel);
+    coloursLabel.setText("Colours", juce::dontSendNotification);
+    coloursLabel.setJustificationType(juce::Justification::centredRight);
+
+    // --- Smoothing combo box ---
+    addAndMakeVisible(smoothingCombo);
+    smoothingCombo.addItem("Off", 1);
+    smoothingCombo.addItem("1/3 Oct", 2);
+    smoothingCombo.addItem("1/6 Oct", 3);
+    smoothingCombo.addItem("1/12 Oct", 4);
+    smoothingCombo.setSelectedId(smoothingModeToId(settings.getSmoothing()),
+                                 juce::dontSendNotification);
+    smoothingCombo.onChange = [this] {
+        settingsRef.setSmoothing(idToSmoothingMode(smoothingCombo.getSelectedId()));
+    };
+
+    addAndMakeVisible(smoothingLabel);
+    smoothingLabel.setText("Smooth", juce::dontSendNotification);
+    smoothingLabel.setJustificationType(juce::Justification::centredRight);
+
+    // --- Transient length slider ---
+    addAndMakeVisible(transientLengthSlider);
+    transientLengthSlider.setRange(0.1, 10.0, 0.1);
+    transientLengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
+    transientLengthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    transientLengthSlider.setTextValueSuffix(" ms");
+    transientLengthSlider.setNumDecimalPlacesToDisplay(1);
+    transientLengthAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvtsRef, "transientLength", transientLengthSlider);
+
+    addAndMakeVisible(transientLengthLabel);
+    transientLengthLabel.setText("Trans Len", juce::dontSendNotification);
+    transientLengthLabel.setJustificationType(juce::Justification::centredRight);
+
+    // --- Theme combo box ---
+    addAndMakeVisible(themeCombo);
+    themeCombo.addItem("Balanced", 1);
+    themeCombo.addItem("Dark", 2);
+    themeCombo.addItem("Light", 3);
+    themeCombo.setSelectedId(themeToId(ColorPalette::getTheme()), juce::dontSendNotification);
+    themeCombo.onChange = [this] {
+        ColorPalette::setTheme(idToTheme(themeCombo.getSelectedId()));
+        applyThemeColours();
+        repaint();
+        if (onThemeChanged)
+            onThemeChanged();
+    };
+
+    addAndMakeVisible(themeLabel);
+    themeLabel.setText("Theme", juce::dontSendNotification);
+    themeLabel.setJustificationType(juce::Justification::centredRight);
+
+    // --- Save button ---
+    addAndMakeVisible(saveButton);
+    saveButton.onClick = [this] {
+        AnalyzerSettings::save(settingsRef);
+        AnalyzerSettings::saveTheme(ColorPalette::getTheme());
+        if (onSave) onSave();
+        if (onClose) onClose();
+    };
+
+    // --- Cancel button ---
+    addAndMakeVisible(cancelButton);
+    cancelButton.onClick = [this] { cancel(); };
+
+    // --- Reset to defaults button ---
+    addAndMakeVisible(resetButton);
+    resetButton.onClick = [this] { resetToDefaults(); };
+
+    applyThemeColours();
+}
+
+//==============================================================================
+void PreferencePanel::applyThemeColours() {
+    const auto textColour = juce::Colour(ColorPalette::textBright);
+    const auto panelFont  = Typography::makeFont(Typography::mainFontSize);
+
+    for (auto *label : { &minDbLabel, &maxDbLabel, &minFreqLabel, &maxFreqLabel,
+                         &coloursLabel, &smoothingLabel, &transientLengthLabel, &themeLabel }) {
+        label->setFont(panelFont);
+        label->setMinimumHorizontalScale(1.0f);
+        label->setColour(juce::Label::textColourId, textColour);
+    }
+
+    const auto panelColour = juce::Colour(ColorPalette::panel);
+    for (auto *combo : { &smoothingCombo, &themeCombo }) {
+        combo->setColour(juce::ComboBox::textColourId,       textColour);
+        combo->setColour(juce::ComboBox::backgroundColourId, panelColour);
+        combo->setColour(juce::ComboBox::arrowColourId,      textColour);
+        combo->setColour(juce::ComboBox::outlineColourId,    juce::Colours::transparentBlack);
+        combo->repaint();
+    }
+
+    const auto textBoxBg = panelColour;
+    for (auto *slider : { &minDbSlider, &maxDbSlider, &minFreqSlider,
+                          &maxFreqSlider, &transientLengthSlider }) {
+        slider->setColour(juce::Slider::textBoxTextColourId,       textColour);
+        slider->setColour(juce::Slider::textBoxBackgroundColourId, textBoxBg);
+        slider->setColour(juce::Slider::textBoxOutlineColourId,    juce::Colours::transparentBlack);
+        slider->repaint();
+    }
+}
+
+//==============================================================================
+void PreferencePanel::paint(juce::Graphics &g) {
+    g.fillAll(juce::Colour(ColorPalette::panel));
+
+    // Section header
+    g.setColour(juce::Colour(ColorPalette::panelHeading));
+    g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
+    g.drawText(UILabels::Panels::settings, getLocalBounds().removeFromTop(30),
+               juce::Justification::centred);
+}
+
+void PreferencePanel::resized() {
+    auto bounds = getLocalBounds().reduced(Spacing::paddingM);
+    constexpr int headerH = Layout::PreferencePanel::headerHeight;
+
+    bounds.removeFromTop(headerH); // header
+    bounds.removeFromRight(Spacing::gapM); // right spacing
+
+    constexpr int labelW = Layout::PreferencePanel::labelColumnWidth;
+    auto layoutRow = [&](juce::Label &label, Component &control) {
+        auto row = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
+        label.setBounds(row.removeFromLeft(labelW));
+        control.setBounds(row);
+    };
+
+    layoutRow(themeLabel, themeCombo);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(smoothingLabel, smoothingCombo);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(transientLengthLabel, transientLengthSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(minDbLabel, minDbSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(maxDbLabel, maxDbSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(minFreqLabel, minFreqSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(maxFreqLabel, maxFreqSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    // Color swatches row - all 4 swatches with equal spacing
+    auto colourRow = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
+    coloursLabel.setBounds(colourRow.removeFromLeft(labelW));
+
+    constexpr int swatchGap = Spacing::gapS;
+    const int totalSwatchAreaW = colourRow.getWidth();
+    const int swatchW = (totalSwatchAreaW - 3 * swatchGap) / 4;
+
+    primarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    colourRow.removeFromLeft(swatchGap);
+    secondarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    colourRow.removeFromLeft(swatchGap);
+    refPrimarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    colourRow.removeFromLeft(swatchGap);
+    refSecondarySwatch.setBounds(colourRow);
+
+    bounds.removeFromTop(Spacing::gapL); // spacing
+
+    // Save / Cancel / Reset row
+    auto actionRow = bounds.removeFromTop(Layout::PreferencePanel::rowHeight);
+    actionRow.removeFromLeft(labelW);
+    saveButton.setBounds(actionRow.removeFromLeft(Layout::PreferencePanel::buttonWidth));
+    actionRow.removeFromLeft(Spacing::gapS);
+    cancelButton.setBounds(actionRow.removeFromLeft(Layout::PreferencePanel::buttonWidth));
+    actionRow.removeFromLeft(Spacing::gapS);
+    resetButton.setBounds(actionRow);
+}
+
+void PreferencePanel::cancel() {
+    revertToSnapshot();
+    if (onClose) onClose();
+}
+
+//==============================================================================
+// ColourSwatch implementation
+
+void PreferencePanel::ColourSwatch::paint(juce::Graphics &g) {
+    const auto b = getLocalBounds().toFloat().reduced(1.0f);
+    g.setColour(colour);
+    g.fillRoundedRectangle(b, 3.0f);
+    g.setColour(juce::Colour(ColorPalette::swatchBorder));
+    g.drawRoundedRectangle(b, 3.0f, 1.0f);
+
+    g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
+    g.setColour(colour.contrasting(0.8f));
+    g.drawText(label, getLocalBounds(), juce::Justification::centred);
+}
+
+void PreferencePanel::ColourSwatch::mouseDown(const juce::MouseEvent &) {
+    auto *selector = new juce::ColourSelector(
+        juce::ColourSelector::showColourAtTop
+        | juce::ColourSelector::showSliders
+        | juce::ColourSelector::showColourspace);
+
+    selector->setCurrentColour(colour);
+    selector->setSize(200, 260);
+    selector->addChangeListener(this);
+
+    juce::CallOutBox::launchAsynchronously(
+        std::unique_ptr<Component>(selector),
+        getScreenBounds(), nullptr);
+}
+
+void PreferencePanel::ColourSwatch::changeListenerCallback(juce::ChangeBroadcaster *source) {
+    if (const auto *cs = dynamic_cast<juce::ColourSelector *>(source)) {
+        colour = cs->getCurrentColour();
+        if (onColourChanged)
+            onColourChanged(colour);
+        repaint();
+    }
+}
+
+//==============================================================================
+// Static helpers
+
+int PreferencePanel::smoothingModeToId(const SmoothingMode m) {
+    switch (m) {
+        case SmoothingMode::None: return 1;
+        case SmoothingMode::ThirdOctave: return 2;
+        case SmoothingMode::SixthOctave: return 3;
+        case SmoothingMode::TwelfthOctave: return 4;
+    }
+    return 2;
+}
+
+SmoothingMode PreferencePanel::idToSmoothingMode(const int id) {
+    switch (id) {
+        case 1: return SmoothingMode::None;
+        case 2: return SmoothingMode::ThirdOctave;
+        case 3: return SmoothingMode::SixthOctave;
+        case 4: return SmoothingMode::TwelfthOctave;
+        default: return SmoothingMode::ThirdOctave;
+    }
+}
+
+int PreferencePanel::themeToId(const ColorPalette::Theme theme) {
+    switch (theme) {
+        case ColorPalette::Theme::Balanced: return 1;
+        case ColorPalette::Theme::Dark:     return 2;
+        case ColorPalette::Theme::Light:    return 3;
+    }
+    return 1;
+}
+
+ColorPalette::Theme PreferencePanel::idToTheme(const int id) {
+    switch (id) {
+        case 1:  return ColorPalette::Theme::Balanced;
+        case 2:  return ColorPalette::Theme::Dark;
+        case 3:  return ColorPalette::Theme::Light;
+        default: return ColorPalette::Theme::Balanced;
+    }
+}
+
+//==============================================================================
+void PreferencePanel::revertToSnapshot() {
+    settingsRef.setDbRange(snapshot.minDb, snapshot.maxDb);
+    settingsRef.setFreqRange(snapshot.minFreq, snapshot.maxFreq);
+    settingsRef.setPrimaryColour(snapshot.primaryColour);
+    settingsRef.setSecondaryColour(snapshot.secondaryColour);
+    settingsRef.setRefPrimaryColour(snapshot.refPrimaryColour);
+    settingsRef.setRefSecondaryColour(snapshot.refSecondaryColour);
+    settingsRef.setSmoothing(snapshot.smoothing);
+    smoothingCombo.setSelectedId(smoothingModeToId(snapshot.smoothing), juce::dontSendNotification);
+
+    if (auto *param = apvtsRef.getParameter("transientLength"))
+        param->setValueNotifyingHost(param->convertTo0to1(snapshot.transientLength));
+    transientLengthSlider.setValue(snapshot.transientLength, juce::dontSendNotification);
+
+    ColorPalette::setTheme(snapshot.theme);
+    themeCombo.setSelectedId(themeToId(snapshot.theme), juce::dontSendNotification);
+    applyThemeColours();
+    repaint();
+    if (onThemeChanged)
+        onThemeChanged();
+}
+
+void PreferencePanel::resetToDefaults() {
+    using D = Defaults;
+
+    settingsRef.setDbRange(D::minDb, D::maxDb);
+    settingsRef.setFreqRange(D::minFreq, D::maxFreq);
+    settingsRef.setPrimaryColour(D::primaryColour());
+    settingsRef.setSecondaryColour(D::secondaryColour());
+    settingsRef.setRefPrimaryColour(D::refPrimaryColour());
+    settingsRef.setRefSecondaryColour(D::refSecondaryColour());
+
+    settingsRef.setSmoothing(D::smoothing);
+    smoothingCombo.setSelectedId(smoothingModeToId(D::smoothing), juce::dontSendNotification);
+
+    // Update sliders to reflect defaults
+    minDbSlider.setValue(D::minDb, juce::dontSendNotification);
+    maxDbSlider.setValue(D::maxDb, juce::dontSendNotification);
+    minFreqSlider.setValue(D::minFreq, juce::dontSendNotification);
+    maxFreqSlider.setValue(D::maxFreq, juce::dontSendNotification);
+
+    if (auto *param = apvtsRef.getParameter("transientLength"))
+        param->setValueNotifyingHost(param->convertTo0to1(2.0f));
+    transientLengthSlider.setValue(2.0, juce::dontSendNotification);
+
+    ColorPalette::setTheme(ColorPalette::Theme::Balanced);
+    themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Balanced), juce::dontSendNotification);
+    applyThemeColours();
+    repaint();
+    if (onThemeChanged)
+        onThemeChanged();
+
+    // Update color swatches
+    primarySwatch.colour = D::primaryColour();
+    secondarySwatch.colour = D::secondaryColour();
+    refPrimarySwatch.colour = D::refPrimaryColour();
+    refSecondarySwatch.colour = D::refSecondaryColour();
+
+    primarySwatch.repaint();
+    secondarySwatch.repaint();
+    refPrimarySwatch.repaint();
+    refSecondarySwatch.repaint();
+
+    AnalyzerSettings::save(settingsRef);
+    AnalyzerSettings::saveTheme(ColorPalette::getTheme());
+}

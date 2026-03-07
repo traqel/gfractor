@@ -1,0 +1,436 @@
+#pragma once
+
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <array>
+#include <functional>
+#include <vector>
+
+#include "AudioVisualizerBase.h"
+#include "../HintManager.h"
+#include "GhostSpectrum.h"
+#include "PeakHold.h"
+#include "TargetCurve.h"
+#include "SpectrumTooltip.h"
+#include "BandConstants.h"
+#include "../ISpectrumControls.h"
+#include "../ISpectrumDisplaySettings.h"
+#include "../Theme/ColorPalette.h"
+#include "../Theme/LayoutConstants.h"
+#include "../Controls/Buttons/ToggleButton.h"
+#include "../../Utility/ChannelMode.h"
+#include "../../Utility/DisplayRange.h"
+#include "../../DSP/Interfaces/IAudioDataSink.h"
+#include "../../DSP/Processing/FFTProcessor.h"
+#include "../../DSP/Interfaces/IGhostDataSink.h"
+
+/**
+ * Primary/Secondary Spectrum Analyzer Component
+ *
+ * Displays real-time frequency spectrum with separate primary and secondary channels.
+ * Uses lock-free FIFO for realtime-safe audio data transfer from the audio thread.
+ *
+ * Features:
+ * - Configurable FFT order (11-14): 2048-16384 points
+ * - Mid/Side decoding from stereo input
+ * - Logarithmic frequency scale with labeled grid
+ * - Octave smoothing with precomputed prefix-sum ranges
+ * - Exponential temporal decay for smooth animation
+ * - Hann windowing to reduce spectral leakage
+ * - Decimated path rendering (~256 log-spaced points)
+ */
+class SpectrumAnalyzer : public AudioVisualizerBase,
+                         public IAudioDataSink,
+                         public IGhostDataSink,
+                         public ISpectrumControls,
+                         public ISpectrumDisplaySettings {
+public:
+    SpectrumAnalyzer();
+
+    ~SpectrumAnalyzer() override;
+
+    //==============================================================================
+    // IAudioDataSink implementation (forwards to AudioVisualizerBase)
+    void pushStereoData(const juce::AudioBuffer<float> &buffer) override {
+        AudioVisualizerBase::pushStereoData(buffer);
+    }
+
+    void setSampleRate(const double sr) override {
+        AudioVisualizerBase::setSampleRate(sr);
+    }
+
+    // IGhostDataSink implementation
+    void pushGhostData(const juce::AudioBuffer<float> &buffer) override;
+
+    //==============================================================================
+    void paint(juce::Graphics &g) override;
+
+    void resized() override;
+
+    //==============================================================================
+    // Mouse interaction for audition bell filter
+    void mouseDown(const juce::MouseEvent &event) override;
+
+    void mouseDrag(const juce::MouseEvent &event) override;
+
+    void mouseUp(const juce::MouseEvent &event) override;
+
+    void mouseMove(const juce::MouseEvent &event) override;
+
+    void mouseExit(const juce::MouseEvent &event) override;
+
+    /** Callback for transient audition filter (set by PluginEditor) */
+    std::function<void(bool active, float freqHz, float q)> onAuditFilter;
+
+    /** Callback for band selection filter (set by PluginEditor) */
+    std::function<void(bool active, float freqHz, float q)> onBandFilter;
+
+    /** Callback fired when the fullscreen toggle button is clicked (set by PluginEditor) */
+    std::function<void(bool fullscreen)> onFullscreen;
+
+    /** Sync the fullscreen button visual state without firing onFullscreen (for keyboard shortcut). */
+    void setFullscreen(bool fullscreen);
+
+    //==============================================================================
+    // ISpectrumControls implementation
+
+    /** Freeze the display — drains FIFOs silently but stops updating paths. */
+    void setFrozen(const bool freeze) override { frozen = freeze; }
+    bool isFrozen() const override { return frozen; }
+
+    /** Infinite peak hold — accumulates the per-bin maximum over time. */
+    void setInfinitePeak(bool enabled) override;
+
+    bool isInfinitePeakEnabled() const override { return peakHold.isEnabled(); }
+
+    /** Switch analyzer colors between direct (green/yellow) and reference (blue/pink) */
+    void setPlayRef(const bool reference) override {
+        playRef = reference;
+        repaint();
+    }
+
+    /** Show/hide primary and secondary spectrum paths (main + ghost) */
+    void setPrimaryVisible(const bool visible) override {
+        showPrimary = visible;
+        repaint();
+    }
+
+    void setSecondaryVisible(const bool visible) override {
+        showSecondary = visible;
+        repaint();
+    }
+
+    void setGhostVisible(const bool visible) override {
+        showGhost = visible;
+        repaint();
+    }
+
+    /** Show/hide sidechain hint message */
+    void setSidechainAvailable(const bool available) override { sidechainAvailable = available; }
+
+    void setChannelMode(const int mode) override {
+        setChannelMode(channelModeFromInt(mode));
+    }
+
+    /** Band selection filter - forwards to onBandFilter callback */
+    void setBandFilter(const bool active, const float frequencyHz, const float q) override {
+        if (onBandFilter)
+            onBandFilter(active, frequencyHz, q);
+    }
+
+    /** Save the current peak hold curves to a target curve file. */
+    void savePeakHoldCurve() override;
+
+    /** Load a target curve from file and overlay on the spectrum. */
+    void loadTargetCurve(std::function<void(bool)> onLoaded = nullptr) override;
+
+    /** Clear the loaded target curve. */
+    void clearTargetCurve() override;
+
+    [[nodiscard]]
+    bool hasTargetCurve() const override { return targetCurve.isLoaded(); }
+
+    void setTargetCurveVisible(const bool visible) override {
+        targetCurveVisible = visible;
+        repaint();
+    }
+
+    [[nodiscard]]
+    bool isTargetCurveVisible() const override { return targetCurveVisible; }
+
+    //==============================================================================
+    // ISpectrumDisplaySettings implementation
+    void setFftOrder(int order) override;
+
+    int getFftOrder() const override { return fftOrder; }
+
+    void setOverlapFactor(const int factor) override {
+        overlapFactor = juce::jlimit(minOverlapFactor, maxOverlapFactor, factor);
+        hopSize = juce::jmax(1, fftSize / overlapFactor);
+        hopCounter = 0;
+    }
+
+    int getOverlapFactor() const override { return overlapFactor; }
+
+    void setSmoothing(SmoothingMode mode) override;
+
+    SmoothingMode getSmoothing() const override { return smoothingMode; }
+
+    void setCurveDecay(const float decay) override {
+        curveDecay = juce::jlimit(0.0f, 1.0f, decay);
+        fftProcessor.setTemporalDecay(curveDecay);
+    }
+
+    float getCurveDecay() const override { return curveDecay; }
+
+    void setDbRange(float newMinDb, float newMaxDb) override;
+
+    void setFreqRange(float newMinFreq, float newMaxFreq) override;
+
+    void setPrimaryColour(const juce::Colour c) override {
+        primaryColour = c;
+        repaint();
+    }
+
+    void setSecondaryColour(const juce::Colour c) override {
+        secondaryColour = c;
+        repaint();
+    }
+
+    void setRefPrimaryColour(const juce::Colour c) override {
+        refPrimaryColour = c;
+        repaint();
+    }
+
+    void setRefSecondaryColour(const juce::Colour c) override {
+        refSecondaryColour = c;
+        repaint();
+    }
+
+    void setChannelMode(const ChannelMode mode) {
+        channelMode = mode;
+        fftProcessor.setChannelMode(mode);
+        clearAllCurves();
+    }
+
+    ChannelMode getChannelModeEnum() const { return channelMode; }
+
+    /** Spectral slope tilt — -9 to +9 dB applied to displayed spectrum.
+     *  Positive tilts the display up toward high frequencies, negative toward lows. */
+    void setSlope(const float db) override {
+        slopeDb = juce::jlimit(-9.0f, 9.0f, db);
+        fftProcessor.setSlope(slopeDb);
+        repaint();
+    }
+
+    void applyTheme();
+
+    /** Register HintManager — call once from PluginEditor after construction. */
+    void setHintManager(HintManager &hm) { hints = &hm; }
+
+    void setBandHintsVisible(const bool visible) {
+        showBandHints = visible;
+        rebuildGridImage();
+        repaint();
+    }
+
+    bool getBandHintsVisible() const { return showBandHints; }
+
+    float getSlope() const override { return slopeDb; }
+
+    // ISpectrumDisplaySettings getters
+    float getMinDb() const override { return range.minDb; }
+    float getMaxDb() const override { return range.maxDb; }
+    float getMinFreq() const override { return range.minFreq; }
+    float getMaxFreq() const override { return range.maxFreq; }
+    juce::Colour getPrimaryColour() const override { return primaryColour; }
+    juce::Colour getSecondaryColour() const override { return secondaryColour; }
+    juce::Colour getRefPrimaryColour() const override { return refPrimaryColour; }
+    juce::Colour getRefSecondaryColour() const override { return refSecondaryColour; }
+
+    /** Left margin reserved for dB axis labels — used by FooterBar to align its buttons. */
+    static constexpr int leftMargin = Layout::SpectrumAnalyzer::leftMargin;
+
+protected:
+    //==============================================================================
+    // AudioVisualizerBase overrides
+    void processDrainedData(int numNewSamples) override;
+
+    void onSampleRateChanged() override;
+
+private:
+    //==============================================================================
+    // Fullscreen toggle button (top-right corner)
+    ToggleButton fullscreenButton{"FS", juce::Colour(ColorPalette::blueAccent), Typography::mainFontSize};
+
+    //==============================================================================
+    // FFT configuration
+    static constexpr int defaultFftOrder = Defaults::fftOrder;
+    static constexpr int maxFftOrder = Layout::SpectrumAnalyzer::fftMaxOrder;
+    static constexpr int maxFifoCapacity = (1 << maxFftOrder) * 2; // 32768
+    static constexpr int minOverlapFactor = Layout::SpectrumAnalyzer::minOverlapFactor;
+    static constexpr int maxOverlapFactor = Layout::SpectrumAnalyzer::maxOverlapFactor;
+
+    // Runtime-configurable dimensions (updated by setFftOrder)
+    int fftOrder = defaultFftOrder;
+    int fftSize = 1 << defaultFftOrder;
+    int fifoCapacity = fftSize * 2;
+    int numBins = fftSize / 2 + 1;
+    int overlapFactor = Defaults::overlapFactor;
+    int hopSize = (1 << defaultFftOrder) / Defaults::overlapFactor;
+
+    //==============================================================================
+    // FFT processing — delegated to FFTProcessor (SRP: DSP separate from rendering)
+    FFTProcessor fftProcessor;
+
+    int hopCounter = 0;
+
+    std::vector<float> smoothedPrimaryDb;
+    std::vector<float> smoothedSecondaryDb;
+
+    //==============================================================================
+    // Rendering — paths built in processDrainedData, drawn in paint
+    juce::Path primaryPath;
+    juce::Path secondaryPath;
+    juce::Image gridImage;
+
+    // Layout margins for labels outside spectrum area
+    static constexpr int topMargin = Layout::SpectrumAnalyzer::topMargin;
+    static constexpr int rightMargin = Layout::SpectrumAnalyzer::rightMargin;
+    static constexpr int bottomMargin = Layout::SpectrumAnalyzer::bottomMargin;
+    juce::Rectangle<float> spectrumArea;
+
+    DisplayRange range;
+
+    // Log-spaced path decimation (numPathPoints is fixed — doesn't depend on fftSize)
+    static constexpr int numPathPoints = Layout::SpectrumAnalyzer::numPathPoints;
+
+    struct PathPoint {
+        float x;
+        int bin0;
+        float frac;
+    };
+
+    std::array<PathPoint, numPathPoints> cachedPathPoints{};
+
+    void precomputePathPoints();
+
+    // Colors — direct mode
+
+    juce::Colour primaryColour{Defaults::primaryColour()};
+    juce::Colour secondaryColour{Defaults::secondaryColour()};
+    // Colors — reference mode
+    juce::Colour refPrimaryColour{Defaults::refPrimaryColour()};
+    juce::Colour refSecondaryColour{Defaults::refSecondaryColour()};
+    bool playRef = false;
+    bool showPrimary = true;
+    bool showSecondary = true;
+    bool showGhost = false;
+    bool sidechainAvailable = false;
+    juce::Colour backgroundColour{ColorPalette::background};
+    juce::Colour gridColour{juce::Colour(ColorPalette::grid).withAlpha(0.5f)};
+    juce::Colour textColour{ColorPalette::textBright};
+    juce::Colour hintColour{ColorPalette::hintPink};
+    juce::Colour bandHeaderColor{ColorPalette::spectrumBorder};
+
+    // Sub-bass glow: 0=none, 1=full. Smoothed per-frame, drawn in paint().
+    float lowFreqGlow = 0.0f;
+
+    // Tooltip + range bars overlay
+    SpectrumTooltip tooltip;
+
+    bool showBandHints = true;
+    int selectedBand = -1; // -1 means none selected, 0-6 are the 7 frequency bands
+    float selectedBandLo = 0.0f; // Low frequency of selected band
+    float selectedBandHi = 0.0f; // High frequency of selected band
+
+    bool isInBandHintsArea(const juce::Point<float> &position) const {
+        constexpr float barY = Layout::SpectrumAnalyzer::barY;
+        constexpr float barH = Layout::SpectrumAnalyzer::barHeight;
+        return position.y >= barY && position.y <= barY + barH
+               && position.x >= spectrumArea.getX() && position.x <= spectrumArea.getRight();
+    }
+
+public:
+    // Band helper functions (delegated to BandConstants)
+    static BandInfo getBandInfo(const size_t bandIndex) { return ::getBandInfo(bandIndex); }
+    static int findBandAtFrequency(const float frequency) { return ::findBandAtFrequency(frequency); }
+
+    bool frozen = false;
+
+    // Target curve overlay (loaded from file)
+    TargetCurve targetCurve;
+    bool targetCurveVisible = true;
+
+    // Infinite peak hold (needs to be accessible to some methods)
+    PeakHold peakHold;
+    int peakHoldThrottleCounter = 0;
+    bool pendingPeakHoldMainRebuild = false;
+    bool pendingPeakHoldGhostRebuild = false;
+    static constexpr int peakHoldRebuildIntervalFrames = Layout::SpectrumAnalyzer::peakHoldRebuildInterval;
+
+    void clearAllCurves();
+
+    // Display slope tilt (-9 to +9 dB)
+    float slopeDb = 0.0f;
+
+    bool auditingActive = false;
+    float currentAuditFreq = Layout::SpectrumAnalyzer::defaultAuditFreq;
+    float currentAuditQ = Layout::SpectrumAnalyzer::defaultAuditQ;
+    juce::Path auditFilterPath;
+    juce::Colour auditFilterColour{ColorPalette::textBright};
+
+    juce::String cachedAuditLabel;
+    int cachedAuditLabelW = 0;
+
+    void updateAuditLabel();
+
+    void buildAuditFilterPath(float width, float height);
+
+    static constexpr float minAuditQ = Layout::SpectrumAnalyzer::minAuditQ;
+    static constexpr float maxAuditQ = Layout::SpectrumAnalyzer::maxAuditQ;
+
+    static float yToAuditQ(float localY, float height);
+
+    void buildPath(juce::Path &path, const std::vector<float> &dbData,
+                   float width, float height, bool closePath = true) const;
+
+    void rebuildGridImage();
+
+    void paintMainPaths(juce::Graphics &g) const;
+
+    mutable juce::ColourGradient cachedPrimaryGrad;
+    mutable juce::ColourGradient cachedSecondaryGrad;
+    mutable juce::Colour lastGradPrimaryCol;
+    mutable juce::Colour lastGradSecondaryCol;
+    mutable float lastGradTy = -1.0f;
+    mutable float lastGradH = -1.0f;
+
+    void paintAuditFilter(juce::Graphics &g) const;
+
+    void paintSelectedBand(juce::Graphics &g) const;
+
+    SmoothingMode smoothingMode = Defaults::smoothing;
+    float curveDecay = Defaults::curveDecay;
+
+    //==============================================================================
+    // Ghost spectrum — shows the "other" signal for visual comparison
+    GhostSpectrum ghostSpectrum{maxFifoCapacity};
+
+
+    ChannelMode channelMode = ChannelMode::MidSide;
+
+    //==============================================================================
+    HintManager *hints = nullptr;
+    HintManager::HintHandle hintHandle;
+
+    enum class HoverRegion { None, BandHints, Spectrum };
+
+    HoverRegion hoverRegion = HoverRegion::None; // tracks previous region to avoid per-frame hint updates
+
+    //==============================================================================
+    // Async file chooser (must outlive the callback)
+    std::unique_ptr<juce::FileChooser> chooser;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrumAnalyzer)
+};

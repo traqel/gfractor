@@ -615,8 +615,8 @@ If you need assistance:
 
 ## Additional Resources
 
-- **JUCE Dev Team README**: `/plugins/juce-dev-team/README.md`
-- **Recommendations**: `/plugins/juce-dev-team/RECOMMENDATIONS.md`
+- **JUCE Dev Team README**: `./README.md`
+- **Roadmap**: `./ROADMAP.md`
 - **Offline Docs**: `docs/INDEX.md` (after running `/setup-offline-docs`)
 - **JUCE Forum**: https://forum.juce.com/
 - **JUCE Tutorials**: https://juce.com/learn/tutorials

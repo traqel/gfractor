@@ -2,12 +2,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
-    tags:
-      - 'v*'
+    branches: [ develop ]
   pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch:
+    branches: [ develop ]
 
 env:
   BUILD_TYPE: Release
@@ -36,6 +33,13 @@ jobs:
             artifact_path: |
               build/*_artefacts/Release/VST3/*.vst3
 
+          - name: Linux
+            os: ubuntu-latest
+            cmake_args: ""
+            artifact_name: Linux
+            artifact_path: |
+              build/*_artefacts/Release/VST3/*.vst3
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,16 +53,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libasound2-dev \
-            libfreetype6-dev \
+            libfreetype-dev \
+            libfontconfig1-dev \
             libx11-dev \
             libxcomposite-dev \
             libxcursor-dev \
             libxinerama-dev \
             libxrandr-dev \
             libxrender-dev \
-            libgl1-mesa-dev \
-            libglu1-mesa-dev \
-            webkit2gtk-4.0
+            libgl-dev \
+            libglu1-mesa-dev
 
       - name: Cache CMake build
         uses: actions/cache@v4
