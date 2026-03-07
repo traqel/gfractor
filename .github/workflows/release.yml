@@ -51,7 +51,7 @@ jobs:
 
           - name: Windows
             os: windows-latest
-            artifact_ext: zip
+            artifact_ext: exe
 
           - name: Linux
             os: ubuntu-latest
@@ -87,46 +87,69 @@ jobs:
       - name: Run Tests
         run: ctest --test-dir build --build-config ${{ env.BUILD_TYPE }} --output-on-failure
 
-      - name: Package (Linux .deb)
-        if: matrix.os == 'ubuntu-latest'
-        run: cpack -G DEB --config build/CPackConfig.cmake
+      # ── Linux .deb package (dpkg-deb) ────────────────────────────────────────
 
-      - name: Rename Linux artifact
+      # 1. Stage VST3 into FHS path: /usr/lib/vst3/
+      - name: Stage Linux plugin files
         if: matrix.os == 'ubuntu-latest'
-        run: mv gFractor-*-Linux.deb ${{ env.PLUGIN_NAME }}-Linux-${{ needs.create-release.outputs.version }}.deb
-        shell: bash
+        run: |
+          mkdir -p deb_root/usr/lib/vst3
+          cp -r build/*_artefacts/Release/VST3/*.vst3 deb_root/usr/lib/vst3/
+
+      # 2. Write the DEBIAN/control file — dpkg metadata required by apt/dpkg.
+      #    Architecture must match the runner (amd64 for ubuntu-latest).
+      - name: Create DEBIAN control file (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          mkdir -p deb_root/DEBIAN
+          cat > deb_root/DEBIAN/control <<EOF
+          Package: gfractor
+          Version: $VERSION
+          Architecture: amd64
+          Maintainer: Growl Audio <support@growlaudio.com>
+          Section: sound
+          Priority: optional
+          Description: gFractor audio plugin (VST3)
+           Spectral fracturing audio effect plugin.
+          EOF
+
+      # 3. dpkg-deb builds the .deb from the staged root.
+      #    --root-owner-group sets all file ownership to root:root as required.
+      - name: Build .deb package (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          ARTIFACT="${{ env.PLUGIN_NAME }}-Linux-$VERSION.deb"
+          dpkg-deb --build --root-owner-group deb_root "$ARTIFACT"
+          echo "ARTIFACT_PATH=$ARTIFACT" >> $GITHUB_ENV
 
       # macOS Code Signing
-      - name: Sign and Notarize (macOS)
+      - name: Sign (macOS)
         if: matrix.os == 'macos-latest' && env.CODESIGN_IDENTITY != ''
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
-          # Sign VST3
           codesign --deep --force --verify --verbose \
             --sign "$CODESIGN_IDENTITY" \
             build/*_artefacts/Release/VST3/*.vst3
 
-          # Sign AU
-          codesign --deep --force --verify --verbose \
-            --sign "$CODESIGN_IDENTITY" \
-            build/*_artefacts/Release/AU/*.component
+          if ls build/*_artefacts/Release/AU/*.component 1>/dev/null 2>&1; then
+            codesign --deep --force --verify --verbose \
+              --sign "$CODESIGN_IDENTITY" \
+              build/*_artefacts/Release/AU/*.component
+          fi
 
       # Windows Code Signing
       - name: Sign (Windows)
         if: matrix.os == 'windows-latest' && env.WINDOWS_CERT_PASSWORD != ''
+        shell: pwsh
         run: |
-          # Decode certificate from base64
-          echo "${{ secrets.WINDOWS_CERT_BASE64 }}" | base64 -d > cert.pfx
+          $cert = [System.Convert]::FromBase64String("${{ secrets.WINDOWS_CERT_BASE64 }}")
+          [System.IO.File]::WriteAllBytes("cert.pfx", $cert)
 
-          # Sign VST3
-          signtool sign /f cert.pfx /p "$env:WINDOWS_CERT_PASSWORD" \
-            /t http://timestamp.digicert.com \
-            build/*_artefacts/Release/VST3/*.vst3
+          $vst3 = (Get-Item "build\*_artefacts\Release\VST3\*.vst3").FullName
+          & signtool sign /f cert.pfx /p $env:WINDOWS_CERT_PASSWORD `
+            /t http://timestamp.digicert.com $vst3
 
-          # Clean up certificate
           Remove-Item cert.pfx
 
       # ── macOS .pkg installer ──────────────────────────────────────────────────
@@ -216,18 +239,52 @@ jobs:
             "$ARTIFACT"
           echo "ARTIFACT_PATH=$ARTIFACT" >> $GITHUB_ENV
 
-      - name: Package Windows artifacts
+      # ── Windows .exe installer (InnoSetup) ───────────────────────────────────
+
+      # 1. Generate the InnoSetup script (.iss) from a PowerShell here-string.
+      #    VST3 installs to {commoncf64}\VST3 = C:\Program Files\Common Files\VST3\
+      - name: Create InnoSetup script (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           $version = "${{ needs.create-release.outputs.version }}"
-          $artifact = "${{ env.PLUGIN_NAME }}-Windows-$version.zip"
-          Compress-Archive -Path build/*_artefacts/Release/VST3 -DestinationPath $artifact
-          echo "ARTIFACT_PATH=$artifact" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $pluginName = "${{ env.PLUGIN_NAME }}"
+          $vst3Dir = (Get-Item "build\*_artefacts\Release\VST3").FullName
 
-      - name: Set Linux artifact path
-        if: matrix.os == 'ubuntu-latest'
-        run: echo "ARTIFACT_PATH=${{ env.PLUGIN_NAME }}-Linux-${{ needs.create-release.outputs.version }}.deb" >> $GITHUB_ENV
+          $iss = @"
+          [Setup]
+          AppName=$pluginName
+          AppVersion=$version
+          AppPublisher=Growl Audio
+          DefaultDirName={commoncf64}\VST3
+          DefaultGroupName=$pluginName
+          DisableDirPage=yes
+          OutputDir=.
+          OutputBaseFilename=$pluginName-Windows-$version
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64
+
+          [Files]
+          Source: "$vst3Dir\*"; DestDir: "{commoncf64}\VST3"; Flags: recursesubdirs ignoreversion
+
+          [Icons]
+          Name: "{group}\Uninstall $pluginName"; Filename: "{uninstallexe}"
+          "@
+
+          $iss | Out-File -FilePath "$pluginName.iss" -Encoding utf8
+
+      # 2. Run InnoSetup compiler (iscc) — pre-installed on GitHub Windows runners.
+      #    Outputs a single self-contained .exe installer.
+      - name: Build .exe installer (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $pluginName = "${{ env.PLUGIN_NAME }}"
+          $version = "${{ needs.create-release.outputs.version }}"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "$pluginName.iss"
+          $artifact = "$pluginName-Windows-$version.exe"
+          echo "ARTIFACT_PATH=$artifact" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
