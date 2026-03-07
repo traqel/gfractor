@@ -217,9 +217,11 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
             this);
     };
     headerBar->onCheckForUpdates = [] {
-        juce::URL("https://growl-audio.com/gfractor/updates").launchInDefaultBrowser();
+        // ReSharper disable once CppExpressionWithoutSideEffects
+        juce::URL("https://growl-audio.com/#download").launchInDefaultBrowser();
     };
     headerBar->onManual = [] {
+        // ReSharper disable once CppExpressionWithoutSideEffects
         juce::URL("https://growl-audio.com/gfractor/manual").launchInDefaultBrowser();
     };
 

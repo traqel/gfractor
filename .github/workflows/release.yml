@@ -53,11 +53,30 @@ jobs:
             installer_script: Scripts/create_installer_windows.bat
             artifact_pattern: "*.exe"
 
+          - name: Linux
+            os: ubuntu-latest
+            artifact_pattern: "deb"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libasound2-dev \
+            libfreetype-dev \
+            libfontconfig1-dev \
+            libx11-dev \
+            libxext-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libgl-dev
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
@@ -67,6 +86,14 @@ jobs:
 
       - name: Run Tests
         run: ctest --test-dir build --build-config ${{ env.BUILD_TYPE }} --output-on-failure
+
+      - name: Package (Linux .deb)
+        if: matrix.os == 'ubuntu-latest'
+        run: cpack -G DEB --config build/CPackConfig.cmake
+
+      - name: Rename Linux artifact
+        if: matrix.os == 'ubuntu-latest'
+        run: mv gFractor-*-Linux.deb ${{ env.PLUGIN_NAME }}-Linux-${{ needs.create-release.outputs.version }}.deb
 
       # macOS Code Signing
       - name: Sign and Notarize (macOS)
