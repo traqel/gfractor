@@ -2,13 +2,15 @@ name: Release
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    tags:
+      - 'v*'
 
 env:
   BUILD_TYPE: Release
   PLUGIN_NAME: gFractor
+
+permissions:
+  contents: write
 
 jobs:
   create-release:
