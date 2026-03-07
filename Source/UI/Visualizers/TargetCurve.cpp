@@ -1,4 +1,5 @@
 #include "TargetCurve.h"
+#include <cmath>
 #include "../Theme/LayoutConstants.h"
 
 bool TargetCurve::loadFromFile(const juce::File &file) {
@@ -16,11 +17,18 @@ bool TargetCurve::loadFromFile(const juce::File &file) {
     if (obj == nullptr)
         return false;
 
+    // Verify this is actually a target curve file
+    const auto type = obj->getProperty("type").toString();
+    if (type != "target_curve")
+        return false;
+
     data.fftSize = static_cast<int>(obj->getProperty("fftSize"));
     data.numBins = static_cast<int>(obj->getProperty("numBins"));
     data.sampleRate = static_cast<double>(obj->getProperty("sampleRate"));
 
-    if (data.fftSize <= 0 || data.numBins <= 0 || data.sampleRate <= 0.0)
+    // Sanity checks: reject invalid or absurdly large values
+    static constexpr int maxBins = 65536;
+    if (data.fftSize <= 0 || data.numBins <= 0 || data.numBins > maxBins || data.sampleRate <= 0.0)
         return false;
 
     auto *primaryArr = obj->getProperty("primaryDb").getArray();
@@ -37,8 +45,17 @@ bool TargetCurve::loadFromFile(const juce::File &file) {
 
     for (int i = 0; i < data.numBins; ++i) {
         const auto idx = static_cast<size_t>(i);
-        data.primaryDb[idx] = static_cast<float>(static_cast<double>((*primaryArr)[i]));
-        data.secondaryDb[idx] = static_cast<float>(static_cast<double>((*secondaryArr)[i]));
+        const auto pVal = static_cast<float>(static_cast<double>((*primaryArr)[i]));
+        const auto sVal = static_cast<float>(static_cast<double>((*secondaryArr)[i]));
+
+        // Reject NaN/Inf values
+        if (!std::isfinite(pVal) || !std::isfinite(sVal)) {
+            clear();
+            return false;
+        }
+
+        data.primaryDb[idx] = pVal;
+        data.secondaryDb[idx] = sVal;
     }
 
     loaded = true;
@@ -53,7 +70,9 @@ void TargetCurve::clear() {
 }
 
 float TargetCurve::interpolateDb(const std::vector<float> &dbData, const float freqHz) const {
-    const float binFloat = static_cast<float>(freqHz * static_cast<float>(data.fftSize) / static_cast<float>(data.sampleRate));
+    if (dbData.empty()) return -100.0f;
+
+    const float binFloat = freqHz * static_cast<float>(data.fftSize) / static_cast<float>(data.sampleRate);
     const int bin0 = static_cast<int>(binFloat);
     const float frac = binFloat - static_cast<float>(bin0);
 

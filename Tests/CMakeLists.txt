@@ -20,6 +20,7 @@ file(GLOB_RECURSE DSP_SOURCES
 # Additional source files needed by core tests (not under DSP/)
 set(CORE_SOURCES
     "${CMAKE_SOURCE_DIR}/Source/UI/Visualizers/PeakHold.cpp"
+    "${CMAKE_SOURCE_DIR}/Source/UI/Visualizers/TargetCurve.cpp"
     "${CMAKE_SOURCE_DIR}/Source/State/PluginState.cpp"
     "${CMAKE_SOURCE_DIR}/Source/State/PresetManager.cpp"
 )

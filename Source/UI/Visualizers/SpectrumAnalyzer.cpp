@@ -699,7 +699,12 @@ void SpectrumAnalyzer::loadTargetCurve(std::function<void(bool)> onLoaded) {
                                  if (callback) callback(false);
                                  return;
                              }
-                             const bool ok = targetCurve.loadFromFile(file);
+                             bool ok = false;
+                             try {
+                                 ok = targetCurve.loadFromFile(file);
+                             } catch (...) {
+                                 targetCurve.clear();
+                             }
                              if (ok) {
                                  targetCurve.buildPaths(range, spectrumArea.getWidth(), spectrumArea.getHeight());
                                  repaint();
