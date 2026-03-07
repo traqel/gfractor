@@ -47,17 +47,15 @@ jobs:
         include:
           - name: macOS
             os: macos-latest
-            installer_script: Scripts/create_installer_macos.sh
-            artifact_pattern: "*.pkg"
+            artifact_ext: pkg
 
           - name: Windows
             os: windows-latest
-            installer_script: Scripts/create_installer_windows.bat
-            artifact_pattern: "*.exe"
+            artifact_ext: zip
 
           - name: Linux
             os: ubuntu-latest
-            artifact_pattern: "deb"
+            artifact_ext: deb
 
     steps:
       - name: Checkout code
@@ -96,6 +94,7 @@ jobs:
       - name: Rename Linux artifact
         if: matrix.os == 'ubuntu-latest'
         run: mv gFractor-*-Linux.deb ${{ env.PLUGIN_NAME }}-Linux-${{ needs.create-release.outputs.version }}.deb
+        shell: bash
 
       # macOS Code Signing
       - name: Sign and Notarize (macOS)
@@ -130,11 +129,105 @@ jobs:
           # Clean up certificate
           Remove-Item cert.pfx
 
-      # Create installers
-      - name: Create Installer
+      # ── macOS .pkg installer ──────────────────────────────────────────────────
+
+      # 1. Copy built plugins into staging directories that mirror install paths.
+      #    VST3  → /Library/Audio/Plug-Ins/VST3/
+      #    AU    → /Library/Audio/Plug-Ins/Components/  (created only if present)
+      - name: Stage macOS plugin files
+        if: matrix.os == 'macos-latest'
         run: |
-          echo "Installer creation placeholder"
-          echo "Add installer build script here (Packages for macOS, InnoSetup for Windows)"
+          mkdir -p pkg_root/VST3/Library/Audio/Plug-Ins/VST3
+          cp -r build/*_artefacts/Release/VST3/*.vst3 \
+            pkg_root/VST3/Library/Audio/Plug-Ins/VST3/
+          if ls build/*_artefacts/Release/AU/*.component 1>/dev/null 2>&1; then
+            mkdir -p pkg_root/AU/Library/Audio/Plug-Ins/Components
+            cp -r build/*_artefacts/Release/AU/*.component \
+              pkg_root/AU/Library/Audio/Plug-Ins/Components/
+            echo "HAS_AU=true" >> $GITHUB_ENV
+          fi
+          mkdir -p pkg_components
+
+      # 2. pkgbuild wraps each staged root into a relocatable component .pkg.
+      #    --install-location / means paths inside pkg_root are absolute on disk.
+      - name: Build component packages (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          pkgbuild \
+            --root pkg_root/VST3 \
+            --identifier com.growlaudio.gfractor.vst3 \
+            --version "$VERSION" \
+            --install-location / \
+            pkg_components/${{ env.PLUGIN_NAME }}_VST3.pkg
+          if [ "$HAS_AU" = "true" ]; then
+            pkgbuild \
+              --root pkg_root/AU \
+              --identifier com.growlaudio.gfractor.au \
+              --version "$VERSION" \
+              --install-location / \
+              pkg_components/${{ env.PLUGIN_NAME }}_AU.pkg
+          fi
+
+      # 3. Emit a distribution XML that productbuild uses for the installer UI.
+      #    Each <choice> maps to a selectable component in the installer wizard.
+      - name: Create distribution XML (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          {
+            echo '<?xml version="1.0" encoding="utf-8"?>'
+            echo '<installer-gui-script minSpecVersion="2">'
+            echo "  <title>${{ env.PLUGIN_NAME }} $VERSION</title>"
+            echo '  <options customize="allow" require-scripts="false" hostArchitectures="arm64,x86_64"/>'
+            echo '  <choices-outline>'
+            echo '    <line choice="com.growlaudio.gfractor.vst3"/>'
+            if [ "$HAS_AU" = "true" ]; then
+              echo '    <line choice="com.growlaudio.gfractor.au"/>'
+            fi
+            echo '  </choices-outline>'
+            echo '  <choice id="com.growlaudio.gfractor.vst3" title="VST3">'
+            echo '    <pkg-ref id="com.growlaudio.gfractor.vst3"/>'
+            echo '  </choice>'
+            if [ "$HAS_AU" = "true" ]; then
+              echo '  <choice id="com.growlaudio.gfractor.au" title="Audio Unit (AU)">'
+              echo '    <pkg-ref id="com.growlaudio.gfractor.au"/>'
+              echo '  </choice>'
+            fi
+            echo "  <pkg-ref id=\"com.growlaudio.gfractor.vst3\" version=\"$VERSION\">${{ env.PLUGIN_NAME }}_VST3.pkg</pkg-ref>"
+            if [ "$HAS_AU" = "true" ]; then
+              echo "  <pkg-ref id=\"com.growlaudio.gfractor.au\" version=\"$VERSION\">${{ env.PLUGIN_NAME }}_AU.pkg</pkg-ref>"
+            fi
+            echo '</installer-gui-script>'
+          } > distribution.xml
+
+      # 4. productbuild assembles the component packages + distribution XML into
+      #    a single signed installer. Without a Developer ID Installer cert this
+      #    produces an unsigned .pkg (fine for local testing).
+      - name: Build .pkg installer (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          ARTIFACT="${{ env.PLUGIN_NAME }}-macOS-$VERSION.pkg"
+          productbuild \
+            --distribution distribution.xml \
+            --package-path pkg_components \
+            --version "$VERSION" \
+            "$ARTIFACT"
+          echo "ARTIFACT_PATH=$ARTIFACT" >> $GITHUB_ENV
+
+      - name: Package Windows artifacts
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $version = "${{ needs.create-release.outputs.version }}"
+          $artifact = "${{ env.PLUGIN_NAME }}-Windows-$version.zip"
+          Compress-Archive -Path build/*_artefacts/Release/VST3 -DestinationPath $artifact
+          echo "ARTIFACT_PATH=$artifact" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Set Linux artifact path
+        if: matrix.os == 'ubuntu-latest'
+        run: echo "ARTIFACT_PATH=${{ env.PLUGIN_NAME }}-Linux-${{ needs.create-release.outputs.version }}.deb" >> $GITHUB_ENV
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -142,6 +235,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./${{ env.PLUGIN_NAME }}-${{ matrix.name }}-${{ needs.create-release.outputs.version }}.${{ matrix.artifact_pattern }}
-          asset_name: ${{ env.PLUGIN_NAME }}-${{ matrix.name }}-${{ needs.create-release.outputs.version }}.${{ matrix.artifact_pattern }}
+          asset_path: ${{ env.ARTIFACT_PATH }}
+          asset_name: ${{ env.PLUGIN_NAME }}-${{ matrix.name }}-${{ needs.create-release.outputs.version }}.${{ matrix.artifact_ext }}
           asset_content_type: application/octet-stream
