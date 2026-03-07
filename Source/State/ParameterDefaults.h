@@ -32,7 +32,7 @@ namespace ParameterDefaults {
     // Output Mid enable defaults
     namespace OutputMid {
         inline constexpr bool defaultValue = true;
-        inline const juce::String name = "Mid";
+        inline const juce::String name = "mid";
     }
 
     // Output Side enable defaults

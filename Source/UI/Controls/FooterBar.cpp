@@ -9,6 +9,9 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
                      ISpectrumControls &controls)
     : processorRef(processor),
       controlsRef(controls) {
+    const juce::String dotSvg =
+        R"(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#000000"/></svg>)";
+
     // Reference pill — not APVTS-bound, callback-driven
     referencePill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(referencePill);
@@ -42,6 +45,7 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
 
     // Primary pill — APVTS-bound
     primaryPill.attachToParameter(processorRef.getAPVTS(), "outputPrimaryEnable");
+    primaryPill.setLeftIcon(dotSvg, false, Layout::PillButton::dotIconSize);
     primaryPill.onClick = [this] {
         controlsRef.setPrimaryVisible(primaryPill.getToggleState());
     };
@@ -49,6 +53,7 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
 
     // Secondary pill — APVTS-bound
     secondaryPill.attachToParameter(processorRef.getAPVTS(), "outputSecondaryEnable");
+    secondaryPill.setLeftIcon(dotSvg, false, Layout::PillButton::dotIconSize);
     secondaryPill.onClick = [this] {
         controlsRef.setSecondaryVisible(secondaryPill.getToggleState());
     };

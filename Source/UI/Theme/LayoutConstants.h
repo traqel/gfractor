@@ -13,7 +13,11 @@ namespace Layout {
         inline constexpr float buttonHeight = 28;
         inline constexpr int smallSquareButton = 20;
         inline constexpr int normalSquareButton = 28;
-
+        inline constexpr float leftIconPadding = 6.0f;
+        inline constexpr float leftIconGap = 10.0f;
+        inline constexpr float dotIconSize = 6.0f;
+        inline constexpr float ledGlowRadius = 1.6f;
+        inline constexpr float ledGlowAlpha = 0.25f;
     }
 
     //==========================================================================
