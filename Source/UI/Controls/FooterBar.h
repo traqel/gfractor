@@ -48,6 +48,7 @@ public:
     ToggleButton &getFreezePill() { return freezePill; }
     ToggleButton &getGhostPill() { return ghostPill; }
     ToggleButton &getInfinitePill() { return infinitePill; }
+    ToggleButton &getTargetPill() { return targetPill; }
     DropdownPill &getModePill() { return modePill; }
 
     /** Left margin from SpectrumAnalyzer — used for button alignment. */

@@ -369,6 +369,13 @@ gFractorAudioProcessorEditor::gFractorAudioProcessorEditor(gFractorAudioProcesso
             meteringPanel.setVisible(visible);
             resized();
         };
+        actions.onTarget      = [this]() {
+            auto &pill = footerBar.getTargetPill();
+            if (!pill.isEnabled()) return;
+            const bool ns = !pill.getToggleState();
+            pill.setToggleState(ns, juce::dontSendNotification);
+            spectrumAnalyzer.setTargetCurveVisible(ns);
+        };
         actions.onPerformance = [this]() { togglePerformanceDisplay(); };
         uiController.configure(std::move(actions));
     }

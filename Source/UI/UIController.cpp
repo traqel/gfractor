@@ -25,6 +25,7 @@ void UIController::configure(Actions a) {
     onCycleOverlap        = std::move(a.onCycleOverlap);
     onCycleFFT            = std::move(a.onCycleFFT);
     onMeters              = std::move(a.onMeters);
+    onTarget              = std::move(a.onTarget);
     onPerformance         = std::move(a.onPerformance);
 }
 
@@ -112,6 +113,12 @@ bool UIController::keyPressed(const juce::KeyPress &key) const {
     // W — Fullscreen
     if (key == juce::KeyPress('w')) {
         if (onFullscreen) onFullscreen();
+        return true;
+    }
+
+    // T — toggle Target curve visibility
+    if (key == juce::KeyPress('t')) {
+        if (onTarget) onTarget();
         return true;
     }
 

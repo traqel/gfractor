@@ -261,7 +261,7 @@ void FooterBar::mouseEnter(const juce::MouseEvent &e) {
         title = "CLICK";
         hint = "Load target curve from file";
     } else if (c == &targetPill) {
-        title = "CLICK";
+        title = "CLICK | KEY T";
         hint = "Show / hide target curve";
     } else if (c == &metersPill) {
         title = "CLICK";

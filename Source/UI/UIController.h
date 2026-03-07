@@ -39,6 +39,7 @@ public:
         std::function<void()>         onCycleOverlap;
         std::function<void()>         onCycleFFT;
         std::function<void(bool)>     onMeters;
+        std::function<void()>         onTarget;
         std::function<void()>         onPerformance;
     };
 
@@ -78,5 +79,6 @@ private:
     std::function<void()>         onCycleOverlap;
     std::function<void()>         onCycleFFT;
     std::function<void(bool)>     onMeters;
+    std::function<void()>         onTarget;
     std::function<void()>         onPerformance;
 };
