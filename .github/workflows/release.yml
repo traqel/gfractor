@@ -47,17 +47,15 @@ jobs:
         include:
           - name: macOS
             os: macos-latest
-            installer_script: Scripts/create_installer_macos.sh
-            artifact_pattern: "*.pkg"
+            artifact_ext: pkg
 
           - name: Windows
             os: windows-latest
-            installer_script: Scripts/create_installer_windows.bat
-            artifact_pattern: "*.exe"
+            artifact_ext: exe
 
           - name: Linux
             os: ubuntu-latest
-            artifact_pattern: "deb"
+            artifact_ext: deb
 
     steps:
       - name: Checkout code
@@ -89,52 +87,204 @@ jobs:
       - name: Run Tests
         run: ctest --test-dir build --build-config ${{ env.BUILD_TYPE }} --output-on-failure
 
-      - name: Package (Linux .deb)
-        if: matrix.os == 'ubuntu-latest'
-        run: cpack -G DEB --config build/CPackConfig.cmake
+      # ── Linux .deb package (dpkg-deb) ────────────────────────────────────────
 
-      - name: Rename Linux artifact
+      # 1. Stage VST3 into FHS path: /usr/lib/vst3/
+      - name: Stage Linux plugin files
         if: matrix.os == 'ubuntu-latest'
-        run: mv gFractor-*-Linux.deb ${{ env.PLUGIN_NAME }}-Linux-${{ needs.create-release.outputs.version }}.deb
+        run: |
+          mkdir -p deb_root/usr/lib/vst3
+          cp -r build/*_artefacts/Release/VST3/*.vst3 deb_root/usr/lib/vst3/
+
+      # 2. Write the DEBIAN/control file — dpkg metadata required by apt/dpkg.
+      #    Architecture must match the runner (amd64 for ubuntu-latest).
+      - name: Create DEBIAN control file (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          mkdir -p deb_root/DEBIAN
+          cat > deb_root/DEBIAN/control <<EOF
+          Package: gfractor
+          Version: $VERSION
+          Architecture: amd64
+          Maintainer: Growl Audio <support@growlaudio.com>
+          Section: sound
+          Priority: optional
+          Description: gFractor audio plugin (VST3)
+           Spectral fracturing audio effect plugin.
+          EOF
+
+      # 3. dpkg-deb builds the .deb from the staged root.
+      #    --root-owner-group sets all file ownership to root:root as required.
+      - name: Build .deb package (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          ARTIFACT="${{ env.PLUGIN_NAME }}-Linux-$VERSION.deb"
+          dpkg-deb --build --root-owner-group deb_root "$ARTIFACT"
+          echo "ARTIFACT_PATH=$ARTIFACT" >> $GITHUB_ENV
 
       # macOS Code Signing
-      - name: Sign and Notarize (macOS)
+      - name: Sign (macOS)
         if: matrix.os == 'macos-latest' && env.CODESIGN_IDENTITY != ''
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
-          # Sign VST3
           codesign --deep --force --verify --verbose \
             --sign "$CODESIGN_IDENTITY" \
             build/*_artefacts/Release/VST3/*.vst3
 
-          # Sign AU
-          codesign --deep --force --verify --verbose \
-            --sign "$CODESIGN_IDENTITY" \
-            build/*_artefacts/Release/AU/*.component
+          if ls build/*_artefacts/Release/AU/*.component 1>/dev/null 2>&1; then
+            codesign --deep --force --verify --verbose \
+              --sign "$CODESIGN_IDENTITY" \
+              build/*_artefacts/Release/AU/*.component
+          fi
 
       # Windows Code Signing
       - name: Sign (Windows)
         if: matrix.os == 'windows-latest' && env.WINDOWS_CERT_PASSWORD != ''
+        shell: pwsh
         run: |
-          # Decode certificate from base64
-          echo "${{ secrets.WINDOWS_CERT_BASE64 }}" | base64 -d > cert.pfx
+          $cert = [System.Convert]::FromBase64String("${{ secrets.WINDOWS_CERT_BASE64 }}")
+          [System.IO.File]::WriteAllBytes("cert.pfx", $cert)
 
-          # Sign VST3
-          signtool sign /f cert.pfx /p "$env:WINDOWS_CERT_PASSWORD" \
-            /t http://timestamp.digicert.com \
-            build/*_artefacts/Release/VST3/*.vst3
+          $vst3 = (Get-Item "build\*_artefacts\Release\VST3\*.vst3").FullName
+          & signtool sign /f cert.pfx /p $env:WINDOWS_CERT_PASSWORD `
+            /t http://timestamp.digicert.com $vst3
 
-          # Clean up certificate
           Remove-Item cert.pfx
 
-      # Create installers
-      - name: Create Installer
+      # ── macOS .pkg installer ──────────────────────────────────────────────────
+
+      # 1. Copy built plugins into staging directories that mirror install paths.
+      #    VST3  → /Library/Audio/Plug-Ins/VST3/
+      #    AU    → /Library/Audio/Plug-Ins/Components/  (created only if present)
+      - name: Stage macOS plugin files
+        if: matrix.os == 'macos-latest'
         run: |
-          echo "Installer creation placeholder"
-          echo "Add installer build script here (Packages for macOS, InnoSetup for Windows)"
+          mkdir -p pkg_root/VST3/Library/Audio/Plug-Ins/VST3
+          cp -r build/*_artefacts/Release/VST3/*.vst3 \
+            pkg_root/VST3/Library/Audio/Plug-Ins/VST3/
+          if ls build/*_artefacts/Release/AU/*.component 1>/dev/null 2>&1; then
+            mkdir -p pkg_root/AU/Library/Audio/Plug-Ins/Components
+            cp -r build/*_artefacts/Release/AU/*.component \
+              pkg_root/AU/Library/Audio/Plug-Ins/Components/
+            echo "HAS_AU=true" >> $GITHUB_ENV
+          fi
+          mkdir -p pkg_components
+
+      # 2. pkgbuild wraps each staged root into a relocatable component .pkg.
+      #    --install-location / means paths inside pkg_root are absolute on disk.
+      - name: Build component packages (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          pkgbuild \
+            --root pkg_root/VST3 \
+            --identifier com.growlaudio.gfractor.vst3 \
+            --version "$VERSION" \
+            --install-location / \
+            pkg_components/${{ env.PLUGIN_NAME }}_VST3.pkg
+          if [ "$HAS_AU" = "true" ]; then
+            pkgbuild \
+              --root pkg_root/AU \
+              --identifier com.growlaudio.gfractor.au \
+              --version "$VERSION" \
+              --install-location / \
+              pkg_components/${{ env.PLUGIN_NAME }}_AU.pkg
+          fi
+
+      # 3. Emit a distribution XML that productbuild uses for the installer UI.
+      #    Each <choice> maps to a selectable component in the installer wizard.
+      - name: Create distribution XML (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          {
+            echo '<?xml version="1.0" encoding="utf-8"?>'
+            echo '<installer-gui-script minSpecVersion="2">'
+            echo "  <title>${{ env.PLUGIN_NAME }} $VERSION</title>"
+            echo '  <options customize="allow" require-scripts="false" hostArchitectures="arm64,x86_64"/>'
+            echo '  <choices-outline>'
+            echo '    <line choice="com.growlaudio.gfractor.vst3"/>'
+            if [ "$HAS_AU" = "true" ]; then
+              echo '    <line choice="com.growlaudio.gfractor.au"/>'
+            fi
+            echo '  </choices-outline>'
+            echo '  <choice id="com.growlaudio.gfractor.vst3" title="VST3">'
+            echo '    <pkg-ref id="com.growlaudio.gfractor.vst3"/>'
+            echo '  </choice>'
+            if [ "$HAS_AU" = "true" ]; then
+              echo '  <choice id="com.growlaudio.gfractor.au" title="Audio Unit (AU)">'
+              echo '    <pkg-ref id="com.growlaudio.gfractor.au"/>'
+              echo '  </choice>'
+            fi
+            echo "  <pkg-ref id=\"com.growlaudio.gfractor.vst3\" version=\"$VERSION\">${{ env.PLUGIN_NAME }}_VST3.pkg</pkg-ref>"
+            if [ "$HAS_AU" = "true" ]; then
+              echo "  <pkg-ref id=\"com.growlaudio.gfractor.au\" version=\"$VERSION\">${{ env.PLUGIN_NAME }}_AU.pkg</pkg-ref>"
+            fi
+            echo '</installer-gui-script>'
+          } > distribution.xml
+
+      # 4. productbuild assembles the component packages + distribution XML into
+      #    a single signed installer. Without a Developer ID Installer cert this
+      #    produces an unsigned .pkg (fine for local testing).
+      - name: Build .pkg installer (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          ARTIFACT="${{ env.PLUGIN_NAME }}-macOS-$VERSION.pkg"
+          productbuild \
+            --distribution distribution.xml \
+            --package-path pkg_components \
+            --version "$VERSION" \
+            "$ARTIFACT"
+          echo "ARTIFACT_PATH=$ARTIFACT" >> $GITHUB_ENV
+
+      # ── Windows .exe installer (InnoSetup) ───────────────────────────────────
+
+      # 1. Generate the InnoSetup script (.iss) from a PowerShell here-string.
+      #    VST3 installs to {commoncf64}\VST3 = C:\Program Files\Common Files\VST3\
+      - name: Create InnoSetup script (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $version = "${{ needs.create-release.outputs.version }}"
+          $pluginName = "${{ env.PLUGIN_NAME }}"
+          $vst3Dir = (Get-Item "build\*_artefacts\Release\VST3").FullName
+
+          $iss = @"
+          [Setup]
+          AppName=$pluginName
+          AppVersion=$version
+          AppPublisher=Growl Audio
+          DefaultDirName={commoncf64}\VST3
+          DefaultGroupName=$pluginName
+          DisableDirPage=yes
+          OutputDir=.
+          OutputBaseFilename=$pluginName-Windows-$version
+          Compression=lzma2
+          SolidCompression=yes
+          ArchitecturesInstallIn64BitMode=x64
+
+          [Files]
+          Source: "$vst3Dir\*"; DestDir: "{commoncf64}\VST3"; Flags: recursesubdirs ignoreversion
+
+          [Icons]
+          Name: "{group}\Uninstall $pluginName"; Filename: "{uninstallexe}"
+          "@
+
+          $iss | Out-File -FilePath "$pluginName.iss" -Encoding utf8
+
+      # 2. Run InnoSetup compiler (iscc) — pre-installed on GitHub Windows runners.
+      #    Outputs a single self-contained .exe installer.
+      - name: Build .exe installer (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $pluginName = "${{ env.PLUGIN_NAME }}"
+          $version = "${{ needs.create-release.outputs.version }}"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "$pluginName.iss"
+          $artifact = "$pluginName-Windows-$version.exe"
+          echo "ARTIFACT_PATH=$artifact" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -142,6 +292,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./${{ env.PLUGIN_NAME }}-${{ matrix.name }}-${{ needs.create-release.outputs.version }}.${{ matrix.artifact_pattern }}
-          asset_name: ${{ env.PLUGIN_NAME }}-${{ matrix.name }}-${{ needs.create-release.outputs.version }}.${{ matrix.artifact_pattern }}
+          asset_path: ${{ env.ARTIFACT_PATH }}
+          asset_name: ${{ env.PLUGIN_NAME }}-${{ matrix.name }}-${{ needs.create-release.outputs.version }}.${{ matrix.artifact_ext }}
           asset_content_type: application/octet-stream
