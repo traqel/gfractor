@@ -13,10 +13,13 @@ HintBar::HintBar() {
     addAndMakeVisible(overlapPill);
     addAndMakeVisible(decayPill);
     addAndMakeVisible(slopePill);
+    addAndMakeVisible(dividerAfterSlp);
+    addAndMakeVisible(dividerAfterDcy);
+    addAndMakeVisible(dividerAfterOvl);
 }
 
 void HintBar::paint(juce::Graphics &g) {
-    g.fillAll(juce::Colour(ColorPalette::panel).withAlpha(0.95f));
+    g.fillAll(juce::Colour(ColorPalette::background).withAlpha(0.95f));
 
     constexpr int paddingX = 12;
     const auto textArea = getLocalBounds().reduced(paddingX, 0).toFloat()
@@ -62,23 +65,37 @@ void HintBar::resized() {
     const auto area = getLocalBounds();
     const int pillY = (area.getHeight() - pillH) / 2;
 
+    constexpr int divW = Spacing::gapL;
+
     // FFT pill — rightmost
     const int fftPillX = area.getRight() - pillW - paddingX;
     fftPill.setBounds(fftPillX, pillY, pillW, pillH);
     fftLabelBounds = {fftPillX - labelW - labelGap, 0, labelW, area.getHeight()};
 
-    // Overlap pill — left of FFT
-    const int overlapPillX = fftLabelBounds.getX() - pillGap - pillW;
+    // Divider between OVL and FFT
+    const int divOvlX = fftLabelBounds.getX() - divW;
+    dividerAfterOvl.setBounds(divOvlX, 0, divW, area.getHeight());
+
+    // Overlap pill — left of divider
+    const int overlapPillX = divOvlX - pillGap - pillW;
     overlapPill.setBounds(overlapPillX, pillY, pillW, pillH);
     overlapLabelBounds = {overlapPillX - labelW - labelGap, 0, labelW, area.getHeight()};
 
-    // Decay pill — left of Overlap
-    const int decayPillX = overlapLabelBounds.getX() - pillGap - pillW;
+    // Divider between DCY and OVL
+    const int divDcyX = overlapLabelBounds.getX() - divW;
+    dividerAfterDcy.setBounds(divDcyX, 0, divW, area.getHeight());
+
+    // Decay pill — left of divider
+    const int decayPillX = divDcyX - pillGap - pillW;
     decayPill.setBounds(decayPillX, pillY, pillW, pillH);
     decayLabelBounds = {decayPillX - labelW - labelGap, 0, labelW, area.getHeight()};
 
-    // Slope pill — left of Decay
-    const int slopePillX = decayLabelBounds.getX() - pillGap - pillW;
+    // Divider between SLP and DCY
+    const int divSlpX = decayLabelBounds.getX() - divW;
+    dividerAfterSlp.setBounds(divSlpX, 0, divW, area.getHeight());
+
+    // Slope pill — left of divider
+    const int slopePillX = divSlpX - pillGap - pillW;
     slopePill.setBounds(slopePillX, pillY, pillW, pillH);
     slopeLabelBounds = {slopePillX - labelW - labelGap, 0, labelW, area.getHeight()};
 }

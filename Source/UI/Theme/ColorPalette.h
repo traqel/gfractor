@@ -55,7 +55,7 @@ namespace ColorPalette {
         0xccffffff,
         0xb3ffffff,
         0xb3ffb6c1,
-        0xFFFFFF00
+        0xff807820   // textAxis (dimmed yellow)
     };
 
     inline constexpr ThemeSpec lightTheme{
@@ -79,7 +79,7 @@ namespace ColorPalette {
         0xcc101410,
         0xb3202a20,
         0xb3d47896,
-        0xff101410
+        0xff807820   // textAxis (dimmed yellow)
     };
 
     inline constexpr ThemeSpec balancedTheme{
@@ -103,7 +103,7 @@ namespace ColorPalette {
         0xccF4F7FA,  // panelHeading
         0xb3F4F7FA,  // swatchBorder
         0xb3ffb3c7,  // hintPink
-        0xFFFFFF00   // textAxis
+        0xff807820   // textAxis (dimmed yellow)
     };
 
     constexpr const ThemeSpec &getThemeSpec(const Theme theme) {

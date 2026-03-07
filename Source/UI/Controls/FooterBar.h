@@ -9,6 +9,7 @@
 #include "../ISpectrumControls.h"
 #include "../HintManager.h"
 #include "Buttons/ToggleButton.h"
+#include "Buttons/VerticalDivider.h"
 
 class gFractorAudioProcessor;
 
@@ -60,11 +61,13 @@ private:
     DropdownPill modePill{ButtonCaptions::channelModeOptions, juce::Colour(ColorPalette::blueAccent)};
     ToggleButton primaryPill{ButtonCaptions::primary, juce::Colour(ColorPalette::primaryGreen)};
     ToggleButton secondaryPill{ButtonCaptions::secondary, juce::Colour(ColorPalette::secondaryAmber)};
+    VerticalDivider refDivider;
     ToggleButton referencePill{ButtonCaptions::reference, juce::Colour(ColorPalette::blueAccent)};
     ToggleButton ghostPill{ButtonCaptions::ghost, juce::Colour(ColorPalette::refPrimaryBlue)};
+    VerticalDivider freezeDivider;
     ToggleButton freezePill{ButtonCaptions::freeze, juce::Colour(ColorPalette::blueAccent)};
     ToggleButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent),};
-    ToggleButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::primaryGreen)};
 
     // Mouse listener overrides — receive forwarded events from pill children
     void mouseEnter(const juce::MouseEvent &e) override;

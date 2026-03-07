@@ -41,4 +41,22 @@ namespace Icons {
 </svg>
 )svg";
 
+    // Snowflake freeze icon (strokes in black; button recolors at paint time)
+    inline constexpr auto freeze = R"svg(
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+  <line x1="6" y1="0.5" x2="6" y2="11.5" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="0.5" y1="6" x2="11.5" y2="6" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="2" y1="2" x2="10" y2="10" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="10" y1="2" x2="2" y2="10" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+</svg>
+)svg";
+
+    // Padlock hold icon (strokes/fill in black; button recolors at paint time)
+    inline constexpr auto hold = R"svg(
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 12">
+  <path d="M2.5,5 V3.5 A2.5,2.5 0 0,1 7.5,3.5 V5" fill="none" stroke="#000000" stroke-width="1.2" stroke-linecap="round"/>
+  <rect x="1" y="5" width="8" height="6" rx="1" fill="#000000"/>
+</svg>
+)svg";
+
 } // namespace Icons

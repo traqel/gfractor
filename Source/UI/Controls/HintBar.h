@@ -4,6 +4,7 @@
 #include "../HintManager.h"
 #include "../Theme/ColorPalette.h"
 #include "Buttons/DropdownPill.h"
+#include "Buttons/VerticalDivider.h"
 
 /**
  * HintBar
@@ -37,6 +38,10 @@ private:
     juce::Rectangle<int> overlapLabelBounds;
     juce::Rectangle<int> decayLabelBounds;
     juce::Rectangle<int> slopeLabelBounds;
+
+    VerticalDivider dividerAfterSlp;
+    VerticalDivider dividerAfterDcy;
+    VerticalDivider dividerAfterOvl;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HintBar)
 };

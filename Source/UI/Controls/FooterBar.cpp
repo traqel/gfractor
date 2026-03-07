@@ -4,6 +4,7 @@
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/ButtonCaptions.h"
+#include "../Theme/Icons.h"
 
 FooterBar::FooterBar(gFractorAudioProcessor &processor,
                      ISpectrumControls &controls)
@@ -13,6 +14,7 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
         R"(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#000000"/></svg>)";
 
     // Reference pill — not APVTS-bound, callback-driven
+    addAndMakeVisible(refDivider);
     referencePill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(referencePill);
 
@@ -67,10 +69,14 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     addAndMakeVisible(ghostPill);
 
     // Meters pill
+    metersPill.setLeftIcon(dotSvg, false, Layout::PillButton::dotIconSize);
     metersPill.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(metersPill);
 
+    addAndMakeVisible(freezeDivider);
+
     // Freeze pill
+    freezePill.setLeftIcon(Icons::freeze, false, Layout::PillButton::normalIconSize);
     freezePill.setToggleState(false, juce::dontSendNotification);
     freezePill.onClick = [this] {
         controlsRef.setFrozen(freezePill.getToggleState());
@@ -78,6 +84,7 @@ FooterBar::FooterBar(gFractorAudioProcessor &processor,
     addAndMakeVisible(freezePill);
 
     // Infinite peak pill
+    infinitePill.setLeftIcon(Icons::hold, false, Layout::PillButton::normalIconSize);
     infinitePill.setToggleState(false, juce::dontSendNotification);
     infinitePill.onClick = [this] {
         controlsRef.setInfinitePeak(infinitePill.getToggleState());
@@ -92,6 +99,10 @@ FooterBar::~FooterBar() = default;
 
 void FooterBar::paint(juce::Graphics &g) {
     g.fillAll(juce::Colour(ColorPalette::background));
+
+    g.setColour(juce::Colour(ColorPalette::border).withAlpha(0.3f));
+    g.drawHorizontalLine(0, 0.0f, static_cast<float>(getWidth()));
+    g.drawHorizontalLine(getHeight() - 1, 0.0f, static_cast<float>(getWidth()));
 }
 
 void FooterBar::applyTheme() {
@@ -102,7 +113,7 @@ void FooterBar::applyTheme() {
     secondaryPill.setActiveColour(juce::Colour(ColorPalette::secondaryAmber));
     freezePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
     infinitePill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
-    metersPill.setActiveColour(juce::Colour(ColorPalette::blueAccent));
+    metersPill.setActiveColour(juce::Colour(ColorPalette::primaryGreen));
     repaint();
 }
 
@@ -125,24 +136,29 @@ void FooterBar::resized() {
     fb.items.add(Item(primaryPill).withWidth(bw).withHeight(ph));
     fb.items.add(Item().withWidth(gs).withHeight(ph));
     fb.items.add(Item(secondaryPill).withWidth(bw).withHeight(ph));
-    fb.items.add(Item().withWidth(gl).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(refDivider).withWidth(gl).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
 
     // ── [Reference  Ghost] ───────────────────────────────────────────────────
     fb.items.add(Item(referencePill).withWidth(bw).withHeight(ph));
     fb.items.add(Item().withWidth(gs).withHeight(ph));
     fb.items.add(Item(ghostPill).withWidth(bw).withHeight(ph));
-    fb.items.add(Item().withWidth(gl).withHeight(ph));
-
-    // ── [Freeze] ───────────────────────────────────────────────────────────────
-    fb.items.add(Item(freezePill).withWidth(bw).withHeight(ph));
     fb.items.add(Item().withWidth(gs).withHeight(ph));
-    fb.items.add(Item(infinitePill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item(freezeDivider).withWidth(gl).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+
+    // ── [Freeze  Hold] ─────────────────────────────────────────────────────────
+    constexpr auto bww = static_cast<float>(Layout::PillButton::buttonWidthWide);
+    fb.items.add(Item(freezePill).withWidth(bww).withHeight(ph));
+    fb.items.add(Item().withWidth(gs).withHeight(ph));
+    fb.items.add(Item(infinitePill).withWidth(bww).withHeight(ph));
 
     // Spacer — pushes Meters + Settings to the right
     fb.items.add(Item().withFlex(1.0f));
 
     // ── Meters ────────────────────────────────────────────────────────────────
-    fb.items.add(Item(metersPill).withWidth(bw).withHeight(ph));
+    fb.items.add(Item(metersPill).withWidth(bww).withHeight(ph));
 
     // ── Help  Settings ───────────────────────────────────────────────────────
     fb.performLayout(area.toFloat());

@@ -30,6 +30,9 @@ HeaderBar::HeaderBar(std::function<void()> settingsCallback) {
 
 void HeaderBar::paint(juce::Graphics &g) {
     g.fillAll(juce::Colour(ColorPalette::background));
+
+    g.setColour(juce::Colour(ColorPalette::border).withAlpha(0.3f));
+    g.drawHorizontalLine(getHeight() - 1, 0.0f, static_cast<float>(getWidth()));
 }
 
 void HeaderBar::setHintManager(HintManager &hm) {
