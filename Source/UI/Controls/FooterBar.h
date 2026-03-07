@@ -2,31 +2,26 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "PillButton.h"
-#include "DropdownPill.h"
+#include "Buttons/DropdownPill.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
-#include "../Theme/Symbols.h"
+#include "../Theme/ButtonCaptions.h"
 #include "../ISpectrumControls.h"
-#include "../../DSP/IPeakLevelSource.h"
+#include "../HintManager.h"
+#include "Buttons/ToggleButton.h"
+#include "Buttons/VerticalDivider.h"
 
 class gFractorAudioProcessor;
 
 /**
  * FooterBar
  *
- * 30px tall footer strip containing:
- * - Left: Reference, Mid, Side pill buttons
- * - Right: Settings button
- *
- * Timer feeds peak levels to the SpectrumAnalyzer meter bars at 30Hz.
+ * 30px tall footer strip containing pill buttons for channel, mode, and display controls.
  */
-class FooterBar : public juce::Component,
-                  juce::Timer {
+class FooterBar : public juce::Component {
 public:
     FooterBar(gFractorAudioProcessor &processor,
-              ISpectrumControls &controls,
-              IPeakLevelSource &peakSource);
+              ISpectrumControls &controls);
 
     ~FooterBar() override;
 
@@ -41,46 +36,51 @@ public:
     void applyTheme();
 
     /** Sync pill toggle states from the analyzer (call after AnalyzerSettings::load). */
-    void syncAnalyzerState();
+    static void syncAnalyzerState();
 
-    PillButton &getReferencePill() { return referencePill; }
-    PillButton &getMidPill() { return midPill; }
-    PillButton &getSidePill() { return sidePill; }
-    PillButton &getMetersPill() { return metersPill; }
-    PillButton &getTransientPill() { return transientPill; }
-    PillButton &getFreezePill() { return freezePill; }
+    /** Register HintManager — call once from PluginEditor after construction. */
+    void setHintManager(HintManager &hm);
+
+    ToggleButton &getReferencePill() { return referencePill; }
+    ToggleButton &getPrimaryPill() { return primaryPill; }
+    ToggleButton &getSecondaryPill() { return secondaryPill; }
+    ToggleButton &getMetersPill() { return metersPill; }
+    ToggleButton &getFreezePill() { return freezePill; }
+    ToggleButton &getGhostPill() { return ghostPill; }
+    ToggleButton &getInfinitePill() { return infinitePill; }
+    ToggleButton &getTargetPill() { return targetPill; }
+    DropdownPill &getModePill() { return modePill; }
 
     /** Left margin from SpectrumAnalyzer — used for button alignment. */
     static constexpr int analyzerLeftMargin = Layout::SpectrumAnalyzer::leftMargin;
 
 private:
-    void timerCallback() override;
-
     gFractorAudioProcessor &processorRef;
     ISpectrumControls &controlsRef;
-    IPeakLevelSource &peakSourceRef;
 
     // Left group — pill buttons
-    PillButton referencePill{"Reference", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton ghostPill{"Ghost", juce::Colour(ColorPalette::refMidBlue), true};
-    DropdownPill modePill{{"M/S", "L/R"}, juce::Colour(ColorPalette::blueAccent)};
-    PillButton midPill{"Mid", juce::Colour(ColorPalette::midGreen), true};
-    PillButton sidePill{"Side", juce::Colour(ColorPalette::sideAmber), true};
-    PillButton freezePill{
-        juce::String::fromUTF8(Symbols::pauseUTF8), juce::Colour(ColorPalette::blueAccent), true
-    };
-    PillButton infinitePill{"Hold", juce::Colour(ColorPalette::blueAccent), true};
+    DropdownPill modePill{ButtonCaptions::channelModeOptions, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton primaryPill{ButtonCaptions::primary, juce::Colour(ColorPalette::primaryGreen)};
+    ToggleButton secondaryPill{ButtonCaptions::secondary, juce::Colour(ColorPalette::secondaryAmber)};
+    VerticalDivider refDivider;
+    ToggleButton referencePill{ButtonCaptions::reference, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton ghostPill{ButtonCaptions::ghost, juce::Colour(ColorPalette::refPrimaryBlue)};
+    VerticalDivider freezeDivider;
+    ToggleButton freezePill{ButtonCaptions::freeze, juce::Colour(ColorPalette::blueAccent)};
+    VerticalDivider holdDivider;
+    ToggleButton infinitePill{ButtonCaptions::infinite, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton targetPill{ButtonCaptions::target, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton loadTargetPill{ButtonCaptions::loadTarget, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton saveTargetPill{ButtonCaptions::saveTarget, juce::Colour(ColorPalette::blueAccent)};
+    ToggleButton metersPill{ButtonCaptions::meters, juce::Colour(ColorPalette::primaryGreen)};
 
-    PillButton metersPill{"Stereo", juce::Colour(ColorPalette::blueAccent), true};
-    PillButton transientPill{"Transient", juce::Colour(ColorPalette::blueAccent), true};
+    // Mouse listener overrides — receive forwarded events from pill children
+    void mouseEnter(const juce::MouseEvent &e) override;
 
-    // Smoothed peak levels (fed to SpectrumAnalyzer meter bars)
-    float peakMidDisplay = -100.0f;
-    float peakSideDisplay = -100.0f;
+    void mouseExit(const juce::MouseEvent &e) override;
 
-    // Previous raw peak values for repaint gating
-    float prevMid = -100.0f;
-    float prevSide = -100.0f;
+    HintManager *hints = nullptr;
+    HintManager::HintHandle hintHandle;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FooterBar)
 };

@@ -1,8 +1,9 @@
 #include "StereoMeteringPanel.h"
-#include "../../DSP/DSPConstants.h"
+#include "../../DSP/Core/DSPConstants.h"
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
+#include "../Theme/UILabels.h"
 
 //==============================================================================
 static constexpr int kFifoCapacity = Layout::StereoMetering::fifoCapacity;
@@ -24,6 +25,19 @@ StereoMeteringPanel::~StereoMeteringPanel() {
     stopVisualizerTimer();
 }
 
+void StereoMeteringPanel::setHintManager(HintManager& hm) {
+    hints = &hm;
+}
+
+void StereoMeteringPanel::mouseEnter(const juce::MouseEvent& /*e*/) {
+    if (hints)
+        hintHandle = hints->setHint("DRAG", "Divider to resize  |  Goniometer  |  Correlation  |  Width");
+}
+
+void StereoMeteringPanel::mouseExit(const juce::MouseEvent& /*e*/) {
+    hintHandle = {};
+}
+
 //==============================================================================
 void StereoMeteringPanel::processDrainedData(const int numNewSamples) {
     if (numNewSamples == 0) return;
@@ -40,7 +54,7 @@ void StereoMeteringPanel::processDrainedData(const int numNewSamples) {
 void StereoMeteringPanel::updateGoniometerImage() const {
     if (!gonioImage.isValid()) return;
 
-    const juce::Colour gonioBg(ColorPalette::spectrumBg);
+    const juce::Colour gonioBg(ColorPalette::background);
     if (gonioImageBgArgb != gonioBg.getARGB()) {
         const juce::Graphics clearGc(gonioImage);
         clearGc.fillAll(gonioBg);
@@ -61,7 +75,7 @@ void StereoMeteringPanel::updateGoniometerImage() const {
     const float scale = cx * 0.88f;
 
     const juce::Image::BitmapData bd(gonioImage, juce::Image::BitmapData::readWrite);
-    const juce::Colour dotColour(ColorPalette::midGreen);
+    const juce::Colour dotColour(ColorPalette::primaryGreen);
 
     const auto &rolling_L = getRollingL();
     const auto &rolling_R = getRollingR();
@@ -72,8 +86,8 @@ void StereoMeteringPanel::updateGoniometerImage() const {
         const float l = rolling_L[static_cast<size_t>(i)];
         const float r = rolling_R[static_cast<size_t>(i)];
 
-        // M/S rotation: mid = (L+R)*0.5 maps to vertical (up = positive)
-        //               side = (L-R)*0.5 maps to horizontal
+        // Primary/secondary rotation: primary = (L+R)*0.5 maps to vertical (up = positive)
+        //                            secondary = (L-R)*0.5 maps to horizontal
         const float dotX = (l - r) * 0.5f * scale + cx;
         const float dotY = cy - (l + r) * 0.5f * scale;
 
@@ -148,7 +162,7 @@ void StereoMeteringPanel::computeWidthPerOctave() {
 
     const float binHz = static_cast<float>(sampleRate) / static_cast<float>(kFftSize);
     using namespace DSP::Correlation;
-    const int numBins = kFftSize / 2 + 1;
+    constexpr int numBins = kFftSize / 2 + 1;
 
     for (size_t b = 0; b < static_cast<size_t>(kNumBands); ++b) {
         const float fc = kBandCenters[b];
@@ -191,7 +205,7 @@ void StereoMeteringPanel::resized() {
     // Recreate goniometer image at new size, fill with black
     gonioImage = juce::Image(juce::Image::ARGB, drawSide, drawSide, true);
     {
-        const juce::Colour gonioBg(ColorPalette::spectrumBg);
+        const juce::Colour gonioBg(ColorPalette::background);
         const juce::Graphics gc(gonioImage);
         gc.fillAll(gonioBg);
         gonioImageBgArgb = gonioBg.getARGB();
@@ -203,10 +217,10 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     // Title
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(Typography::makeFont(Typography::mainFontSize));
-    g.drawText("GONIOMETER", gonioArea.withHeight(20), juce::Justification::centred);
+    g.drawText(UILabels::Metering::goniometer, gonioArea.withHeight(20), juce::Justification::centred);
 
     // Background
-    g.setColour(juce::Colour(ColorPalette::spectrumBg));
+    g.setColour(juce::Colour(ColorPalette::background));
     g.fillRect(gonioDrawArea);
 
     // Draw the persistent phosphor image
@@ -232,15 +246,15 @@ void StereoMeteringPanel::paintGoniometer(juce::Graphics &g) const {
     // Axis labels
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(Typography::makeFont(Typography::mainFontSize));
-    g.drawText("M", gonioDrawArea.withHeight(18).translated(0, -6),
+    g.drawText(UILabels::Channels::mid, gonioDrawArea.withHeight(18).translated(0, -6),
                juce::Justification::centred);
-    g.drawText("L", juce::Rectangle<int>(gonioDrawArea.getX() - 6,
-                                         static_cast<int>(cy) - 9, 18, 18),
+    g.drawText(UILabels::Channels::left, juce::Rectangle(gonioDrawArea.getX() - 6,
+                                          static_cast<int>(cy) - 9, 18, 18),
                juce::Justification::centred);
-    g.drawText("R", juce::Rectangle<int>(gonioDrawArea.getRight() - 12,
-                                         static_cast<int>(cy) - 9, 18, 18),
+    g.drawText(UILabels::Channels::right, juce::Rectangle(gonioDrawArea.getRight() - 12,
+                                          static_cast<int>(cy) - 9, 18, 18),
                juce::Justification::centred);
-    g.drawText("S", gonioDrawArea.withTrimmedTop(gonioDrawArea.getHeight() - 18),
+    g.drawText(UILabels::Channels::side, gonioDrawArea.withTrimmedTop(gonioDrawArea.getHeight() - 18),
                juce::Justification::centred);
 }
 
@@ -252,14 +266,14 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
 
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(Typography::makeFont(Typography::mainFontSize));
-    g.drawText("CORRELATION", area.removeFromTop(labelH),
+    g.drawText(UILabels::Metering::correlation, area.removeFromTop(labelH),
                juce::Justification::centred);
 
     const auto labRow = area.removeFromBottom(20);
     const auto barBounds = area.reduced(pad, 2);
 
     // Background
-    g.setColour(juce::Colour(ColorPalette::spectrumBg));
+    g.setColour(juce::Colour(ColorPalette::background));
     g.fillRect(barBounds);
 
     const auto barW = static_cast<float>(barBounds.getWidth());
@@ -271,7 +285,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     const float sigX = static_cast<float>(barBounds.getX()) + fillT * barW;
 
     const juce::Colour fillCol = correlationDisplay >= 0.0f
-                                     ? juce::Colour(ColorPalette::midGreen)
+                                     ? juce::Colour(ColorPalette::primaryGreen)
                                      : juce::Colour(0xffcc4444);
 
     if (std::abs(correlationDisplay) > 0.01f) {
@@ -292,7 +306,7 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
 
         // 1 px signal-level line
         g.setColour(fillCol);
-        g.fillRect(juce::Rectangle<float>(sigX - 0.5f, barTop, 1.0f, barH));
+        g.fillRect(juce::Rectangle(sigX - 0.5f, barTop, 1.0f, barH));
     }
 
     // Centre tick
@@ -302,9 +316,9 @@ void StereoMeteringPanel::paintCorrelation(juce::Graphics &g) const {
     // Scale labels -1, 0, +1
     g.setFont(Typography::makeFont(Typography::mainFontSize));
     g.setColour(juce::Colour(ColorPalette::textMuted));
-    g.drawText("-1", labRow.withWidth(16), juce::Justification::centredLeft);
-    g.drawText("0", labRow, juce::Justification::centred);
-    g.drawText("+1", labRow.withTrimmedLeft(labRow.getWidth() - 16),
+    g.drawText(UILabels::Metering::minusOne, labRow.withWidth(16), juce::Justification::centredLeft);
+    g.drawText(UILabels::Metering::zero, labRow, juce::Justification::centred);
+    g.drawText(UILabels::Metering::plusOne, labRow.withTrimmedLeft(labRow.getWidth() - 16),
                juce::Justification::centredRight);
 
     // Numeric readout
@@ -325,7 +339,7 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
 
     g.setColour(juce::Colour(ColorPalette::textMuted));
     g.setFont(Typography::makeFont(Typography::mainFontSize));
-    g.drawText("WIDTH / OCTAVE", area.removeFromTop(labelH).withTrimmedTop(labelTopPad),
+    g.drawText(UILabels::Metering::widthPerOctave, area.removeFromTop(labelH).withTrimmedTop(labelTopPad),
                juce::Justification::centred);
 
     const auto freqRow = area.removeFromBottom(freqH);
@@ -339,8 +353,8 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
         "31", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"
     };
 
-    const juce::Colour lo = juce::Colour(ColorPalette::midGreen);
-    const juce::Colour hi = juce::Colour(ColorPalette::sideAmber);
+    const auto lo = juce::Colour(ColorPalette::primaryGreen);
+    const auto hi = juce::Colour(ColorPalette::secondaryAmber);
 
     g.setFont(Typography::makeFont(Typography::mainFontSize));
 
@@ -351,18 +365,18 @@ void StereoMeteringPanel::paintWidthPerOctave(juce::Graphics &g) const {
         const juce::Colour barCol = lo.interpolatedWith(hi, w);
 
         // Bar background
-        const juce::Rectangle<float> trackRect(x + 1.0f,
+        const juce::Rectangle trackRect(x + 1.0f,
                                                static_cast<float>(barArea.getY()),
                                                barW - 2.0f,
                                                static_cast<float>(barH));
 
-        drawLevelBar(g, trackRect, w, barCol, juce::Colour(ColorPalette::spectrumBg));
+        drawLevelBar(g, trackRect, w, barCol, juce::Colour(ColorPalette::background));
 
         // Frequency label
-        if ((b % 2) == 0) {
+        if (b % 2 == 0) {
             g.setColour(juce::Colour(ColorPalette::textMuted));
             g.drawText(kFreqLabels[b],
-                       juce::Rectangle<float>(x, static_cast<float>(freqRow.getY()),
+                       juce::Rectangle(x, static_cast<float>(freqRow.getY()),
                                               barW * 2.0f, static_cast<float>(freqH)),
                        juce::Justification::centred);
         }

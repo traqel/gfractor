@@ -38,155 +38,190 @@
  * };
  * @endcode
  */
-class gFractorLookAndFeel : public juce::LookAndFeel_V4
-{
+class gFractorLookAndFeel : public juce::LookAndFeel_V4 {
 public:
-    gFractorLookAndFeel()
-    {
+    gFractorLookAndFeel() {
         applyTheme();
     }
 
-    void applyTheme()
-    {
-        backgroundDark = juce::Colour (ColorPalette::background);
-        sliderBackground = juce::Colour (ColorPalette::grid);
-        trackColor = juce::Colour (ColorPalette::border);
-        accentColor = juce::Colour (ColorPalette::blueAccent);
-        textColor = juce::Colour (ColorPalette::textLight);
-        textColorDimmed = juce::Colour (ColorPalette::textMuted);
-        textBoxBackground = juce::Colour (ColorPalette::panel);
+    void applyTheme() {
+        backgroundDark = juce::Colour(ColorPalette::background);
+        sliderBackground = juce::Colour(ColorPalette::grid);
+        trackColor = juce::Colour(ColorPalette::border);
+        accentColor = juce::Colour(ColorPalette::blueAccent);
+        textColor = juce::Colour(ColorPalette::textLight);
+        textColorDimmed = juce::Colour(ColorPalette::textMuted);
+        textBoxBackground = juce::Colour(ColorPalette::panel);
 
         // Color scheme - Modern dark theme
-        setColour (juce::ResizableWindow::backgroundColourId, backgroundDark);
-        setColour (juce::Slider::thumbColourId, accentColor);
-        setColour (juce::Slider::trackColourId, trackColor);
-        setColour (juce::Slider::backgroundColourId, sliderBackground);
-        setColour (juce::Slider::textBoxTextColourId, textColor);
-        setColour (juce::Slider::textBoxBackgroundColourId, textBoxBackground);
-        setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
-        setColour (juce::Label::textColourId, textColor);
-        setColour (juce::ToggleButton::textColourId, textColor);
-        setColour (juce::ToggleButton::tickColourId, accentColor);
-        setColour (juce::ToggleButton::tickDisabledColourId, textColorDimmed);
+        setColour(juce::ResizableWindow::backgroundColourId, backgroundDark);
+        setColour(juce::Slider::thumbColourId, accentColor);
+        setColour(juce::Slider::trackColourId, trackColor);
+        setColour(juce::Slider::backgroundColourId, sliderBackground);
+        setColour(juce::Slider::textBoxTextColourId, textColor);
+        setColour(juce::Slider::textBoxBackgroundColourId, textBoxBackground);
+        setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+        setColour(juce::Label::textColourId, textColor);
+        setColour(juce::ToggleButton::textColourId, textColor);
+        setColour(juce::ToggleButton::tickColourId, accentColor);
+        setColour(juce::ToggleButton::tickDisabledColourId, textColorDimmed);
 
         // ComboBox + popup menu theme colors
-        setColour (juce::ComboBox::backgroundColourId, textBoxBackground);
-        setColour (juce::ComboBox::textColourId, textColor);
-        setColour (juce::ComboBox::outlineColourId, trackColor);
-        setColour (juce::ComboBox::buttonColourId, accentColor.withAlpha (0.22f));
-        setColour (juce::ComboBox::arrowColourId, accentColor.brighter (0.35f));
+        setColour(juce::ComboBox::backgroundColourId, textBoxBackground);
+        setColour(juce::ComboBox::textColourId, textColor);
+        setColour(juce::ComboBox::outlineColourId, trackColor);
+        setColour(juce::ComboBox::buttonColourId, accentColor.withAlpha(0.22f));
+        setColour(juce::ComboBox::arrowColourId, accentColor.brighter(0.35f));
 
-        setColour (juce::PopupMenu::backgroundColourId, backgroundDark.brighter (0.08f));
-        setColour (juce::PopupMenu::textColourId, textColor);
-        setColour (juce::PopupMenu::highlightedBackgroundColourId, accentColor.withAlpha (0.30f));
-        setColour (juce::PopupMenu::highlightedTextColourId, textColor);
+        setColour(juce::PopupMenu::backgroundColourId, backgroundDark.brighter(0.08f));
+        setColour(juce::PopupMenu::textColourId, textColor);
+        setColour(juce::PopupMenu::highlightedBackgroundColourId, accentColor.withAlpha(0.30f));
+        setColour(juce::PopupMenu::highlightedTextColourId, textColor);
+
+        // AlertWindow
+        setColour(juce::AlertWindow::backgroundColourId, backgroundDark);
+        setColour(juce::AlertWindow::textColourId,       textColor);
+        setColour(juce::AlertWindow::outlineColourId,    textBoxBackground);
+
+        // TextEditor (input fields inside AlertWindow)
+        setColour(juce::TextEditor::backgroundColourId,     textBoxBackground);
+        setColour(juce::TextEditor::textColourId,           textColor);
+        setColour(juce::TextEditor::highlightColourId,      accentColor.withAlpha(0.4f));
+        setColour(juce::TextEditor::outlineColourId,        juce::Colour(ColorPalette::border));
+        setColour(juce::TextEditor::focusedOutlineColourId, accentColor);
+
+        // ListBox (audio device channel lists in standalone)
+        setColour(juce::ListBox::backgroundColourId, textBoxBackground);
+        setColour(juce::ListBox::textColourId,       textColor);
+        setColour(juce::ListBox::outlineColourId,    juce::Colour(ColorPalette::border));
+        setColour(juce::TextButton::buttonColourId, accentColor);
+        setColour(juce::TextButton::textColourOffId, textColor);
+        setColour(juce::TextButton::textColourOnId, textColor);
+    }
+
+    //==============================================================================
+    // TextButton (used by AlertWindow) — pill style
+
+    void drawButtonBackground(juce::Graphics &g, juce::Button &button,
+                              const juce::Colour & /*backgroundColour*/,
+                              bool shouldDrawButtonAsHighlighted,
+                              bool /*shouldDrawButtonAsDown*/) override {
+        const auto bounds = button.getLocalBounds().toFloat().reduced(0.5f);
+        auto fill = juce::Colour(ColorPalette::pillInactiveBg);
+        if (shouldDrawButtonAsHighlighted)
+            fill = fill.brighter(0.1f);
+        g.setColour(fill);
+        g.fillRoundedRectangle(bounds, 4.0f);
+    }
+
+    void drawButtonText(juce::Graphics &g, juce::TextButton &button,
+                        bool /*shouldDrawButtonAsHighlighted*/,
+                        bool /*shouldDrawButtonAsDown*/) override {
+        g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
+        g.setColour(accentColor);
+        g.drawFittedText(button.getButtonText(), button.getLocalBounds(),
+                         juce::Justification::centred, 1);
     }
 
     //==============================================================================
     // Linear Slider Customization
 
-    void drawLinearSlider (juce::Graphics& g,
-                           const int x, const int y, const int width, const int height,
-                           const float sliderPos,
-                           const float minSliderPos, const float maxSliderPos,
-                           const juce::Slider::SliderStyle style,
-                           juce::Slider& slider) override
-    {
-        if (slider.isBar())
-        {
-            g.setColour (slider.findColour (juce::Slider::trackColourId));
-            g.fillRect (slider.isHorizontal()
-                            ? juce::Rectangle (static_cast<float> (x),
-                                               static_cast<float> (y) + 0.5f,
-                                               sliderPos - static_cast<float> (x),
-                                               static_cast<float> (height) - 1.0f)
-                            : juce::Rectangle (static_cast<float> (x) + 0.5f, sliderPos,
-                                               static_cast<float> (width) - 1.0f,
-                                               static_cast<float> (y) + (static_cast<float> (height) - sliderPos)));
-        }
-        else
-        {
-            const auto isTwoVal   = (style == juce::Slider::SliderStyle::TwoValueVertical
-                                  || style == juce::Slider::SliderStyle::TwoValueHorizontal);
-            const auto isThreeVal = (style == juce::Slider::SliderStyle::ThreeValueVertical
-                                  || style == juce::Slider::SliderStyle::ThreeValueHorizontal);
+    void drawLinearSlider(juce::Graphics &g,
+                          const int x, const int y, const int width, const int height,
+                          const float sliderPos,
+                          const float minSliderPos, const float maxSliderPos,
+                          const juce::Slider::SliderStyle style,
+                          juce::Slider &slider) override {
+        if (slider.isBar()) {
+            g.setColour(slider.findColour(juce::Slider::trackColourId));
+            g.fillRect(slider.isHorizontal()
+                           ? juce::Rectangle(static_cast<float>(x),
+                                             static_cast<float>(y) + 0.5f,
+                                             sliderPos - static_cast<float>(x),
+                                             static_cast<float>(height) - 1.0f)
+                           : juce::Rectangle(static_cast<float>(x) + 0.5f, sliderPos,
+                                             static_cast<float>(width) - 1.0f,
+                                             static_cast<float>(y) + (static_cast<float>(height) - sliderPos)));
+        } else {
+            const auto isTwoVal = style == juce::Slider::SliderStyle::TwoValueVertical
+                                  || style == juce::Slider::SliderStyle::TwoValueHorizontal;
+            const auto isThreeVal = style == juce::Slider::SliderStyle::ThreeValueVertical
+                                    || style == juce::Slider::SliderStyle::ThreeValueHorizontal;
 
-            const auto trackWidth = juce::jmin (6.0f, slider.isHorizontal()
-                                                           ? static_cast<float> (height) * 0.25f
-                                                           : static_cast<float> (width) * 0.25f);
+            const auto trackWidth = juce::jmin(6.0f, slider.isHorizontal()
+                                                         ? static_cast<float>(height) * 0.25f
+                                                         : static_cast<float>(width) * 0.25f);
 
-            const juce::Point startPoint (
-                slider.isHorizontal() ? static_cast<float> (x)
-                                      : static_cast<float> (x) + static_cast<float> (width) * 0.5f,
-                slider.isHorizontal() ? static_cast<float> (y) + static_cast<float> (height) * 0.5f
-                                      : static_cast<float> (height + y));
+            const juce::Point startPoint(
+                slider.isHorizontal()
+                    ? static_cast<float>(x)
+                    : static_cast<float>(x) + static_cast<float>(width) * 0.5f,
+                slider.isHorizontal()
+                    ? static_cast<float>(y) + static_cast<float>(height) * 0.5f
+                    : static_cast<float>(height + y));
 
-            const juce::Point endPoint (
-                slider.isHorizontal() ? static_cast<float> (width + x) : startPoint.x,
-                slider.isHorizontal() ? startPoint.y : static_cast<float> (y));
+            const juce::Point endPoint(
+                slider.isHorizontal() ? static_cast<float>(width + x) : startPoint.x,
+                slider.isHorizontal() ? startPoint.y : static_cast<float>(y));
 
             juce::Path backgroundTrack;
-            backgroundTrack.startNewSubPath (startPoint);
-            backgroundTrack.lineTo (endPoint);
-            g.setColour (sliderBackground);
-            g.strokePath (backgroundTrack, { trackWidth, juce::PathStrokeType::curved, juce::PathStrokeType::rounded });
+            backgroundTrack.startNewSubPath(startPoint);
+            backgroundTrack.lineTo(endPoint);
+            g.setColour(sliderBackground);
+            g.strokePath(backgroundTrack, {trackWidth, juce::PathStrokeType::curved, juce::PathStrokeType::rounded});
 
             juce::Path valueTrack;
             juce::Point<float> minPoint, maxPoint, thumbPoint;
 
-            if (isTwoVal || isThreeVal)
-            {
+            if (isTwoVal || isThreeVal) {
                 minPoint = {
-                    slider.isHorizontal() ? minSliderPos : static_cast<float> (width) * 0.5f,
-                    slider.isHorizontal() ? static_cast<float> (height) * 0.5f : minSliderPos
+                    slider.isHorizontal() ? minSliderPos : static_cast<float>(width) * 0.5f,
+                    slider.isHorizontal() ? static_cast<float>(height) * 0.5f : minSliderPos
                 };
 
                 if (isThreeVal)
                     thumbPoint = {
-                        slider.isHorizontal() ? sliderPos : static_cast<float> (width) * 0.5f,
-                        slider.isHorizontal() ? static_cast<float> (height) * 0.5f : sliderPos
+                        slider.isHorizontal() ? sliderPos : static_cast<float>(width) * 0.5f,
+                        slider.isHorizontal() ? static_cast<float>(height) * 0.5f : sliderPos
                     };
 
                 maxPoint = {
-                    slider.isHorizontal() ? maxSliderPos : static_cast<float> (width) * 0.5f,
-                    slider.isHorizontal() ? static_cast<float> (height) * 0.5f : maxSliderPos
+                    slider.isHorizontal() ? maxSliderPos : static_cast<float>(width) * 0.5f,
+                    slider.isHorizontal() ? static_cast<float>(height) * 0.5f : maxSliderPos
                 };
-            }
-            else
-            {
+            } else {
                 const auto kx = slider.isHorizontal()
                                     ? sliderPos
-                                    : (static_cast<float> (x) + static_cast<float> (width) * 0.5f);
+                                    : static_cast<float>(x) + static_cast<float>(width) * 0.5f;
                 const auto ky = slider.isHorizontal()
-                                    ? (static_cast<float> (y) + static_cast<float> (height) * 0.5f)
+                                    ? static_cast<float>(y) + static_cast<float>(height) * 0.5f
                                     : sliderPos;
 
                 minPoint = startPoint;
-                maxPoint = { kx, ky };
+                maxPoint = {kx, ky};
             }
 
             // Draw active track with gradient
-            valueTrack.startNewSubPath (minPoint);
-            valueTrack.lineTo (isThreeVal ? thumbPoint : maxPoint);
+            valueTrack.startNewSubPath(minPoint);
+            valueTrack.lineTo(isThreeVal ? thumbPoint : maxPoint);
 
-            const juce::ColourGradient gradient (accentColor.brighter (0.3f), minPoint.x, minPoint.y,
-                                                 accentColor, maxPoint.x, maxPoint.y, false);
-            g.setGradientFill (gradient);
-            g.strokePath (valueTrack, { trackWidth, juce::PathStrokeType::curved, juce::PathStrokeType::rounded });
+            const juce::ColourGradient gradient(accentColor.brighter(0.3f), minPoint.x, minPoint.y,
+                                                accentColor, maxPoint.x, maxPoint.y, false);
+            g.setGradientFill(gradient);
+            g.strokePath(valueTrack, {trackWidth, juce::PathStrokeType::curved, juce::PathStrokeType::rounded});
 
-            if (!isTwoVal)
-            {
+            if (!isTwoVal) {
                 // Draw thumb
-                const auto thumbWidthF = static_cast<float> (getSliderThumbRadius (slider));
+                const auto thumbWidthF = static_cast<float>(getSliderThumbRadius(slider));
 
-                g.setColour (accentColor.brighter (0.5f));
-                g.fillEllipse (juce::Rectangle (thumbWidthF, thumbWidthF)
-                    .withCentre (isThreeVal ? thumbPoint : maxPoint));
+                g.setColour(accentColor.brighter(0.5f));
+                g.fillEllipse(juce::Rectangle(thumbWidthF, thumbWidthF)
+                    .withCentre(isThreeVal ? thumbPoint : maxPoint));
 
                 // Inner thumb
-                g.setColour (accentColor.darker (0.2f));
-                g.fillEllipse (juce::Rectangle (thumbWidthF * 0.6f, thumbWidthF * 0.6f)
-                    .withCentre (isThreeVal ? thumbPoint : maxPoint));
+                g.setColour(accentColor.darker(0.2f));
+                g.fillEllipse(juce::Rectangle(thumbWidthF * 0.6f, thumbWidthF * 0.6f)
+                    .withCentre(isThreeVal ? thumbPoint : maxPoint));
             }
         }
     }
@@ -194,107 +229,101 @@ public:
     //==============================================================================
     // Rotary Slider Customization
 
-    void drawRotarySlider (juce::Graphics& g, const int x, const int y, const int width, const int height,
-                           const float sliderPos, const float rotaryStartAngle, const float rotaryEndAngle,
-                           juce::Slider& /*slider*/) override
-    {
-        const auto radius  = static_cast<float> (juce::jmin (width / 2, height / 2)) - 4.0f;
-        const auto centreX = static_cast<float> (x) + static_cast<float> (width) * 0.5f;
-        const auto centreY = static_cast<float> (y) + static_cast<float> (height) * 0.5f;
-        const auto rx      = centreX - radius;
-        const auto ry      = centreY - radius;
-        const auto rw      = radius * 2.0f;
-        const auto angle   = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
+    void drawRotarySlider(juce::Graphics &g, const int x, const int y, const int width, const int height,
+                          const float sliderPos, const float rotaryStartAngle, const float rotaryEndAngle,
+                          juce::Slider & /*slider*/) override {
+        const auto radius = static_cast<float>(juce::jmin(width / 2, height / 2)) - 4.0f;
+        const auto centreX = static_cast<float>(x) + static_cast<float>(width) * 0.5f;
+        const auto centreY = static_cast<float>(y) + static_cast<float>(height) * 0.5f;
+        const auto rx = centreX - radius;
+        const auto ry = centreY - radius;
+        const auto rw = radius * 2.0f;
+        const auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
         // Draw background arc
-        g.setColour (sliderBackground);
-        g.fillEllipse (rx, ry, rw, rw);
+        g.setColour(sliderBackground);
+        g.fillEllipse(rx, ry, rw, rw);
 
         // Draw value arc
         juce::Path valueArc;
-        valueArc.addCentredArc (centreX, centreY, radius, radius, 0.0f, rotaryStartAngle, angle, true);
-        g.setColour (accentColor);
-        g.strokePath (valueArc, juce::PathStrokeType (4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        valueArc.addCentredArc(centreX, centreY, radius, radius, 0.0f, rotaryStartAngle, angle, true);
+        g.setColour(accentColor);
+        g.strokePath(valueArc, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         // Draw pointer
         juce::Path pointer;
-        const auto pointerLength        = radius * 0.6f;
+        const auto pointerLength = radius * 0.6f;
         constexpr auto pointerThickness = 3.0f;
-        pointer.addRectangle (-pointerThickness * 0.5f, -radius, pointerThickness, pointerLength);
-        pointer.applyTransform (juce::AffineTransform::rotation (angle).translated (centreX, centreY));
+        pointer.addRectangle(-pointerThickness * 0.5f, -radius, pointerThickness, pointerLength);
+        pointer.applyTransform(juce::AffineTransform::rotation(angle).translated(centreX, centreY));
 
-        g.setColour (accentColor.brighter (0.5f));
-        g.fillPath (pointer);
+        g.setColour(accentColor.brighter(0.5f));
+        g.fillPath(pointer);
     }
 
     //==============================================================================
     // Toggle Button Customization
 
-    void drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
-                           const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown) override
-    {
-        const auto fontSize  = juce::jmin (15.0f, static_cast<float> (button.getHeight()) * 0.75f);
+    void drawToggleButton(juce::Graphics &g, juce::ToggleButton &button,
+                          const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown) override {
+        const auto fontSize = juce::jmin(15.0f, static_cast<float>(button.getHeight()) * 0.75f);
         const auto tickWidth = fontSize * 1.1f;
 
-        drawTickBox (g, button, 4.0f, (static_cast<float> (button.getHeight()) - tickWidth) * 0.5f,
-                     tickWidth, tickWidth,
-                     button.getToggleState(),
-                     button.isEnabled(),
-                     shouldDrawButtonAsHighlighted,
-                     shouldDrawButtonAsDown);
+        drawTickBox(g, button, 4.0f, (static_cast<float>(button.getHeight()) - tickWidth) * 0.5f,
+                    tickWidth, tickWidth,
+                    button.getToggleState(),
+                    button.isEnabled(),
+                    shouldDrawButtonAsHighlighted,
+                    shouldDrawButtonAsDown);
 
-        g.setColour (button.findColour (juce::ToggleButton::textColourId));
-        g.setFont (Typography::makeFont (fontSize));
+        g.setColour(button.findColour(juce::ToggleButton::textColourId));
+        g.setFont(Typography::makeFont(fontSize));
 
         if (!button.isEnabled())
-            g.setOpacity (0.5f);
+            g.setOpacity(0.5f);
 
-        g.drawFittedText (button.getButtonText(),
-                          button.getLocalBounds().withTrimmedLeft (juce::roundToInt (tickWidth) + 10)
-                                                 .withTrimmedRight (2),
-                          juce::Justification::centredLeft, 10);
+        g.drawFittedText(button.getButtonText(),
+                         button.getLocalBounds().withTrimmedLeft(juce::roundToInt(tickWidth) + 10)
+                         .withTrimmedRight(2),
+                         juce::Justification::centredLeft, 10);
     }
 
-    void drawTickBox (juce::Graphics& g, juce::Component& component,
-                      const float x, const float y, const float w, const float h,
-                      const bool ticked, const bool isEnabled,
-                      const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown) override
-    {
-        juce::ignoreUnused (isEnabled, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+    void drawTickBox(juce::Graphics &g, juce::Component &component,
+                     const float x, const float y, const float w, const float h,
+                     const bool ticked, const bool isEnabled,
+                     const bool shouldDrawButtonAsHighlighted, const bool shouldDrawButtonAsDown) override {
+        juce::ignoreUnused(isEnabled, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
 
-        const juce::Rectangle tickBounds (x, y, w, h);
+        const juce::Rectangle tickBounds(x, y, w, h);
 
         // Draw box
-        g.setColour (sliderBackground);
-        g.fillRoundedRectangle (tickBounds, 3.0f);
+        g.setColour(sliderBackground);
+        g.fillRoundedRectangle(tickBounds, 3.0f);
 
-        if (ticked)
-        {
+        if (ticked) {
             // Draw checkmark
-            g.setColour (component.findColour (juce::ToggleButton::tickColourId));
-            const auto tick = getTickShape (0.75f);
-            g.fillPath (tick, tick.getTransformToScaleToFit (tickBounds.reduced (4, 4), false));
+            g.setColour(component.findColour(juce::ToggleButton::tickColourId));
+            const auto tick = getTickShape(0.75f);
+            g.fillPath(tick, tick.getTransformToScaleToFit(tickBounds.reduced(4, 4), false));
         }
     }
 
     //==============================================================================
     // Helper Methods
 
-    int getSliderThumbRadius (juce::Slider& slider) override
-    {
-        return juce::jmin (12, slider.isHorizontal()
-                                   ? static_cast<int> (static_cast<float> (slider.getHeight()) * 0.5f)
-                                   : static_cast<int> (static_cast<float> (slider.getWidth()) * 0.5f));
+    int getSliderThumbRadius(juce::Slider &slider) override {
+        return juce::jmin(12, slider.isHorizontal()
+                                  ? static_cast<int>(static_cast<float>(slider.getHeight()) * 0.5f)
+                                  : static_cast<int>(static_cast<float>(slider.getWidth()) * 0.5f));
     }
 
-    juce::Typeface::Ptr getTypefaceForFont (const juce::Font& font) override
-    {
+    juce::Typeface::Ptr getTypefaceForFont(const juce::Font &font) override {
         if (auto embeddedMonoTypeface = Typography::getEmbeddedJetBrainsMonoTypeface())
             return embeddedMonoTypeface;
 
         auto monoFont = font;
-        monoFont.setTypefaceName (Typography::resolveMonospaceTypefaceName());
-        return juce::LookAndFeel_V4::getTypefaceForFont (monoFont);
+        monoFont.setTypefaceName(Typography::resolveMonospaceTypefaceName());
+        return LookAndFeel_V4::getTypefaceForFont(monoFont);
     }
 
 private:
@@ -309,5 +338,5 @@ private:
     juce::Colour textColorDimmed;
     juce::Colour textBoxBackground;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (gFractorLookAndFeel)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(gFractorLookAndFeel)
 };

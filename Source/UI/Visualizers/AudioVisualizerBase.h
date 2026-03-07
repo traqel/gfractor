@@ -1,11 +1,10 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include <juce_audio_processors/juce_audio_processors.h>
 #include <atomic>
 #include <vector>
 
-#include "../../DSP/AudioRingBuffer.h"
+#include "../../DSP/Processing/AudioRingBuffer.h"
 
 /**
  * Abstract base class for audio visualization components.
@@ -27,12 +26,12 @@ public:
     ~AudioVisualizerBase() override;
 
     /** Called from the audio thread — lock-free, no allocation. */
-    virtual void pushStereoData(const juce::AudioBuffer<float>& buffer);
+    virtual void pushStereoData(const juce::AudioBuffer<float> &buffer);
 
     virtual void setSampleRate(double newSampleRate);
 
     /** Utility for drawing a vertical level bar with gradient fill + 1px signal line. */
-    static void drawLevelBar(juce::Graphics& g,
+    static void drawLevelBar(juce::Graphics &g,
                              juce::Rectangle<float> area,
                              float normalizedLevel,
                              juce::Colour colour,
@@ -45,7 +44,8 @@ protected:
     virtual void processDrainedData(int numNewSamples) = 0;
 
     /** Called after setSampleRate — subclass can recompute FFT bin mappings, etc. */
-    virtual void onSampleRateChanged() {}
+    virtual void onSampleRateChanged() {
+    }
 
     /** Request a repaint even when no new audio data arrived (e.g. mouse interaction, unfreeze). */
     void requestRepaint() { repaintRequested = true; }
@@ -55,8 +55,8 @@ protected:
     void stopVisualizerTimer() { stopTimer(); }
 
     // Rolling buffer accessors (read-only for subclasses)
-    const std::vector<float>& getRollingL() const { return ringBuffer.getL(); }
-    const std::vector<float>& getRollingR() const { return ringBuffer.getR(); }
+    const std::vector<float> &getRollingL() const { return ringBuffer.getL(); }
+    const std::vector<float> &getRollingR() const { return ringBuffer.getR(); }
     int getRollingWritePos() const { return ringBuffer.getWritePos(); }
     int getRollingSize() const { return ringBuffer.getRollingSize(); }
     double getSampleRate() const { return sampleRate; }
@@ -75,7 +75,7 @@ private:
     double sampleRate = 44100.0;
 
     /** Pending sample rate from audio thread — picked up by timerCallback on the message thread. */
-    std::atomic<double> pendingSampleRate { 0.0 };
+    std::atomic<double> pendingSampleRate{0.0};
 
     bool repaintRequested = false;
 };

@@ -4,6 +4,8 @@
 #include "../Theme/ColorPalette.h"
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Typography.h"
+#include "../Theme/UILabels.h"
+#include "../Theme/Icons.h"
 
 //==============================================================================
 SpectrumAnalyzer::SpectrumAnalyzer()
@@ -14,10 +16,21 @@ SpectrumAnalyzer::SpectrumAnalyzer()
     fftProcessor.setTemporalDecay(curveDecay);
     SpectrumAnalyzer::setFftOrder(defaultFftOrder);
     setOpaque(true);
+
+    fullscreenButton.setIcon(Icons::fullscreen);
+    fullscreenButton.onClick = [this] {
+        if (onFullscreen)
+            onFullscreen(fullscreenButton.getToggleState());
+    };
+    addAndMakeVisible(fullscreenButton);
+}
+
+void SpectrumAnalyzer::setFullscreen(const bool fullscreen) {
+    fullscreenButton.setToggleState(fullscreen, juce::dontSendNotification);
 }
 
 void SpectrumAnalyzer::applyTheme() {
-    backgroundColour = juce::Colour(ColorPalette::spectrumBg);
+    backgroundColour = juce::Colour(ColorPalette::background);
     gridColour = juce::Colour(ColorPalette::grid).withAlpha(0.5f);
     textColour = juce::Colour(ColorPalette::textMuted);
     hintColour = juce::Colour(ColorPalette::hintPink);
@@ -45,8 +58,8 @@ void SpectrumAnalyzer::setFftOrder(const int order) {
     hopCounter = 0;
 
     // Resize and clear magnitude arrays
-    smoothedMidDb.assign(static_cast<size_t>(numBins), range.minDb);
-    smoothedSideDb.assign(static_cast<size_t>(numBins), range.minDb);
+    smoothedPrimaryDb.assign(static_cast<size_t>(numBins), range.minDb);
+    smoothedSecondaryDb.assign(static_cast<size_t>(numBins), range.minDb);
 
     ghostSpectrum.resetBuffers(fftSize, range.minDb);
     peakHold.reset(numBins, range.minDb);
@@ -88,49 +101,89 @@ void SpectrumAnalyzer::paint(juce::Graphics &g) {
     if (!gridImage.isNull())
         g.drawImage(gridImage, 0, 0, getWidth(), getHeight(),
                     0, 0, gridImage.getWidth(), gridImage.getHeight());
+
+    // Sub-bass glow on left edge
+    if (lowFreqGlow > 0.001f)
+    {
+        const float glowW = spectrumArea.getWidth() * 0.18f * lowFreqGlow;
+        const auto  glowRect = juce::Rectangle<float>(
+                                   spectrumArea.getX(), spectrumArea.getY(),
+                                   glowW, spectrumArea.getHeight());
+        const juce::Colour glowColour = juce::Colour(0xFFFF4400);
+        const juce::ColourGradient grad(glowColour.withAlpha(0.45f * lowFreqGlow),
+                                        glowRect.getX(), 0.0f,
+                                        glowColour.withAlpha(0.0f),
+                                        glowRect.getRight(), 0.0f, false);
+        g.setGradientFill(grad);
+        g.fillRect(glowRect);
+    }
+
+    // Mode watermark — faint label, top center of spectrum area
+    {
+        const auto label = channelModeToString(channelMode);
+        g.saveState();
+        g.setColour(juce::Colours::white.withAlpha(0.18f));
+        g.setFont(juce::Font(juce::FontOptions{}.withHeight(Typography::bigFontSize).withStyle("Bold")));
+        const auto area = spectrumArea.toNearestInt().withHeight(static_cast<int>(Typography::bigFontSize) + 4);
+        g.drawText(label, area, juce::Justification::centredTop, false);
+        g.restoreState();
+    }
+
     tooltip.paintRangeBars(g, spectrumArea, range,
-                           showMid, showSide, showGhost, playRef,
-                           midColour, sideColour, refMidColour, refSideColour);
+                           showPrimary, showSecondary, showGhost, playRef,
+                           primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour);
     if (showGhost)
-        ghostSpectrum.paint(g, spectrumArea, showMid, showSide,
-                            channelMode,
-                            playRef ? midColour : refMidColour,
-                            playRef ? sideColour : refSideColour);
+        ghostSpectrum.paint(g, spectrumArea, showPrimary, showSecondary,
+                            playRef ? primaryColour : refPrimaryColour,
+                            playRef ? secondaryColour : refSecondaryColour);
     paintMainPaths(g);
-    peakHold.paint(g, spectrumArea, showMid, showSide, showGhost,
-                   channelMode,
-                   playRef ? refMidColour : midColour,
-                   playRef ? refSideColour : sideColour,
-                   playRef ? midColour : refMidColour,
-                   playRef ? sideColour : refSideColour);
+    peakHold.paint(g, spectrumArea, showPrimary, showSecondary, showGhost,
+                   playRef ? refPrimaryColour : primaryColour,
+                   playRef ? refSecondaryColour : secondaryColour,
+                   playRef ? primaryColour : refPrimaryColour,
+                   playRef ? secondaryColour : refSecondaryColour);
+    if (targetCurve.isLoaded() && targetCurveVisible) {
+        targetCurve.buildPaths(range, spectrumArea.getWidth(), spectrumArea.getHeight());
+        targetCurve.paint(g, spectrumArea, showPrimary, showSecondary,
+                          playRef ? primaryColour : refPrimaryColour,
+                          playRef ? secondaryColour : refSecondaryColour);
+    }
     paintAuditFilter(g);
     paintSelectedBand(g);
     tooltip.paintTooltip(g, spectrumArea, range, fftSize, numBins,
-                         getSampleRate(), smoothedMidDb, smoothedSideDb,
-                         showMid, showSide, playRef,
-                         midColour, sideColour, refMidColour, refSideColour);
-    paintLevelMeters(g);
+                         getSampleRate(), smoothedPrimaryDb, smoothedSecondaryDb,
+                         showPrimary, showSecondary, playRef,
+                         primaryColour, secondaryColour, refPrimaryColour, refSecondaryColour);
 }
 
 void SpectrumAnalyzer::resized() {
     rebuildGridImage();
+
+    constexpr int btnSize = Layout::PillButton::smallSquareButton;
+    constexpr int btnMargin = Spacing::gapS;
+    constexpr int rMargin = Layout::SpectrumAnalyzer::rightMargin;
+    constexpr int tMargin = Layout::SpectrumAnalyzer::topMargin;
+    // Position inside spectrum area, top-right — clear of meter bars (right margin) and channel labels (top margin)
+    fullscreenButton.setBounds(getWidth() - rMargin - btnSize - btnMargin,
+                               tMargin + btnMargin,
+                               btnSize, btnSize);
 }
 
 void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
     const auto tx = spectrumArea.getX();
     const auto ty = spectrumArea.getY();
-    const auto &activeSideColour = playRef ? refSideColour : sideColour;
-    const auto &activeMidColour = playRef ? refMidColour : midColour;
+    const auto &activeSecondaryColour = playRef ? refSecondaryColour : secondaryColour;
+    const auto &activePrimaryColour = playRef ? refPrimaryColour : primaryColour;
     const float h = spectrumArea.getHeight();
 
-    if (activeMidColour != lastGradMidCol || activeSideColour != lastGradSideCol
+    if (activePrimaryColour != lastGradPrimaryCol || activeSecondaryColour != lastGradSecondaryCol
         || ty != lastGradTy || h != lastGradH) {
-        cachedMidGrad = juce::ColourGradient(activeMidColour.withAlpha(0.30f), 0.0f, ty,
-                                             activeMidColour.withAlpha(0.0f), 0.0f, ty + h, false);
-        cachedSideGrad = juce::ColourGradient(activeSideColour.withAlpha(0.25f), 0.0f, ty,
-                                              activeSideColour.withAlpha(0.0f), 0.0f, ty + h, false);
-        lastGradMidCol = activeMidColour;
-        lastGradSideCol = activeSideColour;
+        cachedPrimaryGrad = juce::ColourGradient(activePrimaryColour.withAlpha(0.30f), 0.0f, ty,
+                                                 activePrimaryColour.withAlpha(0.0f), 0.0f, ty + h, false);
+        cachedSecondaryGrad = juce::ColourGradient(activeSecondaryColour.withAlpha(0.25f), 0.0f, ty,
+                                                   activeSecondaryColour.withAlpha(0.0f), 0.0f, ty + h, false);
+        lastGradPrimaryCol = activePrimaryColour;
+        lastGradSecondaryCol = activeSecondaryColour;
         lastGradTy = ty;
         lastGradH = h;
     }
@@ -144,12 +197,10 @@ void SpectrumAnalyzer::paintMainPaths(juce::Graphics &g) const {
                      juce::AffineTransform::translation(tx, ty));
     };
 
-    if (channelMode == ChannelMode::LR) {
-        drawMain(midPath, cachedMidGrad, activeMidColour);
-    } else {
-        if (showSide) drawMain(sidePath, cachedSideGrad, activeSideColour);
-        if (showMid) drawMain(midPath, cachedMidGrad, activeMidColour);
-    }
+    if (showSecondary)
+        drawMain(secondaryPath, cachedSecondaryGrad, activeSecondaryColour);
+    if (showPrimary)
+        drawMain(primaryPath, cachedPrimaryGrad, activePrimaryColour);
 }
 
 void SpectrumAnalyzer::updateAuditLabel() {
@@ -230,36 +281,6 @@ void SpectrumAnalyzer::paintSelectedBand(juce::Graphics &g) const {
     if (hi < range.maxFreq) {
         g.drawVerticalLine(static_cast<int>(xHi), sy, sy + sh);
     }
-}
-
-void SpectrumAnalyzer::paintLevelMeters(juce::Graphics &g) const {
-    constexpr float barW = Layout::SpectrumAnalyzer::barWidth;
-    constexpr float gap = Layout::SpectrumAnalyzer::barGap;
-    constexpr float padLeft = Layout::SpectrumAnalyzer::barPaddingLeft;
-
-    const float x0 = spectrumArea.getRight() + padLeft; // mid-bar left
-    const float x1 = x0 + barW + gap; // sidebar left
-    const float y = spectrumArea.getY();
-    const float h = spectrumArea.getHeight();
-
-    const auto &activeMidCol = playRef ? refMidColour : midColour;
-    const auto &activeSideCol = playRef ? refSideColour : sideColour;
-
-    const float midT = juce::jlimit(0.0f, 1.0f,
-                                    (meterMidDb - range.minDb) / (range.maxDb - range.minDb));
-    const float sideT = juce::jlimit(0.0f, 1.0f,
-                                     (meterSideDb - range.minDb) / (range.maxDb - range.minDb));
-
-    drawLevelBar(g, {x0, y, barW, h}, midT, activeMidCol, backgroundColour);
-    drawLevelBar(g, {x1, y, barW, h}, sideT, activeSideCol, backgroundColour);
-
-    // Labels above bars
-    g.setFont(Typography::makeBoldFont(9.0f));
-    g.setColour(textColour);
-    g.drawText("M", static_cast<int>(x0), 0, static_cast<int>(barW), topMargin - 2,
-               juce::Justification::centredBottom);
-    g.drawText("S", static_cast<int>(x1), 0, static_cast<int>(barW), topMargin - 2,
-               juce::Justification::centredBottom);
 }
 
 //==============================================================================
@@ -377,12 +398,41 @@ void SpectrumAnalyzer::mouseMove(const juce::MouseEvent &event) {
         tooltip.hide();
         repaint(spectrumArea.toNearestInt());
     }
+
+    // Update hint only on region transitions, not every frame
+    if (hints) {
+        auto newRegion = HoverRegion::None;
+        if (showBandHints && isInBandHintsArea(event.position))
+            newRegion = HoverRegion::BandHints;
+        else if (spectrumArea.contains(event.position))
+            newRegion = HoverRegion::Spectrum;
+
+        if (newRegion != hoverRegion) {
+            hoverRegion = newRegion;
+            switch (newRegion) {
+                case HoverRegion::BandHints:
+                    hintHandle = hints->setHint("CLICK | DRAG", "Audition band  |  Move between bands");
+                    break;
+                case HoverRegion::Spectrum:
+                    hintHandle = hints->setHint("R CLICK | DRAG", "Audition freq  |  Change Q");
+                    break;
+                case HoverRegion::None:
+                    hintHandle = {};
+                    break;
+            }
+        }
+    }
 }
 
 void SpectrumAnalyzer::mouseExit(const juce::MouseEvent &) {
     if (tooltip.isVisible()) {
         tooltip.hide();
         repaint(spectrumArea.toNearestInt());
+    }
+
+    if (hints) {
+        hoverRegion = HoverRegion::None;
+        hintHandle = {};
     }
 }
 
@@ -415,42 +465,62 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
 
         if (hopCounter >= hopSize) {
             fftProcessor.processBlock(rolling_L, rolling_R, virtualWritePos,
-                                      smoothedMidDb, smoothedSideDb, true);
+                                      smoothedPrimaryDb, smoothedSecondaryDb);
             fftDataReady = true;
             hopCounter = 0;
         }
     }
 
     // Process ghost FIFO (opposite signal for comparison).
-    // THREAD-SAFETY: ghostSpectrum reuses fftProcessor's work buffers (fftDataMid/Side)
+    // THREAD-SAFETY: ghostSpectrum reuses fftProcessor's work buffers (fftDataPrimary/Secondary)
     // and FFT engine. This is safe because:
     //   1. Both paths run exclusively on the UI timer thread.
     //   2. Main hops (above) always finish before this call.
-    //   3. captureInstant defaults to false, so instantMidDb/SideDb are not overwritten.
+    //   3. captureInstant defaults to false, so instantPrimaryDb/SecondaryDb are not overwritten.
     // If ghost processing is ever moved off the UI thread, this invariant must be revisited.
     const bool ghostFftReady = ghostSpectrum.processDrained(fftSize, hopSize,
                                                             [this](const std::vector<float> &srcL,
                                                                    const std::vector<float> &srcR, const int wp,
-                                                                   std::vector<float> &outMid,
-                                                                   std::vector<float> &outSide) {
+                                                                   std::vector<float> &outPrimary,
+                                                                   std::vector<float> &outSecondary) {
                                                                 // captureInstant = false (default): does not
-                                                                // stomp instantMidDb/SideDb used by the tooltip.
+                                                                // stomp instantPrimaryDb/SecondaryDb used by the tooltip.
                                                                 fftProcessor.processBlock(
-                                                                    srcL, srcR, wp, outMid, outSide);
+                                                                    srcL, srcR, wp, outPrimary, outSecondary);
                                                             });
 
     const float w = spectrumArea.getWidth();
     const float h = spectrumArea.getHeight();
-    const bool canRebuildPeakHold = (++peakHoldThrottleCounter >= peakHoldRebuildIntervalFrames);
+    const bool canRebuildPeakHold = ++peakHoldThrottleCounter >= peakHoldRebuildIntervalFrames;
     if (canRebuildPeakHold)
         peakHoldThrottleCounter = 0;
 
     if (fftDataReady && w > 0 && h > 0) {
-        buildPath(midPath, smoothedMidDb, w, h);
-        buildPath(sidePath, smoothedSideDb, w, h);
+        buildPath(primaryPath, smoothedPrimaryDb, w, h);
+        buildPath(secondaryPath, smoothedSecondaryDb, w, h);
+
+        // Sub-bass glow: measure peak energy below 25 Hz
+        {
+            constexpr float kThresholdDb  = -20.0f; // glow starts here
+            constexpr float kMaxDb        = -1.0f;  // glow is full here
+            constexpr float kAttack       = 0.6f;
+            constexpr float kRelease      = 0.05f;
+
+            const float binWidth = (getSampleRate() > 0.0) ? static_cast<float>(getSampleRate()) / static_cast<float>(fftSize) : 1.0f;
+            const int   maxBin   = juce::jlimit(1, static_cast<int>(smoothedPrimaryDb.size()) - 1,
+                                                static_cast<int>(std::ceil(20.0f / binWidth)));
+            float peakDb = kThresholdDb;
+            for (int b = 0; b <= maxBin; ++b)
+                peakDb = std::max(peakDb, smoothedPrimaryDb[static_cast<size_t>(b)]);
+
+            const float target = juce::jlimit(0.0f, 1.0f,
+                                              (peakDb - kThresholdDb) / (kMaxDb - kThresholdDb));
+            const float coeff  = target > lowFreqGlow ? kAttack : kRelease;
+            lowFreqGlow += coeff * (target - lowFreqGlow);
+        }
 
         if (peakHold.isEnabled()) {
-            const bool peaksChanged = peakHold.accumulate(smoothedMidDb, smoothedSideDb, numBins);
+            const bool peaksChanged = peakHold.accumulate(smoothedPrimaryDb, smoothedSecondaryDb, numBins);
             pendingPeakHoldMainRebuild = pendingPeakHoldMainRebuild || peaksChanged;
             if (pendingPeakHoldMainRebuild && canRebuildPeakHold) {
                 peakHold.buildPaths(w, h, [this](juce::Path &p, const std::vector<float> &db,
@@ -470,8 +540,8 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         ghostSpectrum.buildPaths(w, h, pathBuilder);
 
         if (peakHold.isEnabled()) {
-            const bool ghostPeaksChanged = peakHold.accumulateGhost(ghostSpectrum.getSmoothedMidDb(),
-                                                                    ghostSpectrum.getSmoothedSideDb(), numBins);
+            const bool ghostPeaksChanged = peakHold.accumulateGhost(ghostSpectrum.getSmoothedPrimaryDb(),
+                                                                    ghostSpectrum.getSmoothedSecondaryDb(), numBins);
             pendingPeakHoldGhostRebuild = pendingPeakHoldGhostRebuild || ghostPeaksChanged;
             if (pendingPeakHoldGhostRebuild && canRebuildPeakHold) {
                 peakHold.buildGhostPaths(w, h, pathBuilder);
@@ -486,9 +556,9 @@ void SpectrumAnalyzer::processDrainedData(const int numNewSamples) {
         const float bw = static_cast<float>(sampleRate) / static_cast<float>(fftSize);
         const int bin = juce::jlimit(0, numBins - 1,
                                      static_cast<int>(std::lround(tooltip.getFreq() / bw)));
-        tooltip.updateDotHistory(bin, smoothedMidDb, smoothedSideDb,
-                                 ghostSpectrum.getSmoothedMidDb(),
-                                 ghostSpectrum.getSmoothedSideDb());
+        tooltip.updateDotHistory(bin, smoothedPrimaryDb, smoothedSecondaryDb,
+                                 ghostSpectrum.getSmoothedPrimaryDb(),
+                                 ghostSpectrum.getSmoothedSecondaryDb());
     }
 }
 
@@ -568,14 +638,94 @@ void SpectrumAnalyzer::setInfinitePeak(const bool enabled) {
     clearAllCurves();
 }
 
+void SpectrumAnalyzer::savePeakHoldCurve() {
+    if (!peakHold.isEnabled() || peakHold.getPrimaryDb().empty())
+        return;
+
+    const auto &primaryDb = peakHold.getPrimaryDb();
+    const auto &secondaryDb = peakHold.getSecondaryDb();
+    const double sr = getSampleRate() > 0 ? getSampleRate() : 44100.0;
+
+    // Build JSON object
+    auto *obj = new juce::DynamicObject();
+    obj->setProperty("version", 1);
+    obj->setProperty("type", "target_curve");
+    obj->setProperty("fftSize", fftSize);
+    obj->setProperty("numBins", numBins);
+    obj->setProperty("sampleRate", sr);
+    obj->setProperty("minDb", static_cast<double>(range.minDb));
+    obj->setProperty("maxDb", static_cast<double>(range.maxDb));
+    obj->setProperty("minFreq", static_cast<double>(range.minFreq));
+    obj->setProperty("maxFreq", static_cast<double>(range.maxFreq));
+    obj->setProperty("channelMode", channelModeToString(channelMode));
+
+    juce::Array<juce::var> primaryArr, secondaryArr;
+    primaryArr.ensureStorageAllocated(numBins);
+    secondaryArr.ensureStorageAllocated(numBins);
+    for (int i = 0; i < numBins; ++i) {
+        primaryArr.add(static_cast<double>(primaryDb[static_cast<size_t>(i)]));
+        secondaryArr.add(static_cast<double>(secondaryDb[static_cast<size_t>(i)]));
+    }
+    obj->setProperty("primaryDb", primaryArr);
+    obj->setProperty("secondaryDb", secondaryArr);
+
+    const juce::var json(obj);
+    const auto jsonString = juce::JSON::toString(json);
+
+    chooser = std::make_unique<juce::FileChooser>(
+        "Save Target Curve", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.json");
+
+    chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                         [jsonString](const juce::FileChooser &fc) {
+                             auto file = fc.getResult();
+                             if (file == juce::File())
+                                 return;
+                             if (!file.hasFileExtension(".json"))
+                                 file = file.withFileExtension("json");
+                             file.replaceWithText(jsonString);
+                         });
+}
+
+void SpectrumAnalyzer::loadTargetCurve(std::function<void(bool)> onLoaded) {
+    chooser = std::make_unique<juce::FileChooser>(
+        "Load Target Curve", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.json");
+
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                         [this, callback = std::move(onLoaded)](const juce::FileChooser &fc) {
+                             const auto file = fc.getResult();
+                             if (file == juce::File()) {
+                                 if (callback) callback(false);
+                                 return;
+                             }
+                             bool ok = false;
+                             try {
+                                 ok = targetCurve.loadFromFile(file);
+                             } catch (...) {
+                                 targetCurve.clear();
+                             }
+                             if (ok) {
+                                 targetCurve.buildPaths(range, spectrumArea.getWidth(), spectrumArea.getHeight());
+                                 repaint();
+                             }
+                             if (callback) callback(ok);
+                         });
+}
+
+void SpectrumAnalyzer::clearTargetCurve() {
+    targetCurve.clear();
+    repaint();
+}
+
 void SpectrumAnalyzer::clearAllCurves() {
     const auto nb = static_cast<size_t>(numBins);
-    smoothedMidDb.assign(nb, range.minDb);
-    smoothedSideDb.assign(nb, range.minDb);
-    fftProcessor.resetInstantDb(range.minDb); // clear instant arrays without reallocating
+    smoothedPrimaryDb.assign(nb, range.minDb);
+    smoothedSecondaryDb.assign(nb, range.minDb);
+    fftProcessor.setMinDb(range.minDb);
     ghostSpectrum.resetBuffers(fftSize, range.minDb);
-    midPath.clear();
-    sidePath.clear();
+    primaryPath.clear();
+    secondaryPath.clear();
     ghostSpectrum.clearPaths();
     peakHold.reset(numBins, range.minDb);
     peakHoldThrottleCounter = 0;
@@ -644,7 +794,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
     juce::Graphics g(gridImage);
     g.addTransform(juce::AffineTransform::scale(pixelScale));
 
-    const auto labelFont = Typography::makeBoldFont(Typography::mainFontSize);
+    const auto labelFont = Typography::makeBoldFont(Typography::smallFontSize);
     g.setFont(labelFont);
 
     // ── Band hint bar (within topMargin) ─────────────────────────────────────
@@ -695,7 +845,7 @@ void SpectrumAnalyzer::rebuildGridImage() {
 
     // --- Vertical frequency grid lines + labels below ---
     static constexpr float freqLines[] = {20, 40, 80, 120, 200, 500, 1000, 2000, 5000, 10000, 20000};
-    static const juce::String freqLabels[] = {"20", "40", "80", "120", "200", "500", "1k", "2k", "5k", "10k", "20k"};
+    const auto axisFont = Typography::makeLightFont(12.0f);
 
     for (int i = 0; i < 11; ++i) {
         if (freqLines[i] < range.minFreq || freqLines[i] > range.maxFreq)
@@ -703,8 +853,9 @@ void SpectrumAnalyzer::rebuildGridImage() {
         const float x = sx + range.frequencyToX(freqLines[i], sw);
         g.setColour(gridColour);
         g.drawVerticalLine(static_cast<int>(x), sy, sy + sh);
-        g.setColour(textColour);
-        g.drawText(freqLabels[i],
+        g.setColour(juce::Colour(ColorPalette::axisTextColor));
+        g.setFont(axisFont);
+        g.drawText(UILabels::Spectrum::frequencyLabels[i],
                    static_cast<int>(x) - 15, static_cast<int>(sy + sh) + 6,
                    30, bottomMargin - 10, juce::Justification::centredTop);
     }
@@ -713,9 +864,6 @@ void SpectrumAnalyzer::rebuildGridImage() {
     static constexpr float dbLines[] = {
         -90.0f, -80.0f, -70.0f, -60.0f, -50.0f, -40.0f, -30.0f, -20.0f, -10.0f, -6.0f, -3.0f, 0.0f
     };
-    static const juce::String dbLabels[] = {
-        "-90", "-80", "-70", "-60", "-50", "-40", "-30", "-20", "-10", "-6", "-3", "0"
-    };
 
     for (int i = 0; i < 12; ++i) {
         if (dbLines[i] < range.minDb || dbLines[i] > range.maxDb)
@@ -723,8 +871,9 @@ void SpectrumAnalyzer::rebuildGridImage() {
         const float y = sy + range.dbToY(dbLines[i], sh);
         g.setColour(gridColour);
         g.drawHorizontalLine(static_cast<int>(y), sx, sx + sw);
-        g.setColour(textColour);
-        g.drawText(dbLabels[i],
+        g.setColour(juce::Colour(ColorPalette::axisTextColor));
+        g.setFont(axisFont);
+        g.drawText(UILabels::Spectrum::dbLabels[i],
                    6, static_cast<int>(y) - 7,
                    leftMargin - 14, 14, juce::Justification::centredRight);
     }

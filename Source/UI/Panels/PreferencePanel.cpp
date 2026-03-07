@@ -7,25 +7,24 @@
 #include "../Theme/LayoutConstants.h"
 #include "../Theme/Spacing.h"
 #include "../Theme/Typography.h"
+#include "../Theme/UILabels.h"
 
 //==============================================================================
 PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
-                                 std::function<void()> themeChangedCallback,
-                                 const bool bandHintsOn,
-                                 std::function<void(bool)> bandHintsChangedCallback)
+                                 juce::AudioProcessorValueTreeState &apvts,
+                                 std::function<void()> themeChangedCallback)
     : settingsRef(settings),
+      apvtsRef(apvts),
       snapshot{
           settings.getMinDb(), settings.getMaxDb(),
           settings.getMinFreq(), settings.getMaxFreq(),
-          settings.getMidColour(), settings.getSideColour(),
-          settings.getRefMidColour(), settings.getRefSideColour(),
-          settings.getSmoothing(), settings.getFftOrder(), settings.getOverlapFactor(),
-          settings.getCurveDecay(), settings.getSlope(),
+          settings.getPrimaryColour(), settings.getSecondaryColour(),
+          settings.getRefPrimaryColour(), settings.getRefSecondaryColour(),
+          settings.getSmoothing(),
           ColorPalette::getTheme(),
-          bandHintsOn
+          apvts.getRawParameterValue("transientLength")->load()
       },
-      onThemeChanged(std::move(themeChangedCallback)),
-      onBandHintsChanged(std::move(bandHintsChangedCallback)) {
+      onThemeChanged(std::move(themeChangedCallback)) {
     constexpr auto textBoxWidth = Layout::PreferencePanel::textBoxWidth;
     setOpaque(true);
 
@@ -35,7 +34,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     minDbSlider.setValue(settings.getMinDb(), juce::dontSendNotification);
     minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minDbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    minDbSlider.onValueChange = [this]() {
+    minDbSlider.onValueChange = [this] {
         settingsRef.setDbRange(static_cast<float>(minDbSlider.getValue()),
                                static_cast<float>(maxDbSlider.getValue()));
     };
@@ -45,7 +44,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     maxDbSlider.setValue(settings.getMaxDb(), juce::dontSendNotification);
     maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxDbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    maxDbSlider.onValueChange = [this]() {
+    maxDbSlider.onValueChange = [this] {
         settingsRef.setDbRange(static_cast<float>(minDbSlider.getValue()),
                                static_cast<float>(maxDbSlider.getValue()));
     };
@@ -65,7 +64,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     minFreqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     minFreqSlider.setTextValueSuffix(" Hz");
-    minFreqSlider.onValueChange = [this]() {
+    minFreqSlider.onValueChange = [this] {
         settingsRef.setFreqRange(static_cast<float>(minFreqSlider.getValue()),
                                  static_cast<float>(maxFreqSlider.getValue()));
     };
@@ -76,7 +75,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
     maxFreqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     maxFreqSlider.setTextValueSuffix(" Hz");
-    maxFreqSlider.onValueChange = [this]() {
+    maxFreqSlider.onValueChange = [this] {
         settingsRef.setFreqRange(static_cast<float>(minFreqSlider.getValue()),
                                  static_cast<float>(maxFreqSlider.getValue()));
     };
@@ -90,60 +89,29 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     maxFreqLabel.setJustificationType(juce::Justification::centredRight);
 
     // --- Color swatches ---
-    midSwatch.colour = settings.getMidColour();
-    sideSwatch.colour = settings.getSideColour();
-    refMidSwatch.colour = settings.getRefMidColour();
-    refSideSwatch.colour = settings.getRefSideColour();
+    primarySwatch.colour = settings.getPrimaryColour();
+    secondarySwatch.colour = settings.getSecondaryColour();
+    refPrimarySwatch.colour = settings.getRefPrimaryColour();
+    refSecondarySwatch.colour = settings.getRefSecondaryColour();
 
-    midSwatch.label = "Mid";
-    sideSwatch.label = "Side";
-    refMidSwatch.label = "Ref M";
-    refSideSwatch.label = "Ref S";
+    primarySwatch.label = "Prim";
+    secondarySwatch.label = "Sec";
+    refPrimarySwatch.label = "Ref P";
+    refSecondarySwatch.label = "Ref S";
 
-    midSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setMidColour(c); };
-    sideSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setSideColour(c); };
-    refMidSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefMidColour(c); };
-    refSideSwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefSideColour(c); };
+    primarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setPrimaryColour(c); };
+    secondarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setSecondaryColour(c); };
+    refPrimarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefPrimaryColour(c); };
+    refSecondarySwatch.onColourChanged = [this](const juce::Colour c) { settingsRef.setRefSecondaryColour(c); };
 
-    addAndMakeVisible(midSwatch);
-    addAndMakeVisible(sideSwatch);
-    addAndMakeVisible(refMidSwatch);
-    addAndMakeVisible(refSideSwatch);
+    addAndMakeVisible(primarySwatch);
+    addAndMakeVisible(secondarySwatch);
+    addAndMakeVisible(refPrimarySwatch);
+    addAndMakeVisible(refSecondarySwatch);
 
     addAndMakeVisible(coloursLabel);
     coloursLabel.setText("Colours", juce::dontSendNotification);
     coloursLabel.setJustificationType(juce::Justification::centredRight);
-
-    // --- FFT order combo box ---
-    addAndMakeVisible(fftOrderCombo);
-    fftOrderCombo.addItem("2048", 2);
-    fftOrderCombo.addItem("4096", 3);
-    fftOrderCombo.addItem("8192", 4);
-    fftOrderCombo.addItem("16384", 5);
-    fftOrderCombo.setSelectedId(fftOrderToId(settings.getFftOrder()),
-                                juce::dontSendNotification);
-    fftOrderCombo.onChange = [this]() {
-        settingsRef.setFftOrder(idToFftOrder(fftOrderCombo.getSelectedId()));
-    };
-
-    addAndMakeVisible(fftOrderLabel);
-    fftOrderLabel.setText("FFT", juce::dontSendNotification);
-    fftOrderLabel.setJustificationType(juce::Justification::centredRight);
-
-    // --- Hann overlap combo box ---
-    addAndMakeVisible(overlapCombo);
-    overlapCombo.addItem("2x (50%)", 1);
-    overlapCombo.addItem("4x (75%)", 2);
-    overlapCombo.addItem("8x (87.5%)", 3);
-    overlapCombo.setSelectedId(overlapFactorToId(settings.getOverlapFactor()),
-                               juce::dontSendNotification);
-    overlapCombo.onChange = [this]() {
-        settingsRef.setOverlapFactor(idToOverlapFactor(overlapCombo.getSelectedId()));
-    };
-
-    addAndMakeVisible(overlapLabel);
-    overlapLabel.setText("Overlap", juce::dontSendNotification);
-    overlapLabel.setJustificationType(juce::Justification::centredRight);
 
     // --- Smoothing combo box ---
     addAndMakeVisible(smoothingCombo);
@@ -153,7 +121,7 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     smoothingCombo.addItem("1/12 Oct", 4);
     smoothingCombo.setSelectedId(smoothingModeToId(settings.getSmoothing()),
                                  juce::dontSendNotification);
-    smoothingCombo.onChange = [this]() {
+    smoothingCombo.onChange = [this] {
         settingsRef.setSmoothing(idToSmoothingMode(smoothingCombo.getSelectedId()));
     };
 
@@ -161,45 +129,30 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     smoothingLabel.setText("Smooth", juce::dontSendNotification);
     smoothingLabel.setJustificationType(juce::Justification::centredRight);
 
-    // --- Curve decay slider ---
-    addAndMakeVisible(decaySlider);
-    decaySlider.setRange(0.0, 1.0, 0.001);
-    decaySlider.setSkewFactorFromMidPoint(0.95);
-    decaySlider.setValue(settings.getCurveDecay(), juce::dontSendNotification);
-    decaySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
-    decaySlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    decaySlider.setNumDecimalPlacesToDisplay(3);
-    decaySlider.onValueChange = [this]() {
-        settingsRef.setCurveDecay(static_cast<float>(decaySlider.getValue()));
-    };
+    // --- Transient length slider ---
+    addAndMakeVisible(transientLengthSlider);
+    transientLengthSlider.setRange(0.1, 10.0, 0.1);
+    transientLengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
+    transientLengthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    transientLengthSlider.setTextValueSuffix(" ms");
+    transientLengthSlider.setNumDecimalPlacesToDisplay(1);
+    transientLengthAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvtsRef, "transientLength", transientLengthSlider);
 
-    addAndMakeVisible(decayLabel);
-    decayLabel.setText("Decay", juce::dontSendNotification);
-    decayLabel.setJustificationType(juce::Justification::centredRight);
-
-    // --- Slope slider ---
-    addAndMakeVisible(slopeSlider);
-    slopeSlider.setRange(-9.0, 9.0, 0.1);
-    slopeSlider.setValue(settings.getSlope(), juce::dontSendNotification);
-    slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
-    slopeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    slopeSlider.setTextValueSuffix(" dB");
-    slopeSlider.onValueChange = [this]() {
-        settingsRef.setSlope(static_cast<float>(slopeSlider.getValue()));
-    };
-
-    addAndMakeVisible(slopeLabel);
-    slopeLabel.setText("Slope", juce::dontSendNotification);
-    slopeLabel.setJustificationType(juce::Justification::centredRight);
+    addAndMakeVisible(transientLengthLabel);
+    transientLengthLabel.setText("Trans Len", juce::dontSendNotification);
+    transientLengthLabel.setJustificationType(juce::Justification::centredRight);
 
     // --- Theme combo box ---
     addAndMakeVisible(themeCombo);
-    themeCombo.addItem("Dark", 1);
-    themeCombo.addItem("Light", 2);
-    themeCombo.addItem("Balanced", 3);
+    themeCombo.addItem("Balanced", 1);
+    themeCombo.addItem("Dark", 2);
+    themeCombo.addItem("Light", 3);
     themeCombo.setSelectedId(themeToId(ColorPalette::getTheme()), juce::dontSendNotification);
-    themeCombo.onChange = [this]() {
+    themeCombo.onChange = [this] {
         ColorPalette::setTheme(idToTheme(themeCombo.getSelectedId()));
+        applyThemeColours();
+        repaint();
         if (onThemeChanged)
             onThemeChanged();
     };
@@ -208,72 +161,65 @@ PreferencePanel::PreferencePanel(ISpectrumDisplaySettings &settings,
     themeLabel.setText("Theme", juce::dontSendNotification);
     themeLabel.setJustificationType(juce::Justification::centredRight);
 
-    // --- Band hints toggle ---
-    bandHintsToggle.setToggleState(bandHintsOn, juce::dontSendNotification);
-    bandHintsToggle.onClick = [this]() {
-        if (onBandHintsChanged)
-            onBandHintsChanged(bandHintsToggle.getToggleState());
-    };
-    addAndMakeVisible(bandHintsToggle);
-
-    addAndMakeVisible(bandHintsLabel);
-    bandHintsLabel.setText("Bands", juce::dontSendNotification);
-    bandHintsLabel.setJustificationType(juce::Justification::centredRight);
-
     // --- Save button ---
     addAndMakeVisible(saveButton);
-    saveButton.onClick = [this]() {
+    saveButton.onClick = [this] {
         AnalyzerSettings::save(settingsRef);
         AnalyzerSettings::saveTheme(ColorPalette::getTheme());
-        AnalyzerSettings::saveBandHints(bandHintsToggle.getToggleState());
+        if (onSave) onSave();
         if (onClose) onClose();
     };
 
     // --- Cancel button ---
     addAndMakeVisible(cancelButton);
-    cancelButton.onClick = [this]() { cancel(); };
+    cancelButton.onClick = [this] { cancel(); };
 
     // --- Reset to defaults button ---
     addAndMakeVisible(resetButton);
-    resetButton.onClick = [this]() { resetToDefaults(); };
+    resetButton.onClick = [this] { resetToDefaults(); };
 
-    const auto panelFont = Typography::makeFont(Typography::mainFontSize);
-    const auto applyLabelFont = [&](juce::Label &label) {
-        label.setFont(panelFont);
-        label.setMinimumHorizontalScale(1.0f);
-    };
+    applyThemeColours();
+}
 
-    applyLabelFont(minDbLabel);
-    applyLabelFont(maxDbLabel);
-    applyLabelFont(minFreqLabel);
-    applyLabelFont(maxFreqLabel);
-    applyLabelFont(coloursLabel);
-    applyLabelFont(fftOrderLabel);
-    applyLabelFont(overlapLabel);
-    applyLabelFont(smoothingLabel);
-    applyLabelFont(decayLabel);
-    applyLabelFont(slopeLabel);
-    applyLabelFont(themeLabel);
-    applyLabelFont(bandHintsLabel);
+//==============================================================================
+void PreferencePanel::applyThemeColours() {
+    const auto textColour = juce::Colour(ColorPalette::textBright);
+    const auto panelFont  = Typography::makeFont(Typography::mainFontSize);
 
-    minDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-    maxDbSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-    minFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-    maxFreqSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, textBoxWidth, 24);
-    decaySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
-    slopeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 90, 24);
+    for (auto *label : { &minDbLabel, &maxDbLabel, &minFreqLabel, &maxFreqLabel,
+                         &coloursLabel, &smoothingLabel, &transientLengthLabel, &themeLabel }) {
+        label->setFont(panelFont);
+        label->setMinimumHorizontalScale(1.0f);
+        label->setColour(juce::Label::textColourId, textColour);
+    }
+
+    const auto panelColour = juce::Colour(ColorPalette::panel);
+    for (auto *combo : { &smoothingCombo, &themeCombo }) {
+        combo->setColour(juce::ComboBox::textColourId,       textColour);
+        combo->setColour(juce::ComboBox::backgroundColourId, panelColour);
+        combo->setColour(juce::ComboBox::arrowColourId,      textColour);
+        combo->setColour(juce::ComboBox::outlineColourId,    juce::Colours::transparentBlack);
+        combo->repaint();
+    }
+
+    const auto textBoxBg = panelColour;
+    for (auto *slider : { &minDbSlider, &maxDbSlider, &minFreqSlider,
+                          &maxFreqSlider, &transientLengthSlider }) {
+        slider->setColour(juce::Slider::textBoxTextColourId,       textColour);
+        slider->setColour(juce::Slider::textBoxBackgroundColourId, textBoxBg);
+        slider->setColour(juce::Slider::textBoxOutlineColourId,    juce::Colours::transparentBlack);
+        slider->repaint();
+    }
 }
 
 //==============================================================================
 void PreferencePanel::paint(juce::Graphics &g) {
     g.fillAll(juce::Colour(ColorPalette::panel));
-    g.setColour(juce::Colour(ColorPalette::panelBorder));
-    g.drawRect(getLocalBounds(), 1);
 
     // Section header
     g.setColour(juce::Colour(ColorPalette::panelHeading));
     g.setFont(Typography::makeBoldFont(Typography::mainFontSize));
-    g.drawText("Settings", getLocalBounds().removeFromTop(30),
+    g.drawText(UILabels::Panels::settings, getLocalBounds().removeFromTop(30),
                juce::Justification::centred);
 }
 
@@ -291,21 +237,7 @@ void PreferencePanel::resized() {
         control.setBounds(row);
     };
 
-    layoutRow(minDbLabel, minDbSlider);
-    layoutRow(maxDbLabel, maxDbSlider);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
-    layoutRow(minFreqLabel, minFreqSlider);
-    layoutRow(maxFreqLabel, maxFreqSlider);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
-    layoutRow(fftOrderLabel, fftOrderCombo);
-
-    bounds.removeFromTop(Spacing::gapS); // spacing
-
-    layoutRow(overlapLabel, overlapCombo);
+    layoutRow(themeLabel, themeCombo);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -313,19 +245,23 @@ void PreferencePanel::resized() {
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    layoutRow(decayLabel, decaySlider);
+    layoutRow(transientLengthLabel, transientLengthSlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    layoutRow(slopeLabel, slopeSlider);
+    layoutRow(minDbLabel, minDbSlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    layoutRow(themeLabel, themeCombo);
+    layoutRow(maxDbLabel, maxDbSlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
-    layoutRow(bandHintsLabel, bandHintsToggle);
+    layoutRow(minFreqLabel, minFreqSlider);
+
+    bounds.removeFromTop(Spacing::gapS); // spacing
+
+    layoutRow(maxFreqLabel, maxFreqSlider);
 
     bounds.removeFromTop(Spacing::gapS); // spacing
 
@@ -337,13 +273,13 @@ void PreferencePanel::resized() {
     const int totalSwatchAreaW = colourRow.getWidth();
     const int swatchW = (totalSwatchAreaW - 3 * swatchGap) / 4;
 
-    midSwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    primarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
     colourRow.removeFromLeft(swatchGap);
-    sideSwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    secondarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
     colourRow.removeFromLeft(swatchGap);
-    refMidSwatch.setBounds(colourRow.removeFromLeft(swatchW));
+    refPrimarySwatch.setBounds(colourRow.removeFromLeft(swatchW));
     colourRow.removeFromLeft(swatchGap);
-    refSideSwatch.setBounds(colourRow);
+    refSecondarySwatch.setBounds(colourRow);
 
     bounds.removeFromTop(Spacing::gapL); // spacing
 
@@ -404,27 +340,6 @@ void PreferencePanel::ColourSwatch::changeListenerCallback(juce::ChangeBroadcast
 //==============================================================================
 // Static helpers
 
-int PreferencePanel::fftOrderToId(const int order) {
-    switch (order) {
-        case 11: return 2;
-        case 12: return 3;
-        case 13: return 4;
-        case 14: return 5;
-        default: return 4;
-    }
-}
-
-int PreferencePanel::idToFftOrder(const int id) {
-    switch (id) {
-        case 1: return 10;
-        case 2: return 11;
-        case 3: return 12;
-        case 4: return 13;
-        case 5: return 14;
-        default: return 13;
-    }
-}
-
 int PreferencePanel::smoothingModeToId(const SmoothingMode m) {
     switch (m) {
         case SmoothingMode::None: return 1;
@@ -445,39 +360,21 @@ SmoothingMode PreferencePanel::idToSmoothingMode(const int id) {
     }
 }
 
-int PreferencePanel::overlapFactorToId(const int factor) {
-    switch (factor) {
-        case 2: return 1;
-        case 4: return 2;
-        case 8: return 3;
-        default: return 2;
-    }
-}
-
-int PreferencePanel::idToOverlapFactor(const int id) {
-    switch (id) {
-        case 1: return 2;
-        case 2: return 4;
-        case 3: return 8;
-        default: return 4;
-    }
-}
-
 int PreferencePanel::themeToId(const ColorPalette::Theme theme) {
     switch (theme) {
-        case ColorPalette::Theme::Dark: return 1;
-        case ColorPalette::Theme::Light: return 2;
-        case ColorPalette::Theme::Balanced: return 3;
+        case ColorPalette::Theme::Balanced: return 1;
+        case ColorPalette::Theme::Dark:     return 2;
+        case ColorPalette::Theme::Light:    return 3;
     }
     return 1;
 }
 
 ColorPalette::Theme PreferencePanel::idToTheme(const int id) {
     switch (id) {
-        case 1: return ColorPalette::Theme::Dark;
-        case 2: return ColorPalette::Theme::Light;
-        case 3: return ColorPalette::Theme::Balanced;
-        default: return ColorPalette::Theme::Dark;
+        case 1:  return ColorPalette::Theme::Balanced;
+        case 2:  return ColorPalette::Theme::Dark;
+        case 3:  return ColorPalette::Theme::Light;
+        default: return ColorPalette::Theme::Balanced;
     }
 }
 
@@ -485,33 +382,23 @@ ColorPalette::Theme PreferencePanel::idToTheme(const int id) {
 void PreferencePanel::revertToSnapshot() {
     settingsRef.setDbRange(snapshot.minDb, snapshot.maxDb);
     settingsRef.setFreqRange(snapshot.minFreq, snapshot.maxFreq);
-    settingsRef.setMidColour(snapshot.midColour);
-    settingsRef.setSideColour(snapshot.sideColour);
-    settingsRef.setRefMidColour(snapshot.refMidColour);
-    settingsRef.setRefSideColour(snapshot.refSideColour);
+    settingsRef.setPrimaryColour(snapshot.primaryColour);
+    settingsRef.setSecondaryColour(snapshot.secondaryColour);
+    settingsRef.setRefPrimaryColour(snapshot.refPrimaryColour);
+    settingsRef.setRefSecondaryColour(snapshot.refSecondaryColour);
     settingsRef.setSmoothing(snapshot.smoothing);
     smoothingCombo.setSelectedId(smoothingModeToId(snapshot.smoothing), juce::dontSendNotification);
 
-    settingsRef.setFftOrder(snapshot.fftOrder);
-    fftOrderCombo.setSelectedId(fftOrderToId(snapshot.fftOrder), juce::dontSendNotification);
-
-    settingsRef.setOverlapFactor(snapshot.overlapFactor);
-    overlapCombo.setSelectedId(overlapFactorToId(snapshot.overlapFactor), juce::dontSendNotification);
-
-    settingsRef.setCurveDecay(snapshot.curveDecay);
-    decaySlider.setValue(snapshot.curveDecay, juce::dontSendNotification);
-
-    slopeSlider.setValue(snapshot.slope, juce::dontSendNotification);
-    settingsRef.setSlope(snapshot.slope);
+    if (auto *param = apvtsRef.getParameter("transientLength"))
+        param->setValueNotifyingHost(param->convertTo0to1(snapshot.transientLength));
+    transientLengthSlider.setValue(snapshot.transientLength, juce::dontSendNotification);
 
     ColorPalette::setTheme(snapshot.theme);
     themeCombo.setSelectedId(themeToId(snapshot.theme), juce::dontSendNotification);
+    applyThemeColours();
+    repaint();
     if (onThemeChanged)
         onThemeChanged();
-
-    bandHintsToggle.setToggleState(snapshot.bandHints, juce::dontSendNotification);
-    if (onBandHintsChanged)
-        onBandHintsChanged(snapshot.bandHints);
 }
 
 void PreferencePanel::resetToDefaults() {
@@ -519,22 +406,13 @@ void PreferencePanel::resetToDefaults() {
 
     settingsRef.setDbRange(D::minDb, D::maxDb);
     settingsRef.setFreqRange(D::minFreq, D::maxFreq);
-    settingsRef.setMidColour(D::midColour());
-    settingsRef.setSideColour(D::sideColour());
-    settingsRef.setRefMidColour(D::refMidColour());
-    settingsRef.setRefSideColour(D::refSideColour());
+    settingsRef.setPrimaryColour(D::primaryColour());
+    settingsRef.setSecondaryColour(D::secondaryColour());
+    settingsRef.setRefPrimaryColour(D::refPrimaryColour());
+    settingsRef.setRefSecondaryColour(D::refSecondaryColour());
 
     settingsRef.setSmoothing(D::smoothing);
     smoothingCombo.setSelectedId(smoothingModeToId(D::smoothing), juce::dontSendNotification);
-
-    settingsRef.setFftOrder(D::fftOrder);
-    fftOrderCombo.setSelectedId(fftOrderToId(D::fftOrder), juce::dontSendNotification);
-
-    settingsRef.setOverlapFactor(D::overlapFactor);
-    overlapCombo.setSelectedId(overlapFactorToId(D::overlapFactor), juce::dontSendNotification);
-
-    settingsRef.setCurveDecay(D::curveDecay);
-    decaySlider.setValue(D::curveDecay, juce::dontSendNotification);
 
     // Update sliders to reflect defaults
     minDbSlider.setValue(D::minDb, juce::dontSendNotification);
@@ -542,28 +420,27 @@ void PreferencePanel::resetToDefaults() {
     minFreqSlider.setValue(D::minFreq, juce::dontSendNotification);
     maxFreqSlider.setValue(D::maxFreq, juce::dontSendNotification);
 
-    slopeSlider.setValue(0.0, juce::dontSendNotification);
-    settingsRef.setSlope(0.0f);
+    if (auto *param = apvtsRef.getParameter("transientLength"))
+        param->setValueNotifyingHost(param->convertTo0to1(2.0f));
+    transientLengthSlider.setValue(2.0, juce::dontSendNotification);
 
     ColorPalette::setTheme(ColorPalette::Theme::Balanced);
     themeCombo.setSelectedId(themeToId(ColorPalette::Theme::Balanced), juce::dontSendNotification);
+    applyThemeColours();
+    repaint();
     if (onThemeChanged)
         onThemeChanged();
 
-    bandHintsToggle.setToggleState(true, juce::dontSendNotification);
-    if (onBandHintsChanged)
-        onBandHintsChanged(true);
-
     // Update color swatches
-    midSwatch.colour = D::midColour();
-    sideSwatch.colour = D::sideColour();
-    refMidSwatch.colour = D::refMidColour();
-    refSideSwatch.colour = D::refSideColour();
+    primarySwatch.colour = D::primaryColour();
+    secondarySwatch.colour = D::secondaryColour();
+    refPrimarySwatch.colour = D::refPrimaryColour();
+    refSecondarySwatch.colour = D::refSecondaryColour();
 
-    midSwatch.repaint();
-    sideSwatch.repaint();
-    refMidSwatch.repaint();
-    refSideSwatch.repaint();
+    primarySwatch.repaint();
+    secondarySwatch.repaint();
+    refPrimarySwatch.repaint();
+    refSecondarySwatch.repaint();
 
     AnalyzerSettings::save(settingsRef);
     AnalyzerSettings::saveTheme(ColorPalette::getTheme());

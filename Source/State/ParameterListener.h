@@ -1,8 +1,9 @@
 #pragma once
 
+#include <array>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "ParameterIDs.h"
-#include "../DSP/gFractorDSP.h"
+#include "../DSP/Interfaces/IDSPProcessor.h"
 
 /**
  * ParameterListener
@@ -40,18 +41,13 @@ public:
     /**
      * Constructor
      * @param apvts Reference to the AudioProcessorValueTreeState
-     * @param dsp Reference to the DSP processor
+     * @param dsp Reference to the DSP processor (IDSPProcessor interface for DIP compliance)
      */
-    ParameterListener(juce::AudioProcessorValueTreeState &apvts, gFractorDSP &dsp)
+    ParameterListener(juce::AudioProcessorValueTreeState &apvts, IDSPProcessor &dsp)
         : apvtsRef(apvts), dspRef(dsp) {
-        // Register as listener for all parameters
-        apvtsRef.addParameterListener(ParameterIDs::gain, this);
-        apvtsRef.addParameterListener(ParameterIDs::dryWet, this);
-        apvtsRef.addParameterListener(ParameterIDs::bypass, this);
-        apvtsRef.addParameterListener(ParameterIDs::outputMidEnable, this);
-        apvtsRef.addParameterListener(ParameterIDs::outputSideEnable, this);
-
-        // Initialize DSP with current parameter values
+        for (const auto &paramID: kTrackedParameterIDs) {
+            apvtsRef.addParameterListener(paramID, this);
+        }
         updateAllParameters();
     }
 
@@ -59,11 +55,9 @@ public:
      * Destructor - unregisters all parameter listeners
      */
     ~ParameterListener() override {
-        apvtsRef.removeParameterListener(ParameterIDs::gain, this);
-        apvtsRef.removeParameterListener(ParameterIDs::dryWet, this);
-        apvtsRef.removeParameterListener(ParameterIDs::bypass, this);
-        apvtsRef.removeParameterListener(ParameterIDs::outputMidEnable, this);
-        apvtsRef.removeParameterListener(ParameterIDs::outputSideEnable, this);
+        for (const auto &paramID: kTrackedParameterIDs) {
+            apvtsRef.removeParameterListener(paramID, this);
+        }
     }
 
     /**
@@ -78,13 +72,15 @@ public:
         if (parameterID == ParameterIDs::gain) {
             dspRef.setGain(newValue);
         } else if (parameterID == ParameterIDs::dryWet) {
-            dspRef.setDryWet(newValue / 100.0f); // parameter is 0–100%, DSP expects 0–1
+            dspRef.setDryWet(newValue / 100.0f);
         } else if (parameterID == ParameterIDs::bypass) {
             dspRef.setBypassed(newValue > 0.5f);
-        } else if (parameterID == ParameterIDs::outputMidEnable) {
-            dspRef.setMidEnabled(newValue > 0.5f);
-        } else if (parameterID == ParameterIDs::outputSideEnable) {
-            dspRef.setSideEnabled(newValue > 0.5f);
+        } else if (parameterID == ParameterIDs::outputPrimaryEnable) {
+            dspRef.setPrimaryEnabled(newValue > 0.5f);
+        } else if (parameterID == ParameterIDs::outputSecondaryEnable) {
+            dspRef.setSecondaryEnabled(newValue > 0.5f);
+        } else if (parameterID == ParameterIDs::transientLength) {
+            dspRef.setTransientLength(newValue);
         }
     }
 
@@ -105,19 +101,31 @@ public:
         if (bypassParam != nullptr)
             dspRef.setBypassed(bypassParam->load() > 0.5f);
 
-        const auto *midEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputMidEnable);
-        const auto *sideEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputSideEnable);
+        const auto *midEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputPrimaryEnable);
+        const auto *sideEnableParam = apvtsRef.getRawParameterValue(ParameterIDs::outputSecondaryEnable);
 
         if (midEnableParam != nullptr)
-            dspRef.setMidEnabled(midEnableParam->load() > 0.5f);
+            dspRef.setPrimaryEnabled(midEnableParam->load() > 0.5f);
 
         if (sideEnableParam != nullptr)
-            dspRef.setSideEnabled(sideEnableParam->load() > 0.5f);
+            dspRef.setSecondaryEnabled(sideEnableParam->load() > 0.5f);
+
+        if (const auto *tl = apvtsRef.getRawParameterValue(ParameterIDs::transientLength))
+            dspRef.setTransientLength(tl->load());
     }
 
 private:
+    static constexpr std::array kTrackedParameterIDs = {
+        ParameterIDs::gain,
+        ParameterIDs::dryWet,
+        ParameterIDs::bypass,
+        ParameterIDs::outputPrimaryEnable,
+        ParameterIDs::outputSecondaryEnable,
+        ParameterIDs::transientLength,
+    };
+
     juce::AudioProcessorValueTreeState &apvtsRef;
-    gFractorDSP &dspRef;
+    IDSPProcessor &dspRef;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ParameterListener)
 };

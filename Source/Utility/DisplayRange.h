@@ -11,23 +11,26 @@ struct DisplayRange {
 
     [[nodiscard]]
     float frequencyToX(const float freq, const float width) const noexcept {
-        if (freq <= 0.0f) return 0.0f;
+        if (freq <= 0.0f || logRange == 0.0f) return 0.0f;
         return width * (std::log2(freq / minFreq) / logRange);
     }
 
     [[nodiscard]]
     float xToFrequency(const float x, const float width) const noexcept {
         return juce::jlimit(minFreq, maxFreq,
-                            minFreq * std::pow(2.0f, (x / width) * logRange));
+                            minFreq * std::pow(2.0f, x / width * logRange));
     }
 
     [[nodiscard]]
     float dbToY(const float db, const float height) const noexcept {
-        return height * (1.0f - (db - minDb) / (maxDb - minDb));
+        const float dbRange = maxDb - minDb;
+        if (dbRange == 0.0f) return 0.0f;
+        return height * (1.0f - (db - minDb) / dbRange);
     }
 
     [[nodiscard]]
     float yToDb(const float y, const float height) const noexcept {
+        if (height == 0.0f) return minDb;
         return minDb + (1.0f - y / height) * (maxDb - minDb);
     }
 };

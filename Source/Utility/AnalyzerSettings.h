@@ -19,10 +19,10 @@ struct AnalyzerSettings {
             props->setValue("maxDb", settings.getMaxDb());
             props->setValue("minFreq", settings.getMinFreq());
             props->setValue("maxFreq", settings.getMaxFreq());
-            props->setValue("midColour", static_cast<int>(settings.getMidColour().getARGB()));
-            props->setValue("sideColour", static_cast<int>(settings.getSideColour().getARGB()));
-            props->setValue("refMidColour", static_cast<int>(settings.getRefMidColour().getARGB()));
-            props->setValue("refSideColour", static_cast<int>(settings.getRefSideColour().getARGB()));
+            props->setValue("midColour", static_cast<int>(settings.getPrimaryColour().getARGB()));
+            props->setValue("sideColour", static_cast<int>(settings.getSecondaryColour().getARGB()));
+            props->setValue("refMidColour", static_cast<int>(settings.getRefPrimaryColour().getARGB()));
+            props->setValue("refSideColour", static_cast<int>(settings.getRefSecondaryColour().getARGB()));
             props->setValue("smoothingMode", static_cast<int>(settings.getSmoothing()));
             props->setValue("fftOrder", settings.getFftOrder());
             props->setValue("overlapFactor", settings.getOverlapFactor());
@@ -49,13 +49,13 @@ struct AnalyzerSettings {
             }
 
             if (props->containsKey("midColour"))
-                settings.setMidColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("midColour"))));
+                settings.setPrimaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("midColour"))));
             if (props->containsKey("sideColour"))
-                settings.setSideColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("sideColour"))));
+                settings.setSecondaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("sideColour"))));
             if (props->containsKey("refMidColour"))
-                settings.setRefMidColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refMidColour"))));
+                settings.setRefPrimaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refMidColour"))));
             if (props->containsKey("refSideColour"))
-                settings.setRefSideColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refSideColour"))));
+                settings.setRefSecondaryColour(juce::Colour(static_cast<juce::uint32>(props->getIntValue("refSideColour"))));
             if (props->containsKey("smoothingMode"))
                 settings.setSmoothing(static_cast<SmoothingMode>(
                     props->getIntValue("smoothingMode", static_cast<int>(D::smoothing))));
@@ -68,6 +68,61 @@ struct AnalyzerSettings {
             if (props->containsKey("slopeDb"))
                 settings.setSlope(static_cast<float>(props->getDoubleValue("slopeDb", 0.0)));
         }
+    }
+
+    //==========================================================================
+    // Per-project state (ValueTree-based, saved inside plugin state blob)
+
+    static void saveToValueTree(const ISpectrumDisplaySettings &settings,
+                                ColorPalette::Theme theme,
+                                juce::ValueTree &tree) {
+        tree.setProperty("minDb",         settings.getMinDb(),                                       nullptr);
+        tree.setProperty("maxDb",         settings.getMaxDb(),                                       nullptr);
+        tree.setProperty("minFreq",       settings.getMinFreq(),                                     nullptr);
+        tree.setProperty("maxFreq",       settings.getMaxFreq(),                                     nullptr);
+        tree.setProperty("midColour",     static_cast<int>(settings.getPrimaryColour().getARGB()),                        nullptr);
+        tree.setProperty("sideColour",    static_cast<int>(settings.getSecondaryColour().getARGB()),                      nullptr);
+        tree.setProperty("refMidColour",  static_cast<int>(settings.getRefPrimaryColour().getARGB()),                     nullptr);
+        tree.setProperty("refSideColour", static_cast<int>(settings.getRefSecondaryColour().getARGB()),                   nullptr);
+        tree.setProperty("smoothingMode", static_cast<int>(settings.getSmoothing()),                                      nullptr);
+        tree.setProperty("fftOrder",      settings.getFftOrder(),                                                         nullptr);
+        tree.setProperty("overlapFactor", settings.getOverlapFactor(),                                                    nullptr);
+        tree.setProperty("curveDecay",    settings.getCurveDecay(),                                  nullptr);
+        tree.setProperty("slopeDb",       settings.getSlope(),                                       nullptr);
+        tree.setProperty("uiTheme",       static_cast<int>(theme),                                                        nullptr);
+    }
+
+    static void loadFromValueTree(ISpectrumDisplaySettings &settings,
+                                  ColorPalette::Theme &theme,
+                                  const juce::ValueTree &tree) {
+        if (!tree.isValid()) return;
+
+        if (tree.hasProperty("minDb") && tree.hasProperty("maxDb"))
+            settings.setDbRange(static_cast<float>(static_cast<double>(tree["minDb"])),
+                                static_cast<float>(static_cast<double>(tree["maxDb"])));
+        if (tree.hasProperty("minFreq") && tree.hasProperty("maxFreq"))
+            settings.setFreqRange(static_cast<float>(static_cast<double>(tree["minFreq"])),
+                                  static_cast<float>(static_cast<double>(tree["maxFreq"])));
+        if (tree.hasProperty("midColour"))
+            settings.setPrimaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["midColour"]))));
+        if (tree.hasProperty("sideColour"))
+            settings.setSecondaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["sideColour"]))));
+        if (tree.hasProperty("refMidColour"))
+            settings.setRefPrimaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["refMidColour"]))));
+        if (tree.hasProperty("refSideColour"))
+            settings.setRefSecondaryColour(juce::Colour(static_cast<juce::uint32>(static_cast<int>(tree["refSideColour"]))));
+        if (tree.hasProperty("smoothingMode"))
+            settings.setSmoothing(static_cast<SmoothingMode>(static_cast<int>(tree["smoothingMode"])));
+        if (tree.hasProperty("fftOrder"))
+            settings.setFftOrder(tree["fftOrder"]);
+        if (tree.hasProperty("overlapFactor"))
+            settings.setOverlapFactor(tree["overlapFactor"]);
+        if (tree.hasProperty("curveDecay"))
+            settings.setCurveDecay(static_cast<float>(static_cast<double>(tree["curveDecay"])));
+        if (tree.hasProperty("slopeDb"))
+            settings.setSlope(static_cast<float>(static_cast<double>(tree["slopeDb"])));
+        if (tree.hasProperty("uiTheme"))
+            theme = static_cast<ColorPalette::Theme>(static_cast<int>(tree["uiTheme"]));
     }
 
     //==========================================================================

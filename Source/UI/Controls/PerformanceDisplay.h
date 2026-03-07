@@ -105,10 +105,9 @@ private:
         // Red: > 3ms
         if (timeMs < 1.0)
             return juce::Colours::lightgreen;
-        else if (timeMs < 3.0)
+        if (timeMs < 3.0)
             return juce::Colours::yellow;
-        else
-            return juce::Colours::red;
+        return juce::Colours::red;
     }
 
     static juce::Colour getColorForCPU(const double cpuPercent) {
@@ -118,10 +117,9 @@ private:
         // Red: > 75%
         if (cpuPercent < 25.0)
             return juce::Colours::lightgreen;
-        else if (cpuPercent < 75.0)
+        if (cpuPercent < 75.0)
             return juce::Colours::yellow;
-        else
-            return juce::Colours::red;
+        return juce::Colours::red;
     }
 
     gFractorAudioProcessor *processor = nullptr;

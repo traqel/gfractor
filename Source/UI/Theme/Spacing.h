@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LayoutConstants.h"
+
 namespace Spacing {
     // Element padding (internal space within a component)
     inline constexpr int paddingXS = 4;
@@ -13,11 +15,12 @@ namespace Spacing {
     inline constexpr int marginS = 8;
     inline constexpr int marginM = 12;
     inline constexpr int marginL = 20;
-    inline constexpr int marginXL = 30;
+    inline constexpr int marginXL = 36;
 
     // Component heights
     inline constexpr int headerHeight = 40;
     inline constexpr int footerHeight = 52;
+    inline constexpr int hintBarHeight = 24;
     inline constexpr int rowHeight = 24;
     inline constexpr int pillHeight = 28;
 
@@ -27,6 +30,7 @@ namespace Spacing {
     inline constexpr int gapM = 8;
     inline constexpr int gapL = 12;
     inline constexpr int gapXL = 20;
+    inline constexpr int gapXXL = 30;
 }
 
 namespace Radius {

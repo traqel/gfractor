@@ -8,6 +8,20 @@
  */
 
 namespace Layout {
+    namespace PillButton {
+        inline constexpr int buttonWidth = 64;
+        inline constexpr int buttonWidthWide = 84;
+        inline constexpr float buttonHeight = 28;
+        inline constexpr int smallSquareButton = 20;
+        inline constexpr int normalSquareButton = 28;
+        inline constexpr float leftIconPadding = 6.0f;
+        inline constexpr float leftIconGap = 10.0f;
+        inline constexpr float dotIconSize = 6.0f;
+        inline constexpr float normalIconSize = 10.0f;
+        inline constexpr float ledGlowRadius = 1.2f;
+        inline constexpr float ledGlowAlpha = 0.15f;
+    }
+
     //==========================================================================
     // PreferencePanel
     //==========================================================================
@@ -18,7 +32,7 @@ namespace Layout {
         inline constexpr int headerHeight = 30;
         inline constexpr int buttonWidth = 74;
         inline constexpr int panelWidth = 350;
-        inline constexpr int panelHeight = 500;
+        inline constexpr int panelHeight = 398;
     }
 
     //==========================================================================
@@ -37,9 +51,6 @@ namespace Layout {
         inline constexpr int defaultFftOrder = 13;
         inline constexpr int numPathPoints = 256;
 
-        inline constexpr float barWidth = 7.0f;
-        inline constexpr float barGap = 2.0f;
-        inline constexpr float barPaddingLeft = 3.0f;
         inline constexpr float barY = 3.0f;
         inline constexpr float barHeight = 16.0f;
 
@@ -99,6 +110,8 @@ namespace Layout {
     // HeaderBar
     //==========================================================================
     namespace HeaderBar {
+        inline constexpr float height = 24.0f;
+        inline constexpr float pillWidth = 44.0f;
         inline constexpr float logoFontSize = 24.0f;
     }
 
@@ -107,17 +120,6 @@ namespace Layout {
     //==========================================================================
     namespace AudioVisualizer {
         inline constexpr int gradientStopCount = 12;
-    }
-
-    //==========================================================================
-    // HelpPanel
-    //==========================================================================
-    namespace HelpPanel {
-        inline constexpr int panelWidth = 340;
-        inline constexpr int panelHeight = 436;
-        inline constexpr int sectionHeight = 24;
-        inline constexpr int rowHeight = 28;
-        inline constexpr int keyWidth = 120;
     }
 
     //==========================================================================
@@ -133,6 +135,13 @@ namespace Layout {
     //==========================================================================
     namespace PerformanceDisplay {
         inline constexpr int lineHeight = 14;
+    }
+
+    //==========================================================================
+    // HintBar
+    //==========================================================================
+    namespace HintBar {
+        inline constexpr int height = 24;
     }
 
     //==========================================================================

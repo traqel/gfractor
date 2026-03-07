@@ -10,8 +10,10 @@
 #endif
 
 namespace Typography {
-    inline constexpr const char *fontFamily = "JetBrains Mono";
-    inline constexpr const char *embeddedRegularFont = "JetBrainsMono-Regular.ttf";
+    inline constexpr auto fontFamily = "JetBrains Mono";
+    inline constexpr auto embeddedRegularFont = "JetBrainsMono-Regular.ttf";
+
+    inline constexpr float bigFontSize = 32.0f;
     inline constexpr float mainFontSize = 14.0f;
     inline constexpr float smallFontSize = 12.0f;
 
@@ -63,5 +65,9 @@ namespace Typography {
 
     inline juce::Font makeBoldFont(const float size) {
         return makeFont(size).boldened();
+    }
+
+    inline juce::Font makeLightFont(const float size) {
+        return makeFont(size).withTypefaceStyle("Light");
     }
 }

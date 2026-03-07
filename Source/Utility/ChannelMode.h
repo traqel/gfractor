@@ -1,12 +1,40 @@
 #pragma once
 
+#include <juce_core/juce_core.h>
+
 /**
  * Shared channel mode enum and decoder utility.
  *
  * Used by SpectrumAnalyzer, GhostSpectrum, PeakHold,
  * and FooterBar to avoid coupling to concrete types.
  */
-enum class ChannelMode { MidSide, LR };
+enum class ChannelMode { MidSide, LR, TonalTransient };
+
+inline ChannelMode channelModeFromInt(const int index) {
+    switch (index) {
+        case 1: return ChannelMode::LR;
+        case 2: return ChannelMode::TonalTransient;
+        default: return ChannelMode::MidSide;
+    }
+}
+
+inline int channelModeToInt(const ChannelMode mode) {
+    if (mode == ChannelMode::LR) return 1;
+    if (mode == ChannelMode::TonalTransient) return 2;
+    return 0;
+}
+
+inline juce::String channelModeToString(const ChannelMode mode) {
+    if (mode == ChannelMode::LR) return "L/R";
+    if (mode == ChannelMode::TonalTransient) return "TRN";
+    return "M/S";
+}
+
+inline juce::String channelModeToLongString(const ChannelMode mode) {
+    if (mode == ChannelMode::LR) return "Left/Right";
+    if (mode == ChannelMode::TonalTransient) return "Tonal/Transient";
+    return "Mid/Side";
+}
 
 struct ChannelDecoder {
     /** Decode stereo L/R into the selected channel pair. */
@@ -14,6 +42,11 @@ struct ChannelDecoder {
         if (mode == ChannelMode::LR) {
             out1 = l;
             out2 = r;
+        } else if (mode == ChannelMode::TonalTransient) {
+            // Both channels receive the mono mix; FFTProcessor splits them
+            // post-FFT into Tonal and Transient.
+            out1 = (l + r) * 0.5f;
+            out2 = (l + r) * 0.5f;
         } else {
             out1 = (l + r) * 0.5f;
             out2 = (l - r) * 0.5f;

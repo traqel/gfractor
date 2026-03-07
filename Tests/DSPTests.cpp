@@ -11,7 +11,8 @@
 
 #include <juce_dsp/juce_dsp.h>
 #include <juce_core/juce_core.h>
-#include "DSP/gFractorDSP.h"
+#include "DSP/Core/gFractorDSP.h"
+#include "Utility/ChannelMode.h"
 
 /**
  * DSP Tests using JUCE's built-in testing framework
@@ -287,14 +288,14 @@ private:
         juce::AudioBuffer<float> buffer(2, 512);
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setLRMode(false); // M/S mode
+        dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
 
-        // Test: Disable mid, keep side
+        // Test: Disable primary, keep secondary
         {
-            dsp.setMidEnabled(false);
-            dsp.setSideEnabled(true);
+            dsp.setPrimaryEnabled(false);
+            dsp.setSecondaryEnabled(true);
 
-            // Create correlated signal (left = right) -> mid only, no side
+            // Create correlated signal (left = right) -> primary only, no secondary
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.5f);
                 buffer.setSample(1, sample, 0.5f);
@@ -302,18 +303,18 @@ private:
 
             dsp.process(buffer);
 
-            // Mid disabled, signal was mid-only, so output should be near-silence
+            // Primary disabled, signal was primary-only, so output should be near-silence
             expectWithinAbsoluteError(buffer.getSample(0, 256), 0.0f, 0.01f);
             expectWithinAbsoluteError(buffer.getSample(1, 256), 0.0f, 0.01f);
         }
 
-        // Test: Disable side, keep mid
+        // Test: Disable secondary, keep primary
         {
             dsp.reset();
-            dsp.setMidEnabled(true);
-            dsp.setSideEnabled(false);
+            dsp.setPrimaryEnabled(true);
+            dsp.setSecondaryEnabled(false);
 
-            // Create anti-correlated signal (left = -right) -> side only, no mid
+            // Create anti-correlated signal (left = -right) -> secondary only, no primary
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.5f);
                 buffer.setSample(1, sample, -0.5f);
@@ -321,7 +322,7 @@ private:
 
             dsp.process(buffer);
 
-            // Side disabled, signal was side-only, so output should be near-silence
+            // Secondary disabled, signal was secondary-only, so output should be near-silence
             expectWithinAbsoluteError(buffer.getSample(0, 256), 0.0f, 0.01f);
             expectWithinAbsoluteError(buffer.getSample(1, 256), 0.0f, 0.01f);
         }
@@ -329,8 +330,8 @@ private:
         // Test: Both enabled (no filtering)
         {
             dsp.reset();
-            dsp.setMidEnabled(true);
-            dsp.setSideEnabled(true);
+            dsp.setPrimaryEnabled(true);
+            dsp.setSecondaryEnabled(true);
 
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.3f);
@@ -357,11 +358,12 @@ private:
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
 
-        // In LR mode, mid/side filtering should be bypassed
+        // In LR mode: L enables Left (primary), R enables Right (secondary)
+        // With primary disabled, Left channel is filtered
         {
-            dsp.setLRMode(true);
-            dsp.setMidEnabled(false); // These should have no effect in LR mode
-            dsp.setSideEnabled(false);
+            dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
+            dsp.setPrimaryEnabled(false); // Disable Left
+            dsp.setSecondaryEnabled(true);  // Enable Right
 
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.4f);
@@ -370,17 +372,36 @@ private:
 
             dsp.process(buffer);
 
-            // In LR mode, disabling mid/side should NOT filter the signal
-            expectWithinAbsoluteError(buffer.getSample(0, 256), 0.4f, 0.01f);
+            // Left should be filtered (disabled), Right passes through
+            expectWithinAbsoluteError(buffer.getSample(0, 256), 0.0f, 0.01f);
             expectWithinAbsoluteError(buffer.getSample(1, 256), 0.6f, 0.01f);
+        }
+
+        // With secondary disabled, Right channel is filtered
+        {
+            dsp.reset();
+            dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
+            dsp.setPrimaryEnabled(true);  // Enable Left
+            dsp.setSecondaryEnabled(false); // Disable Right
+
+            for (int sample = 0; sample < 512; ++sample) {
+                buffer.setSample(0, sample, 0.4f);
+                buffer.setSample(1, sample, 0.6f);
+            }
+
+            dsp.process(buffer);
+
+            // Left passes through, Right should be filtered (disabled)
+            expectWithinAbsoluteError(buffer.getSample(0, 256), 0.4f, 0.01f);
+            expectWithinAbsoluteError(buffer.getSample(1, 256), 0.0f, 0.01f);
         }
 
         // In M/S mode with both disabled, signal should be filtered
         {
             dsp.reset();
-            dsp.setLRMode(false);
-            dsp.setMidEnabled(false);
-            dsp.setSideEnabled(false);
+            dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
+            dsp.setPrimaryEnabled(false);
+            dsp.setSecondaryEnabled(false);
 
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.5f);
@@ -406,11 +427,11 @@ private:
         juce::AudioBuffer<float> buffer(2, 512);
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setLRMode(true);
+        dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
 
         // Fill with broadband noise-like signal (alternating values)
         for (int sample = 0; sample < 512; ++sample) {
-            const float val = (sample % 2 == 0) ? 0.5f : -0.5f;
+            const float val = sample % 2 == 0 ? 0.5f : -0.5f;
             buffer.setSample(0, sample, val);
             buffer.setSample(1, sample, val);
         }
@@ -421,7 +442,7 @@ private:
 
             juce::AudioBuffer<float> testBuffer(2, 512);
             for (int sample = 0; sample < 512; ++sample) {
-                const float val = (sample % 2 == 0) ? 0.5f : -0.5f;
+                const float val = sample % 2 == 0 ? 0.5f : -0.5f;
                 testBuffer.setSample(0, sample, val);
                 testBuffer.setSample(1, sample, val);
             }
@@ -439,7 +460,7 @@ private:
 
             juce::AudioBuffer<float> testBuffer(2, 512);
             for (int sample = 0; sample < 512; ++sample) {
-                const float val = (sample % 2 == 0) ? 0.5f : -0.5f;
+                const float val = sample % 2 == 0 ? 0.5f : -0.5f;
                 testBuffer.setSample(0, sample, val);
                 testBuffer.setSample(1, sample, val);
             }
@@ -447,7 +468,7 @@ private:
             // Process multiple blocks to let filter settle
             for (int i = 0; i < 10; ++i) {
                 for (int sample = 0; sample < 512; ++sample) {
-                    const float val = (sample % 2 == 0) ? 0.5f : -0.5f;
+                    const float val = sample % 2 == 0 ? 0.5f : -0.5f;
                     testBuffer.setSample(0, sample, val);
                     testBuffer.setSample(1, sample, val);
                 }
@@ -488,14 +509,14 @@ private:
 
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setLRMode(false);
+        dsp.setOutputMode(channelModeFromInt(0)); // M/S mode
 
         // Test: Mid-only signal (left = right)
         {
             dsp.resetPeaks();
             juce::AudioBuffer<float> buffer(2, 512);
 
-            // Left = Right means side = 0
+            // Left = Right means secondary = 0
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.5f);
                 buffer.setSample(1, sample, 0.5f);
@@ -503,23 +524,23 @@ private:
 
             dsp.process(buffer);
 
-            const float midDb = dsp.getPeakMidDb();
-            const float sideDb = dsp.getPeakSideDb();
+            const float primaryDb = dsp.getPeakPrimaryDb();
+            const float secondaryDb = dsp.getPeakSecondaryDb();
 
-            // Mid should be ~-6dB (0.5 linear)
-            expectGreaterThan(midDb, -10.0f);
-            expectLessThan(midDb, 0.0f);
+            // Primary should be ~-6dB (0.5 linear)
+            expectGreaterThan(primaryDb, -10.0f);
+            expectLessThan(primaryDb, 0.0f);
 
-            // Side should be at -inf (0.0)
-            expectLessThan(sideDb, -60.0f);
+            // Secondary should be at -inf (0.0)
+            expectLessThan(secondaryDb, -60.0f);
         }
 
-        // Test: Side-only signal (left = -right)
+        // Test: Secondary-only signal (left = -right)
         {
             dsp.resetPeaks();
             juce::AudioBuffer<float> buffer(2, 512);
 
-            // Left = -Right means mid = 0
+            // Left = -Right means primary = 0
             for (int sample = 0; sample < 512; ++sample) {
                 buffer.setSample(0, sample, 0.5f);
                 buffer.setSample(1, sample, -0.5f);
@@ -527,15 +548,15 @@ private:
 
             dsp.process(buffer);
 
-            const float midDb = dsp.getPeakMidDb();
-            const float sideDb = dsp.getPeakSideDb();
+            const float primaryDb = dsp.getPeakPrimaryDb();
+            const float secondaryDb = dsp.getPeakSecondaryDb();
 
-            // Mid should be at -inf (0.0)
-            expectLessThan(midDb, -60.0f);
+            // Primary should be at -inf (0.0)
+            expectLessThan(primaryDb, -60.0f);
 
-            // Side should be ~-6dB (0.5 linear)
-            expectGreaterThan(sideDb, -10.0f);
-            expectLessThan(sideDb, 0.0f);
+            // Secondary should be ~-6dB (0.5 linear)
+            expectGreaterThan(secondaryDb, -10.0f);
+            expectLessThan(secondaryDb, 0.0f);
         }
 
         // Test: Mixed signal
@@ -550,8 +571,8 @@ private:
 
             dsp.process(buffer);
 
-            const float midDb = dsp.getPeakMidDb();
-            const float sideDb = dsp.getPeakSideDb();
+            const float midDb = dsp.getPeakPrimaryDb();
+            const float sideDb = dsp.getPeakSecondaryDb();
 
             // Both should have energy
             expectGreaterThan(midDb, -20.0f);
@@ -566,15 +587,15 @@ private:
 
             dsp.process(buffer);
 
-            expectLessThan(dsp.getPeakMidDb(), -60.0f);
-            expectLessThan(dsp.getPeakSideDb(), -60.0f);
+            expectLessThan(dsp.getPeakPrimaryDb(), -60.0f);
+            expectLessThan(dsp.getPeakSecondaryDb(), -60.0f);
         }
 
         // Test: resetPeaks()
         {
             dsp.resetPeaks();
-            expectEquals(dsp.getPeakMidDb(), -100.0f);
-            expectEquals(dsp.getPeakSideDb(), -100.0f);
+            expectEquals(dsp.getPeakPrimaryDb(), -100.0f);
+            expectEquals(dsp.getPeakSecondaryDb(), -100.0f);
         }
     }
 
@@ -602,7 +623,7 @@ private:
         // Note: Dry/wet mixer behavior varies with mono, so use wider tolerance
         const float output = buffer.getSample(0, 256);
         expectGreaterThan(output, 0.3f); // Some gain should be applied
-        expectLessThan(output, 1.5f);    // Should not clip wildly
+        expectLessThan(output, 1.5f); // Should not clip wildly
 
         // Test that multiple mono blocks don't crash
         for (int i = 0; i < 10; ++i) {
@@ -638,14 +659,13 @@ private:
     void testZeroSampleRate() {
         beginTest("Zero Sample Rate");
 
-        gFractorDSP dsp;
-
         // Edge case: zero sample rate (shouldn't crash)
-        constexpr juce::dsp::ProcessSpec zeroSpec{0.0, 512, 2};
 
         // This may cause issues in DSP, test that it doesn't crash
         // Actual behavior depends on JUCE's DSP module handling
         try {
+            constexpr juce::dsp::ProcessSpec zeroSpec{0.0, 512, 2};
+            gFractorDSP dsp;
             dsp.prepare(zeroSpec);
             juce::AudioBuffer<float> buffer(2, 512);
             fillBufferWithValue(buffer, 0.5f);
@@ -766,8 +786,8 @@ private:
         {
             dsp.reset();
             for (int s = 0; s < 512; ++s) {
-                buffer.setSample(0, s, (s % 2 == 0) ? 0.5f : std::nanf(""));
-                buffer.setSample(1, s, (s % 3 == 0) ? std::numeric_limits<float>::infinity() : 0.3f);
+                buffer.setSample(0, s, s % 2 == 0 ? 0.5f : std::nanf(""));
+                buffer.setSample(1, s, s % 3 == 0 ? std::numeric_limits<float>::infinity() : 0.3f);
             }
 
             dsp.process(buffer);
@@ -805,9 +825,9 @@ private:
         for (int block = 0; block < 50; ++block) {
             fillBufferWithValue(buffer, 0.5f);
 
-            dsp.setLRMode(block % 2 == 0);
-            dsp.setMidEnabled(block % 3 == 0);
-            dsp.setSideEnabled(block % 4 == 0);
+            dsp.setOutputMode(block % 2 == 0 ? channelModeFromInt(0) : channelModeFromInt(1));
+            dsp.setPrimaryEnabled(block % 3 == 0);
+            dsp.setSecondaryEnabled(block % 4 == 0);
 
             dsp.process(buffer);
         }
@@ -953,7 +973,7 @@ private:
             for (int sample = 0; sample < blockSize; ++sample) {
                 const auto phase = 2.0 * juce::MathConstants<double>::pi *
                                    1000.0 * static_cast<double>(sample) / sampleRate;
-                const float value = static_cast<float>(std::sin(phase));
+                const auto value = static_cast<float>(std::sin(phase));
                 buffer.setSample(0, sample, value);
                 buffer.setSample(1, sample, value);
             }
@@ -971,7 +991,7 @@ private:
                 }
             }
 
-            return std::pair<float, bool>{maxAbs, allFinite};
+            return std::pair{maxAbs, allFinite};
         };
 
         const auto [max441, finite441] = runAtSampleRate(44100.0, 512);
@@ -1032,17 +1052,17 @@ private:
 
         dsp.setGain(0.0f);
         dsp.setBypassed(false);
-        dsp.setLRMode(true);
+        dsp.setOutputMode(channelModeFromInt(1)); // L/R mode
 
         // Create broadband test signal (alternating samples have energy across spectrum)
-        auto fillBroadbandSignal = [](juce::AudioBuffer<float>& buffer) {
+        auto fillBroadbandSignal = [](juce::AudioBuffer<float> &buffer) {
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
                 for (int s = 0; s < buffer.getNumSamples(); ++s) {
                     // Mix of frequencies to simulate broadband signal
                     const float t = static_cast<float>(s) / 44100.0f;
                     const float v = 0.5f * std::sin(2.0f * juce::MathConstants<float>::pi * 100.0f * t)
-                                 + 0.3f * std::sin(2.0f * juce::MathConstants<float>::pi * 1000.0f * t)
-                                 + 0.2f * std::sin(2.0f * juce::MathConstants<float>::pi * 5000.0f * t);
+                                    + 0.3f * std::sin(2.0f * juce::MathConstants<float>::pi * 1000.0f * t)
+                                    + 0.2f * std::sin(2.0f * juce::MathConstants<float>::pi * 5000.0f * t);
                     buffer.setSample(ch, s, v);
                 }
             }
@@ -1160,7 +1180,8 @@ private:
             juce::AudioBuffer<float> buffer(2, 512);
             fillBroadbandSignal(buffer);
 
-            for (int i = 0; i < 30; ++i) { // More blocks for narrow filter to settle
+            for (int i = 0; i < 30; ++i) {
+                // More blocks for narrow filter to settle
                 fillBroadbandSignal(buffer);
                 dsp.process(buffer);
             }

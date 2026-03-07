@@ -3,10 +3,9 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../Utility/SpectrumAnalyzerDefaults.h"
 
-struct ISpectrumDisplaySettings {
-    virtual ~ISpectrumDisplaySettings() = default;
+struct IRangeSettings {
+    virtual ~IRangeSettings() = default;
 
-    // dB/freq range
     virtual void setDbRange(float min, float max) = 0;
 
     virtual void setFreqRange(float min, float max) = 0;
@@ -18,25 +17,31 @@ struct ISpectrumDisplaySettings {
     virtual float getMinFreq() const = 0;
 
     virtual float getMaxFreq() const = 0;
+};
 
-    // Colors
-    virtual void setMidColour(juce::Colour c) = 0;
+struct IColorSettings {
+    virtual ~IColorSettings() = default;
 
-    virtual void setSideColour(juce::Colour c) = 0;
+    virtual void setPrimaryColour(juce::Colour c) = 0;
 
-    virtual void setRefMidColour(juce::Colour c) = 0;
+    virtual void setSecondaryColour(juce::Colour c) = 0;
 
-    virtual void setRefSideColour(juce::Colour c) = 0;
+    virtual void setRefPrimaryColour(juce::Colour c) = 0;
 
-    virtual juce::Colour getMidColour() const = 0;
+    virtual void setRefSecondaryColour(juce::Colour c) = 0;
 
-    virtual juce::Colour getSideColour() const = 0;
+    virtual juce::Colour getPrimaryColour() const = 0;
 
-    virtual juce::Colour getRefMidColour() const = 0;
+    virtual juce::Colour getSecondaryColour() const = 0;
 
-    virtual juce::Colour getRefSideColour() const = 0;
+    virtual juce::Colour getRefPrimaryColour() const = 0;
 
-    // FFT / smoothing / slope
+    virtual juce::Colour getRefSecondaryColour() const = 0;
+};
+
+struct IFftSettings {
+    virtual ~IFftSettings() = default;
+
     virtual void setFftOrder(int order) = 0;
 
     virtual int getFftOrder() const = 0;
@@ -56,4 +61,8 @@ struct ISpectrumDisplaySettings {
     virtual void setSlope(float db) = 0;
 
     virtual float getSlope() const = 0;
+};
+
+struct ISpectrumDisplaySettings : IRangeSettings, IColorSettings, IFftSettings {
+    ~ISpectrumDisplaySettings() override = default;
 };

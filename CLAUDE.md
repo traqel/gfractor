@@ -12,9 +12,21 @@ This is a **Claude Code plugin configuration** called "JUCE Dev Team" — it pro
 - `.claude/commands/` — Slash commands (`new-juce-plugin`, `build-all-formats`, `release-build`, `run-pluginval`, `run-daw-tests`, `analyze-performance`, `setup-offline-docs`)
 - `.claude/skills/` — Knowledge modules (`juce-best-practices`, `dsp-cookbook`, `cross-platform-builds`, `plugin-architecture-patterns`, `daw-compatibility-guide`)
 - `.claude/hooks/hooks.json` — Quality gate hooks (realtime safety checks, auto-test on DSP changes, parameter ID stability warnings)
+- `.claude/scripts/hooks/` — Hook validation scripts
+- `.claude/includes/` — Shared command snippets
+- `.claude/knowledge/` — Searchable JSON knowledge bases
 - `.claude/static-docs/` — Reference docs (`BUILD_GUIDE.md`, `TESTING_STRATEGY.md`, `RELEASE_CHECKLIST.md`, `GETTING_STARTED.md`)
+- `.claude/ROADMAP.md` — Versioned feature roadmap
 
 ## Key Concepts
+
+### Primary/Secondary Channel Mode Abstraction
+This plugin operates in three channel modes:
+- **Mid/Side (M/S)**: Mid = Primary, Side = Secondary
+- **Left/Right (L/R)**: Left = Primary, Right = Secondary  
+- **Tonal/Transient (T/T)**: Transient = Primary, Tonal = Secondary
+
+**Primary/Secondary is the generic abstraction** — all three modes (M/S, L/R, T/T) can be treated uniformly as Primary/Secondary in classes and components that don't need to know the specific channel mode.
 
 ### Agent Delegation
 Users invoke agents via `@agent-name` mentions. Claude auto-delegates to the right specialist based on context. The 13 agents cover: technical-lead, dsp-engineer, plugin-engineer, ui-engineer, daw-compatibility-engineer, qa-engineer, test-automation-engineer, build-engineer, support-engineer, telemetry-engineer, security-engineer, audio-content-engineer, platform-engineer.
@@ -42,6 +54,14 @@ pluginval --strictness-level 5 build-release/*_artefacts/Release/VST3/*.vst3
 auval -v aufx <PlugCode> <ManuCode>
 ```
 
+### HintBar Convention
+Hints are set via `HintManager::setHint(title, hint)`. Rules:
+- **Title** — one of `CLICK`, `DRAG`, `KEY`. Combine with ` | ` for multi-action: `"CLICK | DRAG"`, `"CLICK | KEY F"`
+- **Hint** — description text. Keep it as short as possible (≤ 50 chars ideally)
+- Use `  |  ` (two spaces each side) to separate multiple items in the hint text
+- Use only plain ASCII — no Unicode symbols (`·`, `→`, etc.) as they cause encoding issues
+- Examples: `setHint("CLICK", "Toggle freeze")`, `setHint("KEY", "F: Freeze  |  R: Reference")`
+
 ### JUCE Realtime Safety Rules (Enforced by Hooks)
 Never do these in `processBlock()`: allocate memory (`new`, `delete`, `malloc`, `vector::push_back`), use locks (`mutex`, `lock_guard`), or block/wait. Pre-allocate in `prepareToPlay()` and use lock-free structures (`juce::AbstractFifo`).
 
@@ -51,4 +71,4 @@ Never do these in `processBlock()`: allocate memory (`new`, `delete`, `malloc`, 
 - Commands follow the Claude Code slash command format
 - Skills are knowledge modules referenced via `/skill-name`
 - Hooks in `hooks.json` use glob matchers on file paths and tool names
-- `RECOMMENDATIONS.md` tracks planned enhancements and implementation priority phases
+- `ROADMAP.md` tracks completed features, in-progress items, and planned enhancements

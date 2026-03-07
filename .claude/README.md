@@ -64,11 +64,15 @@ Claude will automatically delegate to the right specialist based on your request
 
 ## Expanding the Plugin
 
-See `RECOMMENDATIONS.md` for suggestions on:
-- **Commands**: Workflow automation (`/new-juce-plugin`, `/release-build`, etc.)
-- **Skills**: Reusable knowledge modules (DSP cookbook, JUCE best practices)
-- **Hooks**: Quality gates (realtime safety checks, parameter validation)
-- **Documentation**: Setup guides, testing strategies, release checklists
+See `ROADMAP.md` for:
+- Completed features with version history
+- In-progress items
+- Planned enhancements and proposals
+
+Quick links:
+- **[/skill-name]** - Invoke skills (juce-best-practices, dsp-cookbook, etc.)
+- **[/command-name]** - Run commands (new-juce-plugin, build-all-formats, release-build)
+- **[/juce-best-practices]** - Realtime safety, threading, memory management
 
 ## Installation
 
@@ -85,64 +89,7 @@ Once installed, you can invoke specific expert agents by @-mentioning them or as
 
 ## Version History
 
-### 1.5.0 (Phase 4 - Advanced Features)
-- Added `/run-daw-tests` command - Comprehensive DAW compatibility testing across Logic Pro, Ableton Live, Pro Tools, Cubase, Reaper, FL Studio, Bitwig, and Ardour
-- Added `/analyze-performance` command - Performance profiling and optimization with Instruments, perf, VTune, Tracy, flame graphs, and SIMD optimization
-- Added `plugin-architecture-patterns` skill - Clean architecture, separation of concerns, APVTS patterns, state management, preset systems, MIDI handling, and modulation routing
-- Added `daw-compatibility-guide` skill - DAW-specific quirks, known issues, and workarounds for all major DAWs with format-specific requirements (AU/VST3/AAX)
-- Advanced tooling for performance analysis and DAW compatibility
-- Comprehensive architecture patterns for maintainable, testable plugins
-- Complete DAW compatibility reference with specific solutions
-
-### 1.4.0 (Phase 3 - Production Ready)
-- Added `/release-build` command - Complete release automation with code signing, notarization, installers, and distribution
-- Added `prevent-audio-thread-allocation` hook - Blocks writes to processBlock containing memory allocations or locks
-- Added `cross-platform-builds` skill - Comprehensive guide to building for macOS, Windows, and Linux with CMake, code signing, and CI/CD
-- Created `BUILD_GUIDE.md` - Step-by-step build instructions from development to production for all platforms
-- Created `RELEASE_CHECKLIST.md` - Complete pre-release validation checklist covering testing, QA, signing, and distribution
-- Production-ready release workflow with automated signing and notarization
-- Platform-specific build documentation for all target systems
-
-### 1.3.0 (Phase 2 - Quality Assurance)
-- Added `/run-pluginval` command - Industry-standard plugin validation with strictness levels and detailed reports
-- Added 3 testing hooks - Auto-run DSP tests after code changes, warn on realtime-unsafe patterns, validate parameter stability
-- Added `dsp-cookbook` skill - Production-ready DSP algorithms: filters, compressors, delays, modulation, saturation with JUCE integration
-- Created `TESTING_STRATEGY.md` - Comprehensive testing guide covering unit tests, integration tests, DAW compatibility, CI/CD, and manual QA
-- Quality gates and automated feedback during development
-- Complete testing workflow from unit tests to release validation
-
-### 1.2.0 (Phase 1 - Immediate Value)
-- Added `/new-juce-plugin` command - Complete project scaffolding with architecture, build config, and CI/CD
-- Added `/build-all-formats` command - Build VST3/AU/AAX/Standalone with one command
-- Added `juce-best-practices` skill - Comprehensive JUCE development guide covering realtime safety, threading, memory management, modern C++, and common pitfalls
-- Created `GETTING_STARTED.md` - Complete guide to using all 13 agents, commands, and workflows
-- Project structure templates with proper CMake configuration
-- Agent orchestration for complex workflows
-
-### 1.1.0
-- Added `/setup-offline-docs` command for building offline documentation
-- Automated JUCE API documentation building with Doxygen
-- Plugin format specification downloads (VST3, AU, AAX)
-- DSP resources organization (Audio EQ Cookbook, J.O. Smith books, etc.)
-- Comprehensive documentation index for offline reference
-- Prerequisites verification and installation guidance
-
-### 1.0.0
-- Initial release with 13 expert agents
-- Technical Lead: Architecture and engineering standards
-- DSP Engineer: Audio algorithm implementation
-- Plugin Engineer: Plugin integration and deployment
-- DAW Compatibility Engineer: Cross-DAW testing and fixes
-- UI Engineer: JUCE interface development
-- QA Engineer: Manual testing and validation
-- Test Automation Engineer: Automated testing infrastructure
-- Build Engineer: CI/CD and release automation
-- Support Engineer: Bug triage and user support
-- Telemetry Engineer: Analytics and crash reporting
-- Security Engineer: Licensing and copy protection
-- Audio Content Engineer: Preset and content tools
-- Platform Engineer: Custom host applications
-- Comprehensive recommendations for commands, skills, hooks, and docs
+See `ROADMAP.md` for complete version history with all features.
 
 ## Author
 

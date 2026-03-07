@@ -1,7 +1,7 @@
 # C++ Coding Standards for gFractor JUCE Plugin Project
 
 **Version:** 1.0
-**Last Updated:** 2026-02-16
+**Last Updated:** 2026-03-02
 **Applies To:** All C++ code in the gFractor plugin project
 
 ---
@@ -12,10 +12,11 @@
 2. [JUCE-Specific Standards](#2-juce-specific-standards)
 3. [Realtime Safety Rules](#3-realtime-safety-rules)
 4. [Modern C++ Best Practices](#4-modern-c-best-practices)
-5. [Project-Specific Conventions](#5-project-specific-conventions)
-6. [Error Handling](#6-error-handling)
-7. [Documentation Standards](#7-documentation-standards)
-8. [Testing Standards](#8-testing-standards)
+5. [SOLID & GRASP Design Principles](#5-solid--grasp-design-principles)
+6. [Project-Specific Conventions](#6-project-specific-conventions)
+7. [Error Handling](#7-error-handling)
+8. [Documentation Standards](#8-documentation-standards)
+9. [Testing Standards](#9-testing-standards)
 
 ---
 
@@ -1218,21 +1219,458 @@ auto counter = [count = 0] () mutable
 
 ---
 
-## 5. Project-Specific Conventions
+## 5. SOLID & GRASP Design Principles
 
-### 5.1 File Organization
+This section outlines the core object-oriented design principles applied throughout the gFractor codebase. These principles promote maintainability, testability, and extensibility.
 
-**Directory structure:**
+### 5.1 SOLID Principles
+
+#### 5.1.1 Single Responsibility Principle (SRP)
+
+**Definition:** A class should have only one reason to change.
+
+**Application in gFractor:**
+```cpp
+// Good - each class has one responsibility
+class SinkRegistry {
+    // Only manages audio data sink registration and dispatch
+};
+
+class PerformanceMonitor {
+    // Only tracks and reports performance metrics
+};
+
+class gFractorAudioProcessor {
+    // Orchestrates audio processing, delegates to specialized classes
+    // Does NOT directly manage sinks or compute metrics
+};
+```
+
+**When to apply:**
+- When a class grows beyond ~200 lines
+- When testing requires mocking multiple concerns
+- When unrelated changes frequently affect the same class
+
+#### 5.1.2 Open/Closed Principle (OCP)
+
+**Definition:** Classes should be open for extension but closed for modification.
+
+**Application in gFractor:**
+```cpp
+// Good - use interfaces for extensibility
+class IAudioDataSink {
+public:
+    virtual ~IAudioDataSink() = default;
+    virtual void pushStereoData(const juce::AudioBuffer<float>& buffer) = 0;
+    virtual void setSampleRate(double sr) = 0;
+};
+
+// Add new sinks without modifying existing code
+class SpectrumAnalyzer : public IAudioDataSink { /* ... */ };
+class WaveformDisplay : public IAudioDataSink { /* ... */ };
+```
+
+**When to apply:**
+- When adding new channel modes (M/S, L/R, T/N)
+- When introducing new filter types
+- When creating new visualizer components
+
+#### 5.1.3 Liskov Substitution Principle (LSP)
+
+**Definition:** Objects of a superclass should be replaceable with objects of a subclass without breaking the application.
+
+**Application in gFractor:**
+```cpp
+// Good - interfaces define complete contracts
+class IAudioDataSink {
+public:
+    virtual ~IAudioDataSink() = default;
+    virtual void pushStereoData(const juce::AudioBuffer<float>& buffer) = 0;
+    virtual void setSampleRate(double sr) = 0;
+    // All methods must be implemented - no partial interfaces
+};
+
+// Implementations must satisfy full contract
+class SpectrumAnalyzer : public IAudioDataSink {
+    void pushStereoData(const juce::AudioBuffer<float>& buffer) override { /* ... */ }
+    void setSampleRate(double sr) override { /* ... */ }
+};
+```
+
+**When to apply:**
+- Always use interfaces with complete contracts
+- Avoid "partial" interface implementations
+- Ensure subclasses honor preconditions/postconditions of base
+
+#### 5.1.4 Interface Segregation Principle (ISP)
+
+**Definition:** Prefer small, focused interfaces over large, general-purpose ones.
+
+**Application in gFractor:**
+```cpp
+// Good - separate interfaces for different concerns
+class IAudioDataSink {
+    virtual void pushStereoData(const juce::AudioBuffer<float>& buffer) = 0;
+    virtual void setSampleRate(double sr) = 0;
+};
+
+class IGhostDataSink {
+    virtual void pushGhostData(const juce::AudioBuffer<float>& buffer) = 0;
+};
+
+class IPeakLevelSource {
+    virtual float getPeakPrimaryDb() const = 0;
+    virtual float getPeakSecondaryDb() const = 0;
+};
+
+// Bad - bloated interface
+class IAllInOneSink {
+    virtual void pushAudio() = 0;
+    virtual void pushGhost() = 0;
+    virtual void setSampleRate() = 0;
+    virtual float getPeak() = 0;
+    // Too many responsibilities
+};
+```
+
+**When to apply:**
+- When interfaces have more than 5-7 methods
+- When implementers only need a subset of methods
+- When testing requires mocking only specific behavior
+
+#### 5.1.5 Dependency Inversion Principle (DIP)
+
+**Definition:** Depend on abstractions, not concretions. High-level modules should not depend on low-level modules.
+
+**Application in gFractor:**
+```cpp
+// Good - depend on interface, inject implementation
+class gFractorAudioProcessor {
+private:
+    gFractorDSP& dspProcessor;  // Concrete, but owned by processor
+    SinkRegistry sinkRegistry;   // Concrete, focused class
+    
+    // For testability, consider interface for DSP:
+    // IDSPProcessor& dspProcessor;  // Interface
+};
+
+// Concrete classes are fine when they are stable and self-contained
+// gFractorDSP - stable, well-tested core processing
+// SinkRegistry - simple coordination, no complex dependencies
+```
+
+**When to apply:**
+- When a class is difficult to test due to concrete dependencies
+- When dependencies might change (e.g., different DSP strategies)
+- When implementing strategy patterns
+
+### 5.2 GRASP Principles
+
+#### 5.2.1 Information Expert
+
+**Definition:** Assign responsibility to the class that has the information needed to fulfill it.
+
+**Application in gFractor:**
+```cpp
+// Good - PerformanceMonitor owns its metrics
+class PerformanceMonitor {
+    struct Metrics metrics;
+public:
+    const Metrics& getMetrics() const { return metrics; }
+    void recordBlock(double elapsedMs, double sampleRate, int blockSize);
+};
+
+// PluginProcessor delegates to PerformanceMonitor
+void gFractorAudioProcessor::processBlock(...) {
+    perfMonitor.recordBlock(elapsedMs, getSampleRate(), buffer.getNumSamples());
+}
+```
+
+#### 5.2.2 Creator
+
+**Definition:** Assign responsibility for creating objects to a class that contains, uses, or has information about the class to be created.
+
+**Application in gFractor:**
+```cpp
+// Good - PluginProcessor creates and owns DSP processor
+class gFractorAudioProcessor {
+private:
+    gFractorDSP dspProcessor;  // Created and owned by processor
+    std::unique_ptr<ParameterListener> parameterListener;
+};
+
+// Good - Editor creates visualizers it owns
+class gFractorAudioProcessorEditor {
+    std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer;
+};
+```
+
+#### 5.2.3 Controller
+
+**Definition:** Assign responsibility for handling a system operation to a class representing the system or a use case.
+
+**Application in gFractor:**
+```cpp
+// Good - gFractorAudioProcessor coordinates processing
+void gFractorAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midi) {
+    // 1. Push data to sinks
+    sinkRegistry.pushAudioData(...);
+    
+    // 2. Process through DSP
+    dspProcessor.process(buffer);
+    
+    // 3. Record performance
+    perfMonitor.recordBlock(...);
+}
+
+// Controller doesn't do the work - delegates to specialists
+```
+
+#### 5.2.4 Low Coupling
+
+**Definition:** Assign responsibilities to minimize dependencies between classes.
+
+**Application in gFractor:**
+```cpp
+// Good - low coupling via interfaces
+class IAudioDataSink { /* minimal interface */ };
+class SpectrumAnalyzer : public IAudioDataSink { /* ... */ };
+
+// gFractorAudioProcessor depends on interface, not concrete visualizer
+void registerAudioDataSink(IAudioDataSink* sink);
+
+// Good - event-based communication reduces direct coupling
+class ParameterListener {
+    // Listens to APVTS changes, updates DSP
+    // Decouples parameter system from DSP implementation
+};
+```
+
+#### 5.2.5 High Cohesion
+
+**Definition:** Assign responsibilities so that classes remain focused and well-understood.
+
+**Application in gFractor:**
+```cpp
+// Good - high cohesion in SinkRegistry
+class SinkRegistry {
+    // Focused on: sink registration, data dispatch
+    void registerAudioDataSink(IAudioDataSink* sink);
+    void unregisterAudioDataSink(IAudioDataSink* sink);
+    void pushAudioData(...);
+    void pushGhostData(...);
+    // All related to sink management
+};
+
+// Bad - low cohesion
+class AudioProcessorHelper {
+    // Does audio processing
+    // Manages sinks
+    // Computes performance metrics
+    // Handles parameter serialization
+    // Too many unrelated responsibilities
+};
+```
+
+### 5.3 Summary Checklist
+
+**Before writing a new class, verify:**
+
+- [ ] Does this class have a single, clear responsibility?
+- [ ] Can it be extended without modifying existing code?
+- [ ] Do subclasses fully implement parent interfaces?
+- [ ] Are interfaces small and focused?
+- [ ] Does this class depend on abstractions where beneficial?
+- [ ] Is the information needed to fulfill responsibilities held by this class?
+- [ ] Does this class have low coupling and high cohesion?
+
+**Refactoring triggers:**
+- Class exceeds ~200 lines
+- Class has more than 5 unrelated methods
+- Changes to one area require changes in unrelated areas
+- Testing requires extensive mocking of unrelated concerns
+
+---
+
+## 6. Project-Specific Conventions
+
+### 6.1 File Organization
+
+### 6.2 Folder Structure Patterns
+
+This section defines patterns for organizing code to maintain logical grouping and discoverability.
+
+#### 6.2.1 Grouping Principles
+
+| Principle | Description | Example |
+|-----------|-------------|---------|
+| **Cohesion** | Files that change together stay together | All FFT-related code in DSP/ |
+| **Abstraction** | Interfaces near implementations | IAudioDataSink.h next to AudioVisualizer.cpp |
+| **Dependency** | Lower-level code in subdirectories | DSP/ contains core processing, UI/ depends on it |
+| **Ownership** | Components owned by same subsystem | Visualizers in UI/Visualizers/, panels in UI/Panels/ |
+
+#### 6.2.2 Directory Organization
+
 ```
 Source/
-├── DSP/                    # DSP processing & audio interfaces
-│   ├── gFractorDSP.h/.cpp
-│   ├── FFTProcessor.h/.cpp
-│   ├── AudioRingBuffer.h/.cpp
-│   ├── IAudioDataSink.h
-│   ├── IGhostDataSink.h
-│   └── IPeakLevelSource.h
-├── Utility/                # Shared types & settings (used by DSP + UI)
+├── DSP/                        # Core audio processing (no UI dependencies)
+│   ├── Core/                   # Main processing
+│   │   ├── gFractorDSP.h/.cpp # Main DSP processor
+│   │   └── DSPConstants.h     # Processing constants
+│   │
+│   ├── Interfaces/             # Abstractions (I prefix)
+│   │   ├── IAudioDataSink.h
+│   │   ├── IGhostDataSink.h
+│   │   ├── IDSPProcessor.h
+│   │   ├── IFilterBank.h
+│   │   ├── IGainProcessor.h
+│   │   ├── ITransientDetector.h
+│   │   └── IPeakLevelSource.h
+│   │
+│   ├── Analysis/               # FFT & audio analysis
+│   │   ├── FFTProcessor.h/.cpp
+│   │   └── AudioRingBuffer.h/.cpp
+│   │
+│   └── Monitoring/             # Performance & data flow
+│       ├── PerformanceMonitor.h/.cpp
+│       └── SinkRegistry.h/.cpp
+│
+├── State/                      # Parameter & preset management
+│   ├── ParameterIDs.h          # Parameter identifier constants
+│   ├── ParameterLayout.h/.cpp  # APVTS layout definition
+│   ├── ParameterDefaults.h     # Default values
+│   ├── ParameterListener.h     # APVTS → DSP sync
+│   └── PluginState.h/.cpp     # Serialization
+│
+├── UI/                         # User interface components
+│   ├── Controls/               # Reusable UI controls
+│   │   ├── PillButton.h
+│   │   ├── DropdownPill.h
+│   │   └── HintBar.h/.cpp
+│   ├── Panels/                 # Major UI panels
+│   │   ├── PreferencePanel.h/.cpp
+│   │   └── StereoMeteringPanel.h/.cpp
+│   ├── Visualizers/            # Audio visualization components
+│   │   ├── SpectrumAnalyzer.h/.cpp
+│   │   ├── GhostSpectrum.h/.cpp
+│   │   └── PeakHold.h/.cpp
+│   └── Theme/                  # Visual styling
+│       ├── ColorPalette.h
+│       ├── Typography.h
+│       └── Spacing.h
+│
+├── Utility/                    # Cross-cutting utilities
+│   ├── ChannelMode.h           # Enum definitions
+│   ├── DisplayRange.h          # Value objects
+│   └── AnalyzerSettings.h
+│
+├── PluginProcessor.h/.cpp      # Main audio processor
+└── PluginEditor.h/.cpp        # Main editor
+```
+
+#### 6.2.3 File Naming Conventions
+
+```cpp
+// Implementation + Header: same name, different extension
+SinkRegistry.h      → SinkRegistry.cpp
+PerformanceMonitor.h→ PerformanceMonitor.cpp
+
+// Interfaces: I prefix, header only (no .cpp)
+IAudioDataSink.h    // No IAudioDataSink.cpp
+
+// Simple value objects: header only
+ChannelMode.h       // No ChannelMode.cpp
+
+// Groups of related constants: header only
+ParameterIDs.h      // No ParameterIDs.cpp
+ColorPalette.h      // No ColorPalette.cpp
+```
+
+#### 6.2.4 Interface Placement
+
+**Rule:** Place interfaces in the same directory as their primary implementer or consumer.
+
+```cpp
+// Good - interface near main implementation
+Source/DSP/
+├── IAudioDataSink.h           # Interface definition
+├── SpectrumAnalyzer.h/.cpp   # Primary implementer
+└── WaveformDisplay.h/.cpp    # Also implements IAudioDataSink
+
+// Acceptable - interface in owning subsystem
+Source/UI/
+├── ISpectrumControls.h        # Used by multiple visualizers
+└── Visualizers/
+    ├── SpectrumAnalyzer.h/.cpp
+    └── WaveformDisplay.h/.cpp
+```
+
+#### 6.2.5 When to Create a New Directory
+
+Create a new subdirectory when:
+1. A group of 3+ files share a distinct responsibility
+2. The directory would contain both interfaces and implementations
+3. Other directories would need to depend on this group
+
+```cpp
+// Good - distinct responsibility, multiple files
+Source/DSP/
+├── SinkRegistry.h/.cpp
+├── PerformanceMonitor.h/.cpp
+// New directory for coherent group
+Source/Processing/
+├── ChannelProcessor.h/.cpp
+├── Crossover.h/.cpp
+└── Limiter.h/.cpp
+
+// Bad - single file or unclear boundary
+Source/Processing/        // Only one file - don't create directory
+    └── OneClass.h
+```
+
+#### 6.2.6 Dependency Direction
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     PluginEditor                        │
+│                  (depends on UI/)                      │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+        ┌─────────────┴─────────────┐
+        ▼                           ▼
+┌───────────────┐         ┌─────────────────┐
+│     UI/       │         │  PluginProcessor│
+│  Visualizers  │         │   (depends on)  │
+│   Controls    │         │    DSP/, State/ │
+│   Panels      │         └────────┬────────┘
+└───────┬───────┘                  │
+        │                 ┌────────┴────────┐
+        │                 ▼                 ▼
+        │          ┌───────────┐     ┌──────────┐
+        └─────────▶│   DSP/   │     │  State/  │
+                   │ (core)   │     │(params)   │
+                   └───────────┘     └───────────┘
+
+Rule: Dependencies flow inward. Core (DSP, State) has no UI dependencies.
+```
+
+#### 6.2.7 Summary Checklist
+
+**Before creating a new file, verify:**
+
+- [ ] Does this file belong in an existing directory?
+- [ ] Is there a clear owner (directory) for this functionality?
+- [ ] Does the file group with others that change for the same reasons?
+- [ ] Are dependency directions correct (no UI → DSP dependencies)?
+- [ ] If creating a new directory, will it contain 3+ related files?
+
+**Directory structure review:**
+- [ ] Core DSP has no UI #includes
+- [ ] State/ has no UI #includes
+- [ ] Interfaces use I prefix, header-only
+- [ ] Implementation files paired with headers
+
+---
 │   ├── ChannelMode.h
 │   ├── DisplayRange.h
 │   ├── SpectrumAnalyzerDefaults.h
@@ -1276,7 +1714,7 @@ Source/
 - Source files: `.cpp` extension
 - Match class name to filename: `WaveformVisualizer` -> `WaveformVisualizer.h`
 
-### 5.2 Color Definitions Belong in `ColorPalette.h`
+### 6.3 Color Definitions Belong in `ColorPalette.h`
 
 **Never hardcode color literals in components — add them to `Source/UI/Theme/ColorPalette.h`.**
 
@@ -1289,7 +1727,7 @@ All `juce::Colour` values used in the UI must be defined as `inline constexpr ju
 void MyComponent::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colour (ColorPalette::background));
-    g.setColour (juce::Colour (ColorPalette::midGreen));
+    g.setColour (juce::Colour (ColorPalette::primaryGreen));
     g.drawText (label, bounds, juce::Justification::centred);
 }
 
@@ -1312,7 +1750,7 @@ void MyComponent::paint (juce::Graphics& g)
 namespace ColorPalette
 {
     // Accent colors
-    inline constexpr juce::uint32 midGreen   = 0xff3DCC6E;
+    inline constexpr juce::uint32 primaryGreen   = 0xff3DCC6E;
     inline constexpr juce::uint32 sideAmber  = 0xffC8A820;
     inline constexpr juce::uint32 blueAccent = 0xff1E6ECC;
 
@@ -1323,7 +1761,7 @@ namespace ColorPalette
 
 **Note:** Alpha-encoded colors use the `0xAARRGGBB` format (e.g. `0xb3ffb6c1` = light pink at 70% alpha). Document non-obvious alpha values with a short comment as shown in `ColorPalette.h`.
 
-### 5.3 Header Guards vs `#pragma once`
+### 6.4 Header Guards vs `#pragma once`
 
 **Use `#pragma once` (simpler, faster, no naming conflicts)**
 
@@ -1349,7 +1787,7 @@ class MyClass { };
 
 **Note:** `#pragma once` is supported by all modern compilers and is the JUCE convention.
 
-### 5.4 Forward Declarations
+### 6.5 Forward Declarations
 
 **Use forward declarations to reduce compile times**
 
@@ -1400,7 +1838,7 @@ class MyClass
 };
 ```
 
-### 5.5 Include Order
+### 6.6 Include Order
 
 **Standard include order (prevents hidden dependencies):**
 
@@ -1442,7 +1880,7 @@ class MyClass
 #include <MyClass.h>                                      // Should use ""
 ```
 
-### 5.6 Namespace Usage
+### 6.7 Namespace Usage
 
 **Namespace guidelines:**
 - Don't use `using namespace` in headers (pollutes namespace)
@@ -1524,9 +1962,9 @@ void MyClass::initialize()
 
 ---
 
-## 6. Error Handling
+## 7. Error Handling
 
-### 6.1 When to Use Assertions vs Exceptions
+### 7.1 When to Use Assertions vs Exceptions
 
 **Use `jassert` for:**
 - Debug-time checks (removed in release builds)
@@ -1598,7 +2036,7 @@ bool loadState (const void* data, int size)
 }
 ```
 
-### 6.2 jassert Usage
+### 7.2 jassert Usage
 
 **Use `jassert` liberally in debug builds:**
 
@@ -1655,7 +2093,7 @@ void loadFile (const juce::File& file)
 }
 ```
 
-### 6.3 Error Logging Patterns
+### 7.3 Error Logging Patterns
 
 **Use JUCE's logging system:**
 
@@ -1696,9 +2134,9 @@ void setParameter (float value)
 
 ---
 
-## 7. Documentation Standards
+## 8. Documentation Standards
 
-### 7.1 Function/Class Documentation Format
+### 8.1 Function/Class Documentation Format
 
 **Use Doxygen-style comments for public APIs:**
 
@@ -1766,7 +2204,7 @@ void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 }
 ```
 
-### 7.2 When to Write Comments
+### 8.2 When to Write Comments
 
 **DO comment:**
 - Public API documentation
@@ -1825,7 +2263,7 @@ void setGain (float gain)
 }
 ```
 
-### 7.3 Documentation Generators
+### 8.3 Documentation Generators
 
 **This project uses Doxygen-style comments:**
 
@@ -1853,9 +2291,9 @@ float processSample (float input, int channel);
 
 ---
 
-## 8. Testing Standards
+## 9. Testing Standards
 
-### 8.1 Test File Naming
+### 9.1 Test File Naming
 
 **Test files mirror source structure:**
 
@@ -1879,7 +2317,7 @@ Tests/
 - `BasicTests.cpp` for framework validation
 - Keep all tests in `Tests/` directory
 
-### 8.2 Test Organization
+### 9.2 Test Organization
 
 **Use JUCE's UnitTest framework:**
 
@@ -1930,7 +2368,7 @@ private:
 static DSPTests dspTests;
 ```
 
-### 8.3 When to Write Tests
+### 9.3 When to Write Tests
 
 **Write tests for:**
 - All DSP algorithms (gain, filters, effects)
@@ -1967,7 +2405,7 @@ void testGainProcessing()
 - JUCE framework code (already tested)
 - Pure UI layout code (hard to test, low value)
 
-### 8.4 Test Coverage Expectations
+### 9.4 Test Coverage Expectations
 
 **Coverage goals:**
 - DSP code: 80-90% coverage (critical path)

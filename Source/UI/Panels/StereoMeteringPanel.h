@@ -8,15 +8,16 @@
 
 #include "../Visualizers/AudioVisualizerBase.h"
 #include "../Theme/LayoutConstants.h"
-#include "../../DSP/IAudioDataSink.h"
+#include "../HintManager.h"
+#include "../../DSP/Interfaces/IAudioDataSink.h"
 
 /**
  * StereoMeteringPanel
  *
- * Right-side collapsible panel (~180px wide) providing three M/S analysis instruments:
- *  1. Goniometer  — Lissajous with phosphor persistence (Mid=up, Side=sideways)
+ * Right-side collapsible panel (~180px wide) providing three primary/secondary analysis instruments:
+ *  1. Goniometer  — Lissajous with phosphor persistence (Primary=up, Secondary=sideways)
  *  2. Correlation — L/R phase correlation bar (-1 to +1)
- *  3. Width/Oct   — M/S energy ratio in 10 octave bands
+ *  3. Width/Oct   — Primary/Secondary energy ratio in 10 octave bands
  *
  * Audio data is pushed from the audio thread via pushStereoData() and consumed
  * by a 60 Hz timer on the UI thread. The FIFO is lock-free (juce::AbstractFifo).
@@ -42,6 +43,9 @@ public:
     void paint(juce::Graphics &g) override;
 
     void resized() override;
+
+    /** Register HintManager — call once from PluginEditor after construction. */
+    void setHintManager(HintManager& hm);
 
 protected:
     //==============================================================================
@@ -89,6 +93,13 @@ private:
     //==============================================================================
     // Layout areas (set in resized)
     juce::Rectangle<int> gonioArea, corrArea, widthArea;
+
+    //==============================================================================
+    void mouseEnter(const juce::MouseEvent& e) override;
+    void mouseExit(const juce::MouseEvent& e) override;
+
+    HintManager* hints = nullptr;
+    HintManager::HintHandle hintHandle;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StereoMeteringPanel)

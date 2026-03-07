@@ -738,6 +738,17 @@ cmake --build build --parallel
 - `/release-build` command - Complete release automation
 - `/run-pluginval` command - Plugin validation workflow
 
+## Related Documentation
+
+This guide provides step-by-step build instructions. For deeper conceptual knowledge, see:
+
+- **[/skill cross-platform-builds]** - CMake configuration, code signing theory, CI/CD setup
+- **[/skill juce-best-practices]** - JUCE-specific development patterns
+- **[/build-all-formats]** - Quick build command for all formats
+- **[/release-build]** - Complete release automation
+
+---
+
 ## Expert Help
 
 For build issues, consult:

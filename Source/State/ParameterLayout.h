@@ -49,16 +49,30 @@ namespace ParameterLayout {
 
         // Output Mid enable (boolean)
         layout.add(std::make_unique<juce::AudioParameterBool>(
-            juce::ParameterID{ParameterIDs::outputMidEnable, ParameterIDs::parameterVersion},
+            juce::ParameterID{ParameterIDs::outputPrimaryEnable, ParameterIDs::parameterVersion},
             ParameterDefaults::OutputMid::name,
             ParameterDefaults::OutputMid::defaultValue
         ));
 
         // Output Side enable (boolean)
         layout.add(std::make_unique<juce::AudioParameterBool>(
-            juce::ParameterID{ParameterIDs::outputSideEnable, ParameterIDs::parameterVersion},
+            juce::ParameterID{ParameterIDs::outputSecondaryEnable, ParameterIDs::parameterVersion},
             ParameterDefaults::OutputSide::name,
             ParameterDefaults::OutputSide::defaultValue
+        ));
+
+        // Transient length — fast envelope time constant (1–50 ms, default 2 ms)
+        layout.add(std::make_unique<juce::AudioParameterFloat>(
+            juce::ParameterID{ParameterIDs::transientLength, ParameterIDs::parameterVersion},
+            ParameterDefaults::TransientLength::name,
+            juce::NormalisableRange(
+                ParameterDefaults::TransientLength::minValue,
+                ParameterDefaults::TransientLength::maxValue,
+                ParameterDefaults::TransientLength::stepSize
+            ),
+            ParameterDefaults::TransientLength::defaultValue,
+            juce::AudioParameterFloatAttributes()
+            .withLabel(ParameterDefaults::TransientLength::suffix)
         ));
 
         return layout;

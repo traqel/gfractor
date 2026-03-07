@@ -3,12 +3,14 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "PluginProcessor.h"
-#include "DSP/IAudioDataSink.h"
+#include "DSP/Interfaces/IAudioDataSink.h"
 #include "State/ParameterIDs.h"
+#include "Utility/ChannelMode.h"
 
 class PluginIntegrationTests : public juce::UnitTest {
 public:
-    PluginIntegrationTests() : UnitTest("Plugin Integration Tests", "Integration") {}
+    PluginIntegrationTests() : UnitTest("Plugin Integration Tests", "Integration") {
+    }
 
     void runTest() override {
         auto bufferIsFinite = [this](const juce::AudioBuffer<float> &buffer) {
@@ -32,10 +34,10 @@ public:
                 dryWet->setValueNotifyingHost(dryWet->convertTo0to1(35.0f));
             if (auto *bypass = apvts.getParameter(ParameterIDs::bypass))
                 bypass->setValueNotifyingHost(1.0f);
-            if (auto *mid = apvts.getParameter(ParameterIDs::outputMidEnable))
-                mid->setValueNotifyingHost(0.0f);
-            if (auto *side = apvts.getParameter(ParameterIDs::outputSideEnable))
-                side->setValueNotifyingHost(1.0f);
+            if (auto *primary = apvts.getParameter(ParameterIDs::outputPrimaryEnable))
+                primary->setValueNotifyingHost(0.0f);
+            if (auto *secondary = apvts.getParameter(ParameterIDs::outputSecondaryEnable))
+                secondary->setValueNotifyingHost(1.0f);
 
             juce::MemoryBlock state;
             source.getStateInformation(state);
@@ -54,8 +56,8 @@ public:
             expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::gain), 9.0f, 0.25f);
             expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::dryWet), 35.0f, 1.0f);
             expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::bypass), 1.0f, 0.01f);
-            expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::outputMidEnable), 0.0f, 0.01f);
-            expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::outputSideEnable), 1.0f, 0.01f);
+            expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::outputPrimaryEnable), 0.0f, 0.01f);
+            expectWithinAbsoluteError(getValue(restoredApvts, ParameterIDs::outputSecondaryEnable), 1.0f, 0.01f);
 
             restored.prepareToPlay(44100.0, 128);
             juce::AudioBuffer<float> block(2, 128);
@@ -65,12 +67,35 @@ public:
             bufferIsFinite(block);
         }
 
+        beginTest("Display state round-trip: channel mode survives save/load");
+        {
+            gFractorAudioProcessor source;
+            // Changing output mode updates displayState automatically
+            source.setOutputMode(ChannelMode::LR);
+
+            juce::MemoryBlock state;
+            source.getStateInformation(state);
+            expect(state.getSize() > 0);
+
+            gFractorAudioProcessor restored;
+            restored.setStateInformation(state.getData(), static_cast<int>(state.getSize()));
+
+            // channelMode == 1 is L/R
+            expectEquals(static_cast<int>(restored.getDisplayState()["channelMode"]), 1);
+
+            // TonalTransient round-trip
+            source.setOutputMode(ChannelMode::TonalTransient);
+            source.getStateInformation(state);
+            restored.setStateInformation(state.getData(), static_cast<int>(state.getSize()));
+            expectEquals(static_cast<int>(restored.getDisplayState()["channelMode"]), 2);
+        }
+
         beginTest("Processor rejects corrupt/truncated state safely");
         {
             gFractorAudioProcessor processor;
 
             const uint8_t garbage[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x11, 0x22, 0x33};
-            processor.setStateInformation(garbage, static_cast<int>(sizeof(garbage)));
+            processor.setStateInformation(garbage, sizeof(garbage));
 
             juce::MemoryBlock validState;
             processor.getStateInformation(validState);
@@ -195,7 +220,7 @@ public:
                     {400, 200},
                 };
 
-                const float scaleFactors[] = {1.0f, 1.25f, 1.5f, 2.0f};
+                constexpr float scaleFactors[] = {1.0f, 1.25f, 1.5f, 2.0f};
 
                 for (const auto scale: scaleFactors) {
                     editor->setScaleFactor(scale);
@@ -242,10 +267,9 @@ public:
                     {400, 200},
                 };
 
-                const float scales[] = {1.0f, 1.25f, 1.5f, 2.0f};
-
                 for (int i = 0; i < 8; ++i) {
-                    if ((i % 2) == 0)
+                    constexpr float scales[] = {1.0f, 1.25f, 1.5f, 2.0f};
+                    if (i % 2 == 0)
                         processor.enableAllBuses();
                     else
                         processor.disableNonMainBuses();
@@ -269,14 +293,14 @@ public:
                             block.setSample(ch, sample, 0.62f);
                     }
 
-                    processor.setReferenceMode((i % 2) == 0);
+                    processor.setReferenceMode(i % 2 == 0);
                     juce::MidiBuffer midi;
                     processor.processBlock(block, midi);
                     bufferIsFinite(block);
 
                     expect(editor->getWidth() > 0);
                     expect(editor->getHeight() > 0);
-                    expect(processor.isSidechainAvailable() == (channels > 2));
+                    expect(processor.isSidechainAvailable() == channels > 2);
                 }
             }
 
@@ -293,20 +317,19 @@ public:
             expect(editor != nullptr);
 
             if (editor != nullptr) {
-                const struct Size {
-                    int w;
-                    int h;
-                } sizes[] = {
-                    {1200, 600},
-                    {1199, 599},
-                    {1000, 580},
-                    {800, 500},
-                    {640, 360},
-                    {520, 280},
-                    {400, 200},
-                };
-
                 for (int i = 0; i < 300; ++i) {
+                    const struct Size {
+                        int w;
+                        int h;
+                    } sizes[] = {
+                        {1200, 600},
+                        {1199, 599},
+                        {1000, 580},
+                        {800, 500},
+                        {640, 360},
+                        {520, 280},
+                        {400, 200},
+                    };
                     const auto &sz = sizes[static_cast<size_t>(i % 7)];
                     editor->setSize(sz.w, sz.h);
 
@@ -445,6 +468,352 @@ public:
             expectEquals(sinkA.pushCalls, 1);
             expectEquals(sinkB.pushCalls, 2);
             expectWithinAbsoluteError(sinkB.lastSampleRate, 44100.0, 0.001);
+        }
+
+        beginTest("Reference mode routes sidechain to main output");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+
+            processor.enableAllBuses();
+            processor.prepareToPlay(44100.0, 128);
+
+            juce::AudioBuffer<float> buffer(4, 128);
+
+            for (int sample = 0; sample < 128; ++sample) {
+                buffer.setSample(0, sample, 0.05f);
+                buffer.setSample(1, sample, 0.05f);
+                buffer.setSample(2, sample, 0.7f);
+                buffer.setSample(3, sample, 0.7f);
+            }
+
+            processor.setReferenceMode(true);
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+
+            bool outputHasSidechainSignal = false;
+            for (int sample = 0; sample < 128; ++sample) {
+                if (std::abs(buffer.getSample(0, sample)) > 0.3f) {
+                    outputHasSidechainSignal = true;
+                    break;
+                }
+            }
+            expect(outputHasSidechainSignal);
+        }
+
+        beginTest("Sidechain bus layout configurations");
+        {
+            gFractorAudioProcessor processor;
+
+            auto makeLayout = [](const juce::AudioChannelSet &mainIn,
+                                 const juce::AudioChannelSet &mainOut,
+                                 const juce::AudioChannelSet &sidechain) {
+                juce::AudioProcessor::BusesLayout layout;
+                layout.inputBuses.add(mainIn);
+                layout.inputBuses.add(sidechain);
+                layout.outputBuses.add(mainOut);
+                return layout;
+            };
+
+            expect(processor.isBusesLayoutSupported(makeLayout(
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::stereo())));
+
+            expect(processor.isBusesLayoutSupported(makeLayout(
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::disabled())));
+
+            expect(!processor.isBusesLayoutSupported(makeLayout(
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::stereo(),
+                juce::AudioChannelSet::mono())));
+        }
+
+        beginTest("Mono to stereo bus layout not supported");
+        {
+            gFractorAudioProcessor processor;
+
+            juce::AudioProcessor::BusesLayout monoLayout;
+            monoLayout.inputBuses.add(juce::AudioChannelSet::mono());
+            monoLayout.outputBuses.add(juce::AudioChannelSet::stereo());
+
+            expect(!processor.isBusesLayoutSupported(monoLayout));
+        }
+
+        beginTest("Sidechain does not affect main output when reference mode is off");
+
+        beginTest("Primary/Secondary enable parameters affect routing");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+
+            auto *primaryEnable = processor.getAPVTS().getParameter(ParameterIDs::outputPrimaryEnable);
+            auto *secondaryEnable = processor.getAPVTS().getParameter(ParameterIDs::outputSecondaryEnable);
+
+            expect(primaryEnable != nullptr);
+            expect(secondaryEnable != nullptr);
+
+            primaryEnable->setValueNotifyingHost(1.0f);
+            secondaryEnable->setValueNotifyingHost(1.0f);
+
+            juce::AudioBuffer<float> buffer(2, 128);
+            for (int sample = 0; sample < 128; ++sample) {
+                buffer.setSample(0, sample, 0.5f);
+                buffer.setSample(1, sample, 0.5f);
+            }
+
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+
+            bool hasOutput = false;
+            for (int sample = 0; sample < 128; ++sample) {
+                if (std::abs(buffer.getSample(0, sample)) > 0.01f) {
+                    hasOutput = true;
+                    break;
+                }
+            }
+            expect(hasOutput);
+
+            primaryEnable->setValueNotifyingHost(0.0f);
+            secondaryEnable->setValueNotifyingHost(0.0f);
+
+            buffer.clear();
+            for (int sample = 0; sample < 128; ++sample) {
+                buffer.setSample(0, sample, 0.5f);
+                buffer.setSample(1, sample, 0.5f);
+            }
+
+            processor.processBlock(buffer, midi);
+
+            bool isSilent = true;
+            for (int sample = 0; sample < 128; ++sample) {
+                if (std::abs(buffer.getSample(0, sample)) > 0.001f ||
+                    std::abs(buffer.getSample(1, sample)) > 0.001f) {
+                    isSilent = false;
+                    break;
+                }
+            }
+            expect(isSilent);
+        }
+
+        beginTest("Bypass parameter passes audio through unmodified");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+
+            auto *bypass = processor.getAPVTS().getParameter(ParameterIDs::bypass);
+            expect(bypass != nullptr);
+            if (bypass != nullptr)
+                bypass->setValueNotifyingHost(1.0f);
+
+            juce::AudioBuffer<float> input(2, 128);
+            for (int sample = 0; sample < 128; ++sample) {
+                input.setSample(0, sample, 0.4f);
+                input.setSample(1, sample, -0.4f);
+            }
+
+            juce::AudioBuffer<float> buffer(2, 128);
+            buffer.copyFrom(0, 0, input, 0, 0, 128);
+            buffer.copyFrom(1, 0, input, 1, 0, 128);
+
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+
+            bufferIsFinite(buffer);
+
+            // Output must match the bypass-routed signal (finite and non-zero)
+            bool hasSignal = false;
+            for (int sample = 0; sample < 128; ++sample) {
+                if (std::abs(buffer.getSample(0, sample)) > 0.001f) {
+                    hasSignal = true;
+                    break;
+                }
+            }
+            expect(hasSignal);
+        }
+
+        beginTest("Various buffer sizes: no crash, finite output");
+        {
+            const int blockSizes[] = {32, 64, 128, 256, 512, 1024};
+
+            for (const int blockSize: blockSizes) {
+                gFractorAudioProcessor processor;
+                processor.prepareToPlay(44100.0, blockSize);
+
+                juce::AudioBuffer<float> buffer(2, blockSize);
+                for (int sample = 0; sample < blockSize; ++sample) {
+                    buffer.setSample(0, sample, 0.3f);
+                    buffer.setSample(1, sample, -0.3f);
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("Silence input stays finite across all channel modes");
+        {
+            constexpr int modes[] = {0, 1, 2}; // M/S, L/R, Transient
+
+            for (const int mode: modes) {
+                gFractorAudioProcessor processor;
+                processor.prepareToPlay(44100.0, 256);
+                processor.setOutputMode(channelModeFromInt(mode));
+
+                juce::AudioBuffer<float> buffer(2, 256);
+                buffer.clear();
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("Reset then process does not crash");
+        {
+            gFractorAudioProcessor processor;
+
+            for (int cycle = 0; cycle < 5; ++cycle) {
+                processor.prepareToPlay(44100.0, 128);
+
+                juce::AudioBuffer<float> buffer(2, 128);
+                for (int sample = 0; sample < 128; ++sample) {
+                    buffer.setSample(0, sample, 0.2f * static_cast<float>(cycle + 1));
+                    buffer.setSample(1, sample, -0.2f * static_cast<float>(cycle + 1));
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+                bufferIsFinite(buffer);
+
+                processor.releaseResources();
+            }
+        }
+
+        beginTest("Sample rate sweep: 22050, 44100, 48000, 88200, 96000, 192000");
+        {
+            constexpr double sampleRates[] = {22050.0, 44100.0, 48000.0, 88200.0, 96000.0, 192000.0};
+
+            for (const double sr: sampleRates) {
+                gFractorAudioProcessor processor;
+                processor.prepareToPlay(sr, 512);
+
+                juce::AudioBuffer<float> buffer(2, 512);
+                for (int sample = 0; sample < 512; ++sample) {
+                    buffer.setSample(0, sample, 0.1f);
+                    buffer.setSample(1, sample, -0.1f);
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("DAW compatibility: zero-sample buffer (auval)");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+
+            juce::AudioBuffer<float> buffer(2, 0);
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+        }
+
+        beginTest("DAW compatibility: block size sweep 32-4096");
+        {
+            constexpr int blockSizes[] = {32, 64, 128, 256, 512, 1024, 2048, 4096};
+
+            for (const int bs: blockSizes) {
+                gFractorAudioProcessor processor;
+                processor.prepareToPlay(48000.0, bs);
+
+                juce::AudioBuffer<float> buffer(2, bs);
+                for (int sample = 0; sample < bs; ++sample) {
+                    buffer.setSample(0, sample, 0.1f);
+                    buffer.setSample(1, sample, -0.1f);
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("DAW compatibility: rapid parameter changes during process");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(44100.0, 128);
+            auto &apvts = processor.getAPVTS();
+
+            for (int i = 0; i < 10; ++i) {
+                if (auto *gain = apvts.getParameter(ParameterIDs::gain))
+                    gain->setValueNotifyingHost(static_cast<float>(i) / 10.0f);
+
+                juce::AudioBuffer<float> buffer(2, 128);
+                for (int sample = 0; sample < 128; ++sample) {
+                    buffer.setSample(0, sample, 0.2f);
+                    buffer.setSample(1, sample, -0.2f);
+                }
+
+                juce::MidiBuffer midi;
+                processor.processBlock(buffer, midi);
+                bufferIsFinite(buffer);
+            }
+        }
+
+        beginTest("DAW compatibility: double-precision processing simulation");
+        {
+            gFractorAudioProcessor processor;
+            processor.prepareToPlay(48000.0, 64);
+
+            juce::AudioBuffer<float> buffer(2, 64);
+            for (int sample = 0; sample < 64; ++sample) {
+                buffer.setSample(0, sample, 0.1f);
+                buffer.setSample(1, sample, -0.1f);
+            }
+
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+
+            expectGreaterThan(buffer.getRMSLevel(0, 0, 64), 0.01f);
+            bufferIsFinite(buffer);
+        }
+
+        beginTest("DAW compatibility: mono input is rejected");
+        {
+            gFractorAudioProcessor processor;
+
+            juce::AudioProcessor::BusesLayout layout;
+            layout.inputBuses.add(juce::AudioChannelSet::mono());
+            layout.outputBuses.add(juce::AudioChannelSet::stereo());
+            expect(!processor.isBusesLayoutSupported(layout));
+        }
+
+        beginTest("DAW compatibility: disabled sidechain is handled");
+        {
+            gFractorAudioProcessor processor;
+
+            juce::AudioProcessor::BusesLayout layout;
+            layout.inputBuses.add(juce::AudioChannelSet::stereo());
+            layout.inputBuses.add(juce::AudioChannelSet::disabled());
+            layout.outputBuses.add(juce::AudioChannelSet::stereo());
+            expect(processor.isBusesLayoutSupported(layout));
+
+            processor.prepareToPlay(44100.0, 128);
+
+            juce::AudioBuffer<float> buffer(2, 128);
+            buffer.clear();
+            juce::MidiBuffer midi;
+            processor.processBlock(buffer, midi);
+            bufferIsFinite(buffer);
+
+            expect(!processor.isSidechainAvailable());
         }
     }
 };

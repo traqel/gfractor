@@ -13,8 +13,8 @@ struct Defaults {
     static constexpr int overlapFactor = 4;
     static constexpr auto smoothing = SmoothingMode::None;
     static constexpr float curveDecay = 0.95f;
-    static juce::Colour midColour() { return juce::Colour(ColorPalette::midGreen); }
-    static juce::Colour sideColour() { return juce::Colour(ColorPalette::sideAmber); }
-    static juce::Colour refMidColour() { return juce::Colour(ColorPalette::refMidBlue); }
-    static juce::Colour refSideColour() { return juce::Colour(ColorPalette::refSidePink); }
+    static juce::Colour primaryColour() { return juce::Colour(ColorPalette::primaryGreen); }
+    static juce::Colour secondaryColour() { return juce::Colour(ColorPalette::secondaryAmber); }
+    static juce::Colour refPrimaryColour() { return juce::Colour(ColorPalette::refPrimaryBlue); }
+    static juce::Colour refSecondaryColour() { return juce::Colour(ColorPalette::refSecondaryPink); }
 };

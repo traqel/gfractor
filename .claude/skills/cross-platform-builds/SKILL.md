@@ -917,8 +917,12 @@ juce::File presetFolder = juce::File::getSpecialLocation(
 
 ---
 
-**Related Resources:**
-- `/release-build` command - Automated release workflow
-- BUILD_GUIDE.md - Detailed build procedures
-- RELEASE_CHECKLIST.md - Pre-release validation steps
-- @build-engineer - CI/CD and build automation expert
+## Related Documentation
+
+This skill provides conceptual knowledge. For step-by-step procedures, see:
+
+- **[BUILD_GUIDE.md](../static-docs/BUILD_GUIDE.md)** - Detailed build procedures by platform
+- **[RELEASE_CHECKLIST.md](../static-docs/RELEASE_CHECKLIST.md)** - Pre-release validation
+- **[/build-all-formats]** - Quick build command
+- **[/release-build]** - Automated release workflow
+- **@build-engineer** - CI/CD and build automation expert
